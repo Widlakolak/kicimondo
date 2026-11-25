@@ -1,12 +1,12 @@
 # Roadmap
 
-Current status: Stage 01 is implemented and locally verified. Owner review and hands-on device checks are pending. A stage is complete after its checks and owner acceptance.
+Current status: Stage 01 was merged and accepted by the owner after a local Windows playtest. Stage 02 is implemented and awaiting owner review. Physical Android testing has yet to take place.
 
 | Stage | Scope | Acceptance |
 | --- | --- | --- |
 | 00 | Project design and agent instructions | Documents consistent; initial stage ready for Codex |
-| 01 | [Client and playable room](stages/01-room-prototype.md) | Avatar, movement, collisions, emulated touch, and interaction checks passed locally. Owner review pending. |
-| 02 | [Tracing and progression](stages/02-first-quest.md) | First task awards 1 PS once, changes room, unlocks upstairs transition; durable save/reload |
+| 01 | [Client and playable room](stages/01-room-prototype.md) | Merged. Owner confirmed local Windows play. Automated touch coverage used emulation. |
+| 02 | [Tracing and progression](stages/02-first-quest.md) | Tracing and the button alternative, one-time PS, round-trip landing transitions and save/reload verified. Owner review pending. |
 | 03 | [First resident cat](stages/03-first-cat.md) | Cat activity and consent-based petting, water maths and bed matching, simple trust; first playable release |
 | 04 | Android/PWA feasibility | Capacitor debug build on device, local assets and lifecycle, PWA offline reload, verify save adapter |
 | 05 | Upstairs and ground floor | Enough distinct quests to reach 8 PS; NPC dialogue, sorting, return paths |

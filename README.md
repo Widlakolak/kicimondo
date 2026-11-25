@@ -4,11 +4,11 @@ Kicimondo is a 2D adventure game for children in the first years of primary scho
 
 ## Status
 
-Stage 01 includes a playable bedroom prototype. Choose an avatar and nickname, explore with a keyboard or on-screen controls, and inspect the scattered clothes and closed door. The avatar and nickname are stored in the browser. The room and avatars use original placeholder pixel art. Owner acceptance is pending.
+Stage 02 adds the first quest. Trace a path to put away the scattered clothes or use the numbered buttons. Completing the quest earns one independence point, opens the bedroom door and lets you visit the landing and return. The browser saves your avatar, progress and location in IndexedDB. Existing Stage 01 profiles migrate automatically on the same local address and browser profile.
 
 ## Getting started
 
-Use Node.js `24.22.3` (see `.nvmrc`) and npm `11.19.1`.
+Use Node.js 24.13.1 or a later 24.x release, with npm 11.11.0 or a later 11.x release. CI uses Node.js 24.13.1 (see `.nvmrc`) and npm 11.11.0 with the committed lockfile.
 
 ```sh
 cd frontend
@@ -48,6 +48,7 @@ The browser suite serves the production build. On Linux, use `npx playwright ins
 - [Development instructions](AGENTS.md)
 - [Architecture decisions](docs/adr/0001-local-first-web-client.md)
 - [Stage 01](docs/stages/01-room-prototype.md)
+- [Stage 02](docs/stages/02-first-quest.md)
 - [Codex task prompt](docs/CODEX.md)
 
 The game uses Polish text. Code and technical documentation are in English. Names other than Kicimondo and Kicipedia are provisional. No open-source license has been selected.

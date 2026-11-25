@@ -1,21 +1,15 @@
 import { describe, expect, it, vi } from 'vitest'
-import { profileKey, readProfile, writeProfile } from './profileStore'
+import { profileKey, readProfile } from './profileStore'
 
 describe('local profile storage', () => {
   it('reports a missing record without an error', () => {
     expect(readProfile(() => ({ getItem: () => null }))).toEqual({ status: 'ready', profile: null })
   })
 
-  it('round trips the current schema and updates the avatar explicitly', () => {
-    const records = new Map<string, string>()
-    const storage = () => ({
-      getItem: (key: string) => records.get(key) ?? null,
-      setItem: (key: string, value: string) => { records.set(key, value) },
-    })
-    expect(writeProfile(storage, { avatar: 'boy', nickname: 'Żółwik' })).toBe(true)
-    expect(writeProfile(storage, { avatar: 'girl', nickname: 'Żółwik' })).toBe(true)
-    expect(JSON.parse(records.get(profileKey)!)).toEqual({ schemaVersion: 1, avatar: 'girl', nickname: 'Żółwik' })
-    expect(readProfile(storage)).toEqual({ status: 'ready', profile: { avatar: 'girl', nickname: 'Żółwik' } })
+  it('reads a Stage 01 profile and normalizes its nickname', () => {
+    const getItem = vi.fn(() => '{"schemaVersion":1,"avatar":"girl","nickname":" Żółwik "}')
+    expect(readProfile(() => ({ getItem }))).toEqual({ status: 'ready', profile: { avatar: 'girl', nickname: 'Żółwik' } })
+    expect(getItem).toHaveBeenCalledWith(profileKey)
   })
 
   it.each([
@@ -28,9 +22,8 @@ describe('local profile storage', () => {
     expect(setItem).not.toHaveBeenCalled()
   })
 
-  it('handles errors accessing storage and writing a profile', () => {
+  it('handles errors accessing legacy storage', () => {
     const denied = () => { throw new Error('Storage blocked') }
     expect(readProfile(denied)).toEqual({ status: 'unavailable', profile: null })
-    expect(writeProfile(() => ({ setItem: denied }), { avatar: 'boy', nickname: 'Żółwik' })).toBe(false)
   })
 })

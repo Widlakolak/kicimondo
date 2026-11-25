@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { readBedroom } from './bedroom'
+import { readMap, solidsFor } from './tiledMap'
+import { maps } from '../content/world'
+import { validateContent } from '../content/validate'
 import { canStand, movement, moveInRoom, nearbyInteraction } from './room'
 import source from '../game/maps/bedroom.tmj?raw'
 
-const bedroom = readBedroom(JSON.parse(source))
+const bedroom = maps.bedroom
+const spawn = bedroom.spawns.get('bedside')!
+const solids = solidsFor(bedroom)
 
 describe('room rules', () => {
   it('normalizes diagonals and cancels opposing input', () => {
@@ -22,8 +26,8 @@ describe('room rules', () => {
   })
 
   it('chooses only an interaction in range and includes the exact boundary', () => {
-    const [clothes] = bedroom.anchors
-    expect(nearbyInteraction(bedroom.spawn, bedroom.anchors)).toBeNull()
+    const clothes = bedroom.anchors.find(({ id }) => id === 'scattered-clothes')!
+    expect(nearbyInteraction(spawn, bedroom.anchors)).toBeNull()
     expect(nearbyInteraction({ x: clothes.x + clothes.radius, y: clothes.y }, bedroom.anchors)).toBe(clothes.id)
     expect(nearbyInteraction({ x: clothes.x + clothes.radius + 0.1, y: clothes.y }, bedroom.anchors)).toBeNull()
   })
@@ -36,12 +40,18 @@ describe('room rules', () => {
   })
 })
 
-describe('bedroom map', () => {
+describe('location maps', () => {
+  it('validates both maps and resolves safe arrivals and return transitions', () => {
+    expect(() => validateContent(maps)).not.toThrow()
+    expect(canStand(maps.landing.spawns.get('from-bedroom')!, solidsFor(maps.landing))).toBe(true)
+    expect(canStand(bedroom.spawns.get('from-landing')!, solids)).toBe(true)
+  })
+
   it('has a clear spawn, walls and solid furniture', () => {
-    expect(canStand(bedroom.spawn, bedroom.solids)).toBe(true)
-    expect(canStand({ x: 160, y: 26 }, bedroom.solids)).toBe(false)
+    expect(canStand(spawn, solids)).toBe(true)
+    expect(canStand({ x: 160, y: 26 }, solids)).toBe(false)
     for (const item of bedroom.furniture.filter((item) => item.solid)) {
-      expect(canStand(item.box, bedroom.solids)).toBe(false)
+      expect(canStand(item.box, solids)).toBe(false)
     }
     expect(bedroom.furniture.filter((item) => item.solid)).toHaveLength(3)
   })
@@ -49,6 +59,6 @@ describe('bedroom map', () => {
   it('rejects an interaction anchor inside a wall', () => {
     const map = JSON.parse(source)
     map.layers.find((layer: { name: string }) => layer.name === 'Interactions').objects[0].y = 16
-    expect(() => readBedroom(map)).toThrow('walkable closed-door anchor')
+    expect(() => readMap(map)).toThrow('walkable closed-door anchor')
   })
 })

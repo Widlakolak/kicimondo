@@ -13,7 +13,7 @@
 *, *::before, *::after { box-sizing: border-box; }
 body { margin: 0; min-width: 0; }
 button, input { font: inherit; }
-button { cursor: pointer; }
+button { cursor: pointer; touch-action: manipulation; }
 button:disabled { cursor: default; }
 button, input, .avatar-option { -webkit-tap-highlight-color: transparent; }
 :focus-visible { outline: 3px solid #24664f; outline-offset: 4px; }
@@ -140,3 +140,23 @@ dialog::backdrop { background: rgb(41 35 41 / 58%); }
   .world { grid-row: span 3; align-self: start; width: min(100%, 78vh); }
   .controls { align-content: start; }
 }
+
+.room-actions { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
+.points { border-radius: .6rem; background: #f2e7c8; color: #644c29; padding: .45rem .7rem; font-weight: 750; }
+.quest-dialog { width: min(34rem, calc(100% - 1rem)); max-height: calc(100dvh - 1rem); padding: clamp(.85rem, 3vw, 1.35rem); }
+.challenge p { margin: .55rem 0; }
+.trace-board { margin: .65rem auto; width: min(100%, 19rem, 48dvh); }
+.trace-board svg { display: block; width: 100%; background: #f7eddb; border: 1px solid #dfd2b9; border-radius: .85rem; touch-action: none; user-select: none; }
+.trace-board polyline { fill: none; stroke-linejoin: round; stroke-linecap: round; }
+.trace-corridor { stroke: #e5d6af; }
+.trace-guide { stroke: #8e7956; stroke-width: .55; stroke-dasharray: 1.4 2.2; }
+.trace-progress { stroke: #54816a; stroke-width: 1.45; }
+.trace-start { fill: #538271; }
+.trace-end { fill: #ba7c54; }
+.trace-checkpoint { fill: #285c43; stroke: #fffaf0; stroke-width: .55; }
+.trace-board text { text-anchor: middle; font-size: 4px; font-weight: 700; fill: #493b29; }
+.challenge-actions, .sequence { display: flex; flex-wrap: wrap; gap: .45rem; margin-bottom: .65rem; }
+.challenge-feedback { color: var(--muted); font-size: .93rem; margin: .45rem 0; }
+.sequence button { min-width: 3rem; }
+.sequence button:disabled { opacity: .8; }
+.quest-reward { font-weight: 750; color: var(--green); }

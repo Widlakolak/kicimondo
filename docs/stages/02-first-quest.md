@@ -1,6 +1,6 @@
 # Stage 02: First quest and progression
 
-Status: planned; start only after Stage 01 is accepted.
+Status: implemented and locally verified. Owner acceptance is pending.
 
 ## Goal
 
@@ -28,3 +28,29 @@ Other minigames, full upstairs, cats, server, store build, multiplayer, coins, a
 - Tests cover geometry, tolerance/coverage/order, cancelled pointer, duplicate awards, unlock boundaries, save migration and failed writes. Browser smoke test covers the end-to-end loop, including accessible alternative and reload. Run the existing CI commands.
 
 Stop after the first quest and wait for owner acceptance.
+
+## Implementation and verification
+
+The bundled quest links the scattered clothes anchor to a curved tracing exercise and a reward of 1 PS. The drawing area uses normalized coordinates with a 5% tolerance and 90% ordered coverage. The player can lift and resume at the last checkpoint, use a hint, restart, cancel, or use the numbered buttons with a keyboard or pointer. Pointer cancellation rolls back the unfinished stroke.
+
+The quest, reward and removal of the clothes commit together in IndexedDB. The saved checkpoint tracks both transitions between the bedroom and the landing. The repository migrates the Stage 01 profile on the same browser origin and retains a previous valid snapshot for recovery. Unsupported save versions are preserved. When writing fails, the player can continue for the current session and sees a save notice.
+
+The clean install and checks below ran on Linux with the owner's Node.js 24.13.1 and npm 11.11.0 versions. CI pins those versions. The package accepts later releases within both major versions.
+
+| Command from `frontend/` | Result |
+| --- | --- |
+| `npm ci --engine-strict` | Passed with the committed lockfile |
+| `npm run lint` | Passed |
+| `npm run typecheck` | Passed |
+| `npm test` | 35 passed across 7 files |
+| `npm run build` | Passed, including content and map validation. Vite warned about the size of the separately loaded Phaser chunk |
+| `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:browser` | 7 passed on Chromium 156, including mouse tracing, emulated touch, keyboard alternative, migration, save errors and the landing round trip |
+
+The cloud network denied the Playwright Chromium download. The browser suite ran on the installed Chromium. Stage 02 Windows play and physical Android testing await owner review.
+
+### Manual review
+
+- Use the same browser and local address as Stage 01 to check that the saved avatar and nickname migrate. Check the door at 0 PS.
+- Open the clothes quest. Tap the end or draw a shortcut, then use the hint or restart. Follow the line and lift partway, then resume from the green point. Try the numbered buttons with Tab and Enter on a separate browser profile.
+- After success, check for 1 PS, an empty floor where the clothes were, and an open door. Walk to the door and interact to visit the landing. Reload there, resume, and return to the bedroom. Check that the point total remains 1 PS.
+- Repeat tracing and the alternative on a physical phone. Check that a cancelled touch lets the player resume safely.

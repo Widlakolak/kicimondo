@@ -1,8 +1,7 @@
 export type Point = { x: number; y: number }
 export type Box = Point & { width: number; height: number }
 
-export const interactionIds = ['scattered-clothes', 'closed-door'] as const
-export type InteractionId = (typeof interactionIds)[number]
+export type InteractionId = string
 export type Anchor = Point & { id: InteractionId; radius: number }
 
 export type Direction = 'up' | 'down' | 'left' | 'right'

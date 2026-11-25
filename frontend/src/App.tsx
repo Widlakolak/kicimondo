@@ -2,7 +2,8 @@ import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from 'rea
 import { avatars, validateNickname, type Avatar, type Profile } from './core/profile'
 import { paintAvatar } from './game/avatarArt'
 import { pl } from './i18n/pl'
-import { readProfile, writeProfile } from './storage/profileStore'
+import { applyCommand, type Save, type SaveCommand } from './core/progress'
+import { createSaveRepository } from './storage/saveRepository'
 
 const Room = lazy(() => import('./Room'))
 
@@ -20,8 +21,9 @@ function AvatarPortrait({ avatar }: { avatar: Avatar }) {
   return <canvas ref={canvas} width="16" height="24" aria-hidden="true" />
 }
 
-function ProfileForm({ initial, onSave, onCancel }: {
+function ProfileForm({ initial, busy, onSave, onCancel }: {
   initial: Profile | null
+  busy: boolean
   onSave: (profile: Profile) => void
   onCancel?: () => void
 }) {
@@ -32,6 +34,7 @@ function ProfileForm({ initial, onSave, onCancel }: {
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (busy) return
     const result = validateNickname(nickname)
     if ('error' in result) {
       setError(result.error)
@@ -68,53 +71,92 @@ function ProfileForm({ initial, onSave, onCancel }: {
         {error && <p id="nickname-feedback" className="error" role="alert">{pl.nicknameError[error]}</p>}
       </div>
       <div className="profile-actions">
-        <button className="primary" type="submit">{pl.start} <span aria-hidden="true">→</span></button>
-        {onCancel && <button className="secondary" type="button" onClick={onCancel}>{pl.cancel}</button>}
+        <button className="primary" type="submit" disabled={busy}>{busy ? pl.saving : pl.start} <span aria-hidden="true">→</span></button>
+        {onCancel && <button className="secondary" type="button" disabled={busy} onClick={onCancel}>{pl.cancel}</button>}
       </div>
     </form>
   )
 }
 
-const storage = () => window.localStorage
+const repository = createSaveRepository()
+type Screen = 'loading' | 'welcome' | 'edit' | 'room'
+type Notice = keyof typeof pl.save | null
 
 export function App() {
-  const [loaded] = useState(() => readProfile(storage))
-  const [status, setStatus] = useState(loaded.status)
-  const [profile, setProfile] = useState(loaded.profile)
-  const [screen, setScreen] = useState<'welcome' | 'edit' | 'room'>(loaded.profile ? 'welcome' : 'edit')
+  const [status, setStatus] = useState<Notice>(null)
+  const [save, setSave] = useState<Save | null>(null)
+  const [screen, setScreen] = useState<Screen>('loading')
+  const [busy, setBusy] = useState(false)
+  const busyRef = useRef(false)
 
-  function save(next: Profile) {
-    setStatus(writeProfile(storage, next) ? 'ready' : 'unavailable')
-    setProfile(next)
-    setScreen('room')
+  useEffect(() => {
+    let active = true
+    void repository.load().then(({ save, status }) => {
+      if (!active) return
+      setSave(save)
+      setStatus(status === 'ready' ? null : status)
+      setScreen(save ? 'welcome' : 'edit')
+    })
+    return () => { active = false }
+  }, [])
+
+  async function commit(command: SaveCommand) {
+    if (busyRef.current) return null
+    busyRef.current = true
+    setBusy(true)
+    try {
+      let next: Save | null
+      if (status === 'invalid' || status === 'unavailable') {
+        next = applyCommand(save, command)
+      } else {
+        try {
+          next = await repository.commit(command)
+          setStatus(null)
+        } catch {
+          setStatus('unavailable')
+          next = applyCommand(save, command)
+        }
+      }
+      setSave(next)
+      return next
+    } finally {
+      busyRef.current = false
+      setBusy(false)
+    }
   }
+
+  const profile = save?.profile ?? null
+  const notice = status ? pl.save[status] : null
 
   return (
     <main className={screen === 'room' ? 'shell gameplay' : 'shell'}>
       <div className="brand"><span className="brand-mark" aria-hidden="true">✿</span>{pl.title}</div>
-      {status !== 'ready' && <p className="notice" role="status">{pl[status]}</p>}
-      {screen === 'room' && profile ? (
-        <Suspense fallback={<p role="status">{pl.loadingRoom}</p>}>
-          <Room profile={profile} onEdit={() => setScreen('edit')} />
-        </Suspense>
-      ) : (
-        <section className="welcome" aria-labelledby="welcome-title">
-          <h1 id="welcome-title">{pl.welcome}</h1>
-          {screen === 'welcome' && profile ? (
-            <div className="return-profile">
-              <div className={`avatar-portrait ${profile.avatar}`}><AvatarPortrait avatar={profile.avatar} /></div>
-              <p className="saved-name">{profile.nickname}</p>
-              <div className="profile-actions">
-                <button className="primary" onClick={() => setScreen('room')}>{pl.continue} <span aria-hidden="true">→</span></button>
-                <button className="secondary" onClick={() => setScreen('edit')}>{pl.edit}</button>
+      {notice && <p className="notice" role="status">{notice}</p>}
+      {screen === 'loading' ? <p role="status">{pl.loadingSave}</p> :
+        screen === 'room' && save ? (
+          <Suspense fallback={<p role="status">{pl.loadingRoom}</p>}>
+            <Room key={save.checkpoint.location + '/' + save.checkpoint.spawn} save={save}
+              commit={commit} busy={busy} notice={notice} onEdit={() => setScreen('edit')} />
+          </Suspense>
+        ) : (
+          <section className="welcome" aria-labelledby="welcome-title">
+            <h1 id="welcome-title">{pl.welcome}</h1>
+            {screen === 'welcome' && profile ? (
+              <div className="return-profile">
+                <div className={`avatar-portrait ${profile.avatar}`}><AvatarPortrait avatar={profile.avatar} /></div>
+                <p className="saved-name">{profile.nickname}</p>
+                <div className="profile-actions">
+                  <button className="primary" onClick={() => setScreen('room')}>{pl.continue} <span aria-hidden="true">→</span></button>
+                  <button className="secondary" onClick={() => setScreen('edit')}>{pl.edit}</button>
+                </div>
               </div>
-            </div>
-          ) : (
-            <ProfileForm initial={profile} onSave={save}
-              onCancel={profile ? () => setScreen('welcome') : undefined} />
-          )}
-        </section>
-      )}
+            ) : (
+              <ProfileForm initial={profile} busy={busy} onSave={async (profile) => {
+                if (await commit({ type: 'profile', profile })) setScreen('room')
+              }} onCancel={profile ? () => setScreen('welcome') : undefined} />
+            )}
+          </section>
+        )}
     </main>
   )
 }

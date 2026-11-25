@@ -14,7 +14,7 @@ A second loop runs alongside it: repair or place an attraction -> meet cats -> b
 
 ## Opening
 
-Stage 01 covers avatar selection, room exploration and a placeholder interaction with the clothes. The door is closed in this prototype.
+Stage 02 covers avatar selection, bedroom exploration, the clothes quest and the landing. The first quest can be completed by tracing or using numbered buttons in order.
 
 The player chooses a boy or girl avatar and an in-game name (not a real name requirement). Start next to the bed in a bedroom. The first mission is picking up scattered clothes by tracing a path. On success, remove the clothes, award one independence point (PS in Polish) and unlock the bedroom door. Return to exploration rather than chaining another exercise automatically.
 
