@@ -1,6 +1,6 @@
 # Stage 03: First resident cat
 
-Status: implemented and locally verified. Owner playtest pending.
+Status: accepted. PR #3 merged; CI and all 19 owner checks passed.
 
 ## Goal
 
@@ -46,7 +46,7 @@ Checks ran on Linux with Node.js 24.13.1 and npm 11.11.0.
 | `npm run build` | Passed, including challenge, map and cat-route validation. Vite warned about the size of the separately loaded Phaser chunk |
 | `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:browser` | 10 passed on system Chromium 156. Coverage includes both new quests, emulated touch selection, cat consent and pause, migration, reload and the Stage 02 regression suite |
 
-The cloud network denied the Playwright Chromium download. Physical Android testing and Stage 03 owner acceptance are pending.
+The cloud network denied the Playwright Chromium download. Physical Android testing is pending. GitHub Actions run 45599222437 passed all checks, including 44 unit and 10 browser tests. Owner acceptance confirmed on 2026-11-25.
 
 ### Manual review
 
@@ -55,3 +55,7 @@ The cloud network denied the Playwright Chromium download. Physical Android test
 - Open the empty bowl, try a wrong answer and a hint, then finish counting, addition and subtraction. Check the water and watch the cat drink.
 - Match the Polish words to the pictures. Try a wrong pair, then finish by tapping or using Tab and Enter. Watch the cat use the restored bed.
 - Check 3 PS after completing all three quests. Use pause and switch tabs to check that the cat stops. Visit the landing, reload, then return and check that progress, both attractions and trust are intact.
+
+### Owner acceptance
+
+All 19 checks passed: launch, profile/1 PS migration, cleared clothes, cat visibility and movement, petting and unique trust, maths and water restoration, drinking, matching and bed use, 3 PS, pause, landing round trip and persistent progress/trust after reload. Physical device testing was not reported.
