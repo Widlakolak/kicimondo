@@ -1,6 +1,6 @@
 # Deployment
 
-Stage 04 defines a static web build and an Android debug artifact. QNAP hosting and public releases remain planned.
+Kicimondo has a static web build, an Android debug artifact and an optional local content service. QNAP hosting and public releases remain planned.
 
 ## Web
 
@@ -16,13 +16,85 @@ The existing shared Nginx/Cloudflare setup may be reused after checking network 
 
 Before deployment: validate Compose, inspect the diff, check disk/CPU/RAM, check image availability and backup persistent data. Deploy only Kicimondo services. Verify TLS, health, first load, offline reload, asset paths and actual phone play. Document exact commands and image tags after the implementation exists. Keep a rollback plan; never use down -v on persistent production data.
 
+## Local content service
+
+Stage 07 uses Java 21, Spring Boot 4.2.0, Gradle 8.14.3, springdoc 3.2.1 and PostgreSQL 17.9. The Spring Boot BOM pins Flyway 12.11.0, PostgreSQL JDBC 42.7.14, Hibernate 7.4.15.Final, JUnit 6.1.3, Mockito 5.24.0 and Testcontainers 2.0.5. See the [Spring Boot system requirements](https://github.com/spring-projects/spring-boot/blob/v4.2.0/documentation/spring-boot-docs/src/docs/antora/modules/ROOT/pages/system-requirements.adoc) and the [springdoc parent build](https://github.com/springdoc/springdoc-openapi/blob/v3.2.1/pom.xml).
+
+### Run both services with Compose
+
+Run these PowerShell commands from the repository root with JDK 21 and Docker running.
+
+```powershell
+Push-Location .\backend
+.\gradlew.bat --no-daemon --max-workers=4 test bootJar
+Pop-Location
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+docker compose config --quiet
+docker compose up --build --wait
+$demo = (Resolve-Path .\contracts\demo-math.json).Path
+docker compose run --rm --volume "${demo}:/import/demo-math.json:ro" backend import /import/demo-math.json
+```
+
+Copy the example environment file when setting up the project for the first time. The image packages the JAR built by the wrapper. Import files must be readable by the container user (UID 10001). Compose exposes the API only on loopback and puts PostgreSQL on a private, internal network with a named data volume. The container limits are local development defaults. When finished, stop both services with `docker compose down`. The volume retains the published packs.
+
+### Run Spring Boot directly
+
+Use a separate PostgreSQL container with a loopback-only port when running the API outside Compose. Run these PowerShell commands from the repository root.
+
+```powershell
+$env:KICIMONDO_DB_PASSWORD = 'local-dev-only'
+$env:KICIMONDO_ALLOWED_ORIGINS = 'http://127.0.0.1:5173,http://127.0.0.1:4173'
+docker run -d --name kicimondo-dev-postgres -p 127.0.0.1:5432:5432 -v kicimondo-dev-postgres:/var/lib/postgresql/data -e POSTGRES_DB=kicimondo -e POSTGRES_USER=kicimondo -e "POSTGRES_PASSWORD=$env:KICIMONDO_DB_PASSWORD" postgres:17.9-alpine
+docker exec kicimondo-dev-postgres pg_isready -U kicimondo -d kicimondo
+Push-Location .\backend
+.\gradlew.bat --no-daemon bootJar
+Pop-Location
+java -jar .\backend\build\libs\kicimondo-content.jar import .\contracts\demo-math.json
+java -jar .\backend\build\libs\kicimondo-content.jar
+```
+
+Wait for PostgreSQL readiness before importing. For an existing stopped development container, use `docker start kicimondo-dev-postgres`. The import starts a local non-web process and runs Flyway before publishing. The same normalized pack yields `ALREADY_PUBLISHED`. A conflicting payload fails with a nonzero exit and leaves the original row intact. Stop the Java process with Ctrl+C, then use `docker stop kicimondo-dev-postgres`. Use local-only passwords for these examples. The API reads `KICIMONDO_DB_URL`, `KICIMONDO_DB_USER`, `KICIMONDO_DB_PASSWORD`, `SERVER_ADDRESS` and `SERVER_PORT`.
+
+### Read the API
+
+All three endpoints are GET under `/api/v1/content/packs` and require a positive `gameContentVersion`. The optional two-letter `locale` defaults to `pl`. The list returns the newest compatible version per pack ID, ordered by pack ID, with 50 results per page and an optional zero-based `page` (0–1000). Missing compatible versions return HTTP 404 and invalid parameters return HTTP 400. Both use `application/problem+json`. Publication conflicts are reported by the operator CLI.
+
+```powershell
+$api = 'http://127.0.0.1:8080/api/v1/content/packs'
+Invoke-RestMethod "${api}?gameContentVersion=4&locale=pl&page=0"
+Invoke-RestMethod "$api/kicimondo-math/latest?gameContentVersion=4"
+$response = Invoke-WebRequest "$api/kicimondo-math/versions/1?gameContentVersion=4"
+$response.Headers['X-Content-SHA256']
+$response.Content
+Invoke-RestMethod 'http://127.0.0.1:8080/actuator/health'
+Start-Process 'http://127.0.0.1:8080/swagger-ui/index.html'
+```
+
+Metadata includes the pack ID, version, compatible game version, locale, SHA-256 and publication timestamp. The version endpoint returns the exact stored UTF-8 bytes and the same lowercase SHA-256 in `X-Content-SHA256`. Import produces compact JSON with variants sorted by ID. PostgreSQL stores that text to preserve the exact bytes, with a composite primary key and a trigger that rejects updates and deletes. Flyway creates the schema and Hibernate validates it. Actuator exposes health status only, and OpenAPI JSON is at `/v3/api-docs`.
+
+### Configure the client and verify offline
+
+Start the backend first. Run the production preview from the repository root in PowerShell to test the service worker.
+
+```powershell
+$env:VITE_CONTENT_API_ORIGIN = 'http://127.0.0.1:8080'
+Set-Location .\frontend
+npm ci --engine-strict
+npm run build
+npm run preview -- --host 127.0.0.1 --port 4173 --strictPort
+```
+
+Open `http://127.0.0.1:4173`. Create or open a profile, return to the main menu, and choose **Dla dorosłych · zadania dodatkowe → Sprawdź i pobierz pakiet zadań**. The menu requests the `kicimondo-math` pack. After the offline-ready message, disconnect or enable the browser's Offline setting and reload. Try the water-bowl activity. Its first downloaded question shows three drops. Completing it gives the existing quest's single PS. Check school supplies after reloading offline. Return to bundled exercises with **Wróć do zadań dołączonych do gry**.
+
+Use `Remove-Item Env:VITE_CONTENT_API_ORIGIN` before building the default client. For a future web host that proxies `/api` on its own HTTPS origin, set `VITE_CONTENT_API_ORIGIN=same-origin` at build time. For a separate origin, configure the API's comma-separated `KICIMONDO_ALLOWED_ORIGINS` to include the exact client origin. Use trusted HTTPS outside loopback. An opt-in Android build uses an explicit trusted HTTPS API origin and requires `https://localhost` in the API CORS allowlist. The distributed debug build uses bundled content by default. Native HTTPS connectivity still needs a device check.
+
 ## CI/CD
 
 PR: reproducible npm ci, lint/typecheck/test/build; content validation, backend Gradle tests and Compose checks when those files exist. CI must not publish from untrusted PRs. On approved merges, build and publish only configured images with minimum workflow permissions. Pin action versions and use a checked-in lockfile and Gradle wrapper. No production secrets in build logs.
 
 ## Android
 
-The standalone APK has application ID `io.github.widlakolak.kicimondo`. Capacitor 8.6.2 uses Android API 24 as its minimum and API 36 for compile and target. The toolchain uses JDK 21, Gradle 8.14.3, Android Gradle Plugin 8.13.0, Android platform 36 and Build Tools 35.0.0 for AGP and 36.0.0 for artifact inspection. The repository pins Node 24.13.1 and npm 11.11.0 for CI. The APK contains local game assets, no PWA worker, no remote server URL and no native ABI-specific libraries. Android can install the same file on ARM64 and ARMv7 devices. Capacitor’s standard manifest includes the normal INTERNET permission for its WebView. The game uses bundled files and has no runtime external service.
+The standalone APK has application ID `io.github.widlakolak.kicimondo`. Capacitor 8.6.2 uses Android API 24 as its minimum and API 36 for compile and target. The toolchain uses JDK 21, Gradle 8.14.3, Android Gradle Plugin 8.13.0, Android platform 36 and Build Tools 35.0.0 for AGP and 36.0.0 for artifact inspection. The repository pins Node 24.13.1 and npm 11.11.0 for CI. The APK contains local game assets, no PWA worker, no remote server URL and no native ABI-specific libraries. Android can install the same file on ARM64 and ARMv7 devices. Capacitor’s standard manifest includes the normal INTERNET permission for its WebView. The APK runs from bundled files. A build configured for educational updates makes requests only from the adult menu.
 
 ### Get the APK
 

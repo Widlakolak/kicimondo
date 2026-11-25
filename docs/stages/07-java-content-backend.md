@@ -1,6 +1,6 @@
 # Stage 07: Java content backend
 
-Status: ready for implementation. PR #6 is merged and its CI passed (60 unit and 19 browser tests, Android APK). The owner approved continuing before manual Stage 05/06 and physical Stage 04/05/06 Android reviews. Native upgrade durability remains pending.
+Status: implemented for owner review. PR #6 is merged and its CI passed (60 unit and 19 browser tests, Android APK). The owner approved continuing before manual Stage 05/06 and physical Stage 04/05/06 Android reviews. Native upgrade durability remains pending.
 
 ## Goal
 
@@ -20,11 +20,22 @@ Publish immutable, validated educational content packs through a small Java REST
 
 ## Acceptance
 
-- From a clean PostgreSQL instance, Flyway creates schema and an operator imports a valid sample pack. Read it through REST; a second version is published immutably. Incompatible clients receive no incompatible pack. Duplicate identical import is safe; conflicting version, malformed/oversized payload, unknown challenge, unsupported schema, invalid math parameters and invalid references fail without partial publication. Verify persistence across service restart, 404/409 and OpenAPI.
+- From a clean PostgreSQL instance, Flyway creates schema and an operator imports a valid sample pack. Read it through REST; a second version is published immutably. Incompatible clients receive no incompatible pack. Duplicate identical import is safe; conflicting version, malformed/oversized payload, unknown challenge, unsupported schema, invalid math parameters and invalid references fail without partial publication. Verify persistence across service restart, HTTP 404 for incompatible reads, CLI rejection of conflicting versions and OpenAPI.
 - Run Java unit tests and actual PostgreSQL integration tests, including migrations, constraints, transactional publication, compatibility lookup, endpoint responses and shared math/contract fixtures. Run local Compose configuration validation and smoke if Docker is available. Clearly state any tool limitation rather than claiming success.
 - Web client with configured local test API downloads a valid math pack explicitly, starts an existing quest with a demonstrably different valid math variant, completes it offline and retains only the original 1 PS reward. Reload offline and use cached pack in another eligible quest. Test failed fetch, timeout, invalid/unsupported/oversized pack, safe fallback, switching back to bundled, no network in default mode, and preservation of the Stage 06 save with 25 PS, discovered cats and trust. Test activation only at a safe boundary and no remote scripts. Use real backend for at least one integration smoke where available; mocked browser tests are separate.
 - Verify all existing gameplay/CI, PWA precache and update tests, Android packaging and legacy Chromium target. No claim of actual MediaPad T5 performance, native network or upgrade success until tested. Document exact Windows PowerShell startup, operator import, curl/Invoke-RestMethod API usage, client configuration, tests and shutdown (no volume deletion).
 - Update README, roadmap, architecture, content, deployment and stage notes. Record actual tests and pending owner reviews. Keep repository docs/code concise English and UI Polish.
+
+## Verification
+
+- Node.js 24.13.1 and npm 11.11.0 passed strict installation, lint, type checks, contract manifest validation, 80 unit tests and the production build. All 22 Playwright tests passed, including the existing offline and Android layout regressions.
+- The new browser tests use mocked HTTP responses. They cover explicit activation, bad downloads, offline reload and use in two existing quests, returning to bundled content, preservation of a 25 PS save, and the original single reward for the water quest.
+- On Java 21, the Gradle Wrapper checksum matched the published Gradle checksum. All four Java unit tests and five PostgreSQL Testcontainers integration tests passed. The executable JAR built successfully.
+- Local Compose validated and started with healthy PostgreSQL and backend containers. A real import published the demo pack. Reimport preserved its checksum and a conflicting payload failed. After backend recreation the API still served the original bytes. Compatibility filtering, checksum, OpenAPI, Swagger UI and minimal health were checked over HTTP.
+- On Linux, Chromium 80.0.3987.0 and Chromium 156 downloaded the demo pack from the live Compose API, reloaded offline and completed the existing water quest for 1 PS.
+- The universal Android debug APK built and passed signature, application ID, API 24 minimum, target API 36 and version 0.7.0 (7) checks. It bundles the game and retains the native `https://localhost` origin. Physical MediaPad T5 compatibility, performance, HTTPS API connectivity and same-key upgrades remain pending.
+
+Use the [PowerShell setup and offline review instructions](../DEPLOYMENT.md#local-content-service) to repeat the demo. Use the existing [Android installation guide](../DEPLOYMENT.md#android) to check a first launch in airplane mode, hardware Back, backgrounding and orientation on the tablet.
 
 ## Out of scope
 

@@ -6,6 +6,9 @@ import { applyCommand, type Save, type SaveCommand } from './core/progress'
 import { createSaveRepository } from './storage/saveRepository'
 import { minimizeAndroid, watchAndroid } from './platform/android'
 import { OfflineStatus } from './platform/OfflineStatus'
+import { configuredContentEndpoint, downloadPack } from './content/remote/download'
+import type { VerifiedPack } from './content/remote/pack'
+import { createPackStore } from './storage/educationalPacks'
 
 const Room = lazy(() => import('./Room'))
 
@@ -81,6 +84,7 @@ function ProfileForm({ initial, busy, onSave, onCancel }: {
 }
 
 const repository = createSaveRepository()
+const packs = createPackStore()
 type Screen = 'loading' | 'welcome' | 'edit' | 'room'
 type Notice = keyof typeof pl.save | null
 
@@ -89,6 +93,8 @@ export function App() {
   const current = useRef(record)
   const saveQueue = useRef<Promise<unknown>>(Promise.resolve())
   const { save, status } = record
+  const [selectedPack, setSelectedPack] = useState<VerifiedPack | null>(null)
+  const [contentNotice, setContentNotice] = useState<'checking' | 'failed' | null>(null)
   const [screen, setScreen] = useState<Screen>('loading')
   const [busy, setBusy] = useState(false)
   const busyRef = useRef(false)
@@ -106,10 +112,11 @@ export function App() {
 
   useEffect(() => {
     let active = true
-    void repository.load().then(({ save, status }) => {
+    void Promise.all([repository.load(), packs.load()]).then(([{ save, status }, cachedPack]) => {
       if (!active) return
       current.current = { save, status: status === 'ready' ? null : status }
       setRecord(current.current)
+      setSelectedPack(cachedPack)
       setScreen(save ? 'welcome' : 'edit')
     })
     return () => { active = false }
@@ -150,6 +157,25 @@ export function App() {
     }
   }
 
+  const api = configuredContentEndpoint()
+  async function updatePack(endpoint: string | null) {
+    if (screen !== 'welcome' || busyRef.current) return
+    busyRef.current = true
+    setBusy(true)
+    setContentNotice('checking')
+    try {
+      const verified = endpoint ? await downloadPack(endpoint) : null
+      await packs.save(verified)
+      setSelectedPack(verified)
+      setContentNotice(null)
+    } catch {
+      setContentNotice('failed')
+    } finally {
+      busyRef.current = false
+      setBusy(false)
+    }
+  }
+
   const profile = save?.profile ?? null
   const notice = status ? pl.save[status] : null
 
@@ -161,7 +187,7 @@ export function App() {
         screen === 'room' && save ? (
           <Suspense fallback={<p role="status">{pl.loadingRoom}</p>}>
             <Room key={save.checkpoint.location + '/' + save.checkpoint.spawn} save={save}
-              commit={commit} busy={busy} notice={notice} nativeActive={nativeActive} backHandlerRef={roomBack}
+              commit={commit} busy={busy} notice={notice} educationalPack={selectedPack?.pack ?? null} nativeActive={nativeActive} backHandlerRef={roomBack}
               onEdit={() => setScreen('edit')} onMenu={() => setScreen('welcome')} />
           </Suspense>
         ) : (
@@ -172,9 +198,20 @@ export function App() {
                 <div className={`avatar-portrait ${profile.avatar}`}><AvatarPortrait avatar={profile.avatar} /></div>
                 <p className="saved-name">{profile.nickname}</p>
                 <div className="profile-actions">
-                  <button className="primary" onClick={() => setScreen('room')}>{pl.continue} <span aria-hidden="true">→</span></button>
-                  <button className="secondary" onClick={() => setScreen('edit')}>{pl.edit}</button>
+                  <button className="primary" disabled={busy} onClick={() => setScreen('room')}>{pl.continue} <span aria-hidden="true">→</span></button>
+                  <button className="secondary" disabled={busy} onClick={() => setScreen('edit')}>{pl.edit}</button>
                 </div>
+                {(api || selectedPack) && <details className="educational-updates">
+                  <summary>{pl.contentPacks.title}</summary>
+                  <p role="status">{selectedPack ? pl.contentPacks.active(selectedPack.pack.version) : pl.contentPacks.bundled}</p>
+                  <div className="profile-actions">
+                    {api && <button className="secondary" type="button" disabled={busy}
+                      onClick={() => { void updatePack(api) }}>{pl.contentPacks.download}</button>}
+                    {selectedPack && <button className="secondary" type="button" disabled={busy}
+                      onClick={() => { void updatePack(null) }}>{pl.contentPacks.reset}</button>}
+                  </div>
+                  {contentNotice && <p role="status">{pl.contentPacks[contentNotice]}</p>}
+                </details>}
               </div>
             ) : (
               <ProfileForm initial={profile} busy={busy} onSave={async (profile) => {

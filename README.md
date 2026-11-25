@@ -14,6 +14,8 @@ The browser stores the profile, quest progress, location, discoveries and trust 
 
 The production web build is installable on supported browsers and plays offline after “Gra gotowa do działania bez internetu” appears. The Android debug build bundles the game for a first launch in airplane mode. Android and browser saves are separate. MediaPad T5 device acceptance is pending. See the [installation and upgrade guide](docs/DEPLOYMENT.md#android).
 
+The optional Java content service publishes compatible math variants. With an API configured, an adult can download a pack from the main menu and use it offline after restart. The bundled game and its save work with no configured backend. See the [local content service guide](docs/DEPLOYMENT.md#local-content-service).
+
 ## Getting started
 
 Use Node.js 24.13.1 or a later 24.x release, with npm 11.11.0 or a later 11.x release. CI uses Node.js 24.13.1 (see `.nvmrc`) and npm 11.11.0 with the committed lockfile.
@@ -61,6 +63,7 @@ The browser suite serves the production build. On Linux, use `npx playwright ins
 - [Stage 04](docs/stages/04-android-pwa.md)
 - [Stage 05](docs/stages/05-house-expansion.md)
 - [Stage 06](docs/stages/06-garden-kicipedia.md)
+- [Stage 07](docs/stages/07-java-content-backend.md)
 - [Codex task prompt](docs/CODEX.md)
 
 The game uses Polish text. Code and technical documentation are in English. Names other than Kicimondo and Kicipedia are provisional. No open-source license has been selected.

@@ -2,12 +2,13 @@ import { useEffect, useEffectEvent, useRef, useState, type RefObject } from 'rea
 import { Kicipedia } from './Kicipedia'
 import type { CatId } from './content/catCatalog'
 import { Challenge } from './challenges/Challenge'
-import { cats, challenges, dialogues, quests, transitions, type Dialogue, type Quest, type Transition } from './content/pack'
+import { cats, challenges, dialogues, quests, transitions, type Challenge as ChallengeDefinition, type Dialogue, type Quest, type Transition } from './content/pack'
 import { meetsGate, pointsOf, trustOf, type Save, type SaveCommand } from './core/progress'
 import type { Direction, InteractionId } from './core/room'
 import { createRoom, type CatCue, type WorldState } from './game/createRoom'
 import { RoomInput } from './game/RoomInput'
 import { pl } from './i18n/pl'
+import { challengeAttempt, type EducationalPack } from './content/remote/pack'
 
 const keyboardDirections = new Map<string, Direction>([
   ['ArrowUp', 'up'], ['KeyW', 'up'], ['ArrowDown', 'down'], ['KeyS', 'down'],
@@ -45,7 +46,7 @@ function DirectionButton({ direction, input }: { direction: Direction; input: Ro
 }
 
 type Overlay =
-  | { type: 'quest'; quest: Quest }
+  | { type: 'quest'; quest: Quest; definition: ChallengeDefinition }
   | { type: 'locked'; edge: Transition }
   | { type: 'dialogue'; dialogue: Dialogue }
   | { type: 'pause' }
@@ -72,11 +73,12 @@ function worldState(save: Save): WorldState {
   }
 }
 
-export default function Room({ save, commit, busy, notice, nativeActive, backHandlerRef, onEdit, onMenu }: {
+export default function Room({ save, commit, busy, notice, educationalPack, nativeActive, backHandlerRef, onEdit, onMenu }: {
   save: Save
   commit: (command: SaveCommand) => Promise<Save | null>
   busy: boolean
   notice: string | null
+  educationalPack: EducationalPack | null
   nativeActive: boolean
   backHandlerRef: RefObject<(() => void) | null>
   onEdit: () => void
@@ -175,7 +177,7 @@ export default function Room({ save, commit, busy, notice, nativeActive, backHan
     const dialogue = dialogues.find((entry) => entry.location === location && entry.interaction === id)
     previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
     if (quest) {
-      setOpen({ type: 'quest', quest })
+      setOpen({ type: 'quest', quest, definition: challengeAttempt(quest.challenge, educationalPack) })
     } else if (dialogue) {
       setOpen({ type: 'dialogue', dialogue })
     } else if (edge && !meetsGate(points, edge.minimumPoints)) {
@@ -312,7 +314,7 @@ export default function Room({ save, commit, busy, notice, nativeActive, backHan
       >
         {open?.type === 'quest' && <>
           <h2 id="interaction-title">{pl.challenges[challenges[open.quest.challenge].text].title}</h2>
-          <Challenge definition={challenges[open.quest.challenge]} busy={busy} onComplete={() => {
+          <Challenge definition={open.definition} busy={busy} onComplete={() => {
             void complete(open.quest)
           }} />
         </>}

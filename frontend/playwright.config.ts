@@ -11,8 +11,12 @@ export default defineConfig({
     launchOptions: executablePath ? { executablePath } : {},
     trace: 'retain-on-failure',
   },
-  webServer: {
+  webServer: [{
     command: 'npm run preview -- --host 127.0.0.1 --port 4173 --strictPort',
     url: 'http://127.0.0.1:4173',
-  },
+  }, {
+    command: 'npm run build -- --outDir .vite/content-test && npm run preview -- --outDir .vite/content-test --host 127.0.0.1 --port 4174 --strictPort',
+    url: 'http://127.0.0.1:4174',
+    env: { VITE_CONTENT_API_ORIGIN: 'same-origin' },
+  }],
 })

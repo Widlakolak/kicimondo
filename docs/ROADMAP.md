@@ -1,6 +1,6 @@
 # Roadmap
 
-Current status: Stage 04 and Stage 05 are merged with green CI. Stage 05 owner gameplay review and physical MediaPad T5 acceptance remain deferred. Stage 06 adds the garden at 16 PS, four visitors and Kicipedia, with 25 PS available. PR #6 is merged with green CI. Stage 05/06 owner reviews, MediaPad T5 testing and native upgrade verification are pending; the owner approved proceeding to Stage 07.
+Stage 04 and Stage 05 are merged with green CI. Stage 05 owner gameplay review and physical MediaPad T5 acceptance remain deferred. Stage 06 adds the garden at 16 PS, four visitors and Kicipedia, with 25 PS available. PR #6 is merged with green CI. Stage 05/06 owner reviews, MediaPad T5 testing and native upgrade verification are pending. The owner approved proceeding to Stage 07. Stage 07 adds an optional service for math variants and is ready for review.
 
 | Stage | Scope | Acceptance |
 | --- | --- | --- |
@@ -11,7 +11,7 @@ Current status: Stage 04 and Stage 05 are merged with green CI. Stage 05 owner g
 | 04 | [Android and offline web](stages/04-android-pwa.md) | Universal debug APK, PWA offline play and safe updates, MediaPad T5 lifecycle and save durability |
 | 05 | [House expansion](stages/05-house-expansion.md) | Merged in PR #5 with green CI. Owner gameplay and device review deferred. |
 | 06 | [Garden, visiting cats and Kicipedia](stages/06-garden-kicipedia.md) | Garden at 16 PS, eight restorations, four visitors and 25 total PS. Owner review pending. |
-| 07 | [Java content backend](stages/07-java-content-backend.md) | Spring Boot, Gradle, Flyway, PostgreSQL, validated versioned packs, REST/OpenAPI and integration tests |
+| 07 | [Java content backend](stages/07-java-content-backend.md) | Read-only REST, immutable math packs, operator import, offline client cache and PostgreSQL integration tests. Owner review pending. |
 | 08 | Family web release on QNAP | CI, GHCR, Compose, HTTPS, offline smoke, backup/restore and rollback |
 | 09 | Basement workshop | Reach 32 PS, simple recipes and fixed upgrade slots; enough accessible tasks |
 | 10 | Educational refinement | Skill-based difficulty, reviewed Polish pools, local parent reports and export |
