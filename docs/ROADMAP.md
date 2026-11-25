@@ -1,14 +1,14 @@
 # Roadmap
 
-Current status: Stage 02 was merged after CI passed and the owner confirmed all 14 manual checks. Stage 03 is implemented and awaiting the owner playtest. Physical Android testing has yet to take place.
+Current status: Stage 03 is merged and accepted (19 owner checks passed). The first family-playtest MVP is complete. Stage 04 is specified; Android and PWA implementation and physical-device testing are pending.
 
 | Stage | Scope | Acceptance |
 | --- | --- | --- |
 | 00 | Project design and agent instructions | Documents consistent; initial stage ready for Codex |
 | 01 | [Client and playable room](stages/01-room-prototype.md) | Merged. Owner confirmed local Windows play. Automated touch coverage used emulation. |
 | 02 | [Tracing and progression](stages/02-first-quest.md) | Merged in PR #2. CI and all 14 owner checks passed. |
-| 03 | [First resident cat](stages/03-first-cat.md) | Cat activities, consent, both quests, trust and migration verified locally. Owner review pending. |
-| 04 | Android/PWA feasibility | Capacitor debug build on device, local assets and lifecycle, PWA offline reload, verify save adapter |
+| 03 | [First resident cat](stages/03-first-cat.md) | Merged in PR #3. CI and all 19 owner checks passed. |
+| 04 | [Android/PWA feasibility](stages/04-android-pwa.md) | Capacitor debug build on device, local assets and lifecycle, PWA offline reload, verify save adapter |
 | 05 | Upstairs and ground floor | Enough distinct quests to reach 8 PS; NPC dialogue, sorting, return paths |
 | 06 | Garden and visiting cats | Reach 16 PS, restore fixed habitats, deterministic visitors, basic Kicipedia |
 | 07 | Java content backend | Spring Boot, Gradle, Flyway, PostgreSQL, validated versioned packs, REST/OpenAPI and integration tests |
