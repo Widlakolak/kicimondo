@@ -63,7 +63,21 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: true
-      - run: sdkmanager 'platforms;android-36' 'build-tools;35.0.0' 'build-tools;36.0.0'
+      - name: Install Android SDK
+        run: |
+          sdk="$RUNNER_TEMP/android-sdk"
+          archive="$RUNNER_TEMP/android-command-line-tools.zip"
+          curl --fail --silent --show-error --location --retry 3 \
+            https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip \
+            --output "$archive"
+          printf '7ec965280a073311c339e571cd5de778b9975026cfcbe79f2b1cdcb1e15317ee  %s\n' "$archive" | sha256sum --check
+          mkdir -p "$sdk/cmdline-tools"
+          unzip -q "$archive" -d "$sdk/cmdline-tools"
+          mv "$sdk/cmdline-tools/cmdline-tools" "$sdk/cmdline-tools/19.0"
+          sdkmanager="$sdk/cmdline-tools/19.0/bin/sdkmanager"
+          (set +o pipefail; yes | "$sdkmanager" --sdk_root="$sdk" --licenses >/dev/null)
+          "$sdkmanager" --sdk_root="$sdk" 'platforms;android-36' 'build-tools;35.0.0' 'build-tools;36.0.0'
+          printf 'ANDROID_HOME=%s\nANDROID_SDK_ROOT=%s\n' "$sdk" "$sdk" >> "$GITHUB_ENV"
       - run: npm install --global npm@11.11.0
       - run: npm ci --engine-strict
       - run: npm run build:android
