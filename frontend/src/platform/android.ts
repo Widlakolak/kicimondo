@@ -16,10 +16,13 @@ export function watchAndroid(onBack: () => void, onActive: (active: boolean) => 
   void retain(NativeApp.addListener('backButton', () => {
     if (!disposed) onBack()
   })).catch(console.error)
-  void retain(NativeApp.addListener('appStateChange', ({ isActive }) => {
+  function reportActive(isActive: boolean) {
     receivedState = true
     if (!disposed) onActive(isActive)
-  })).then(async () => {
+  }
+
+  void retain(NativeApp.addListener('pause', () => reportActive(false))).catch(console.error)
+  void retain(NativeApp.addListener('appStateChange', ({ isActive }) => reportActive(isActive))).then(async () => {
     const { isActive } = await NativeApp.getState()
     if (!disposed && !receivedState) onActive(isActive)
   }).catch(console.error)
