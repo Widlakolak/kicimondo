@@ -1,6 +1,6 @@
 # Deployment
 
-Kicimondo has a static web build, an Android debug artifact and an optional local content service. QNAP hosting and public releases remain planned.
+Kicimondo has a static web build, an Android debug artifact and an optional content service. The QNAP deployment files are ready for owner review.
 
 ## Web
 
@@ -8,13 +8,166 @@ Run `npm run build` and `npm run preview` in `frontend`. Full PWA testing requir
 
 Deploy the entire `frontend/dist` directory as one release. Serve `index.html` and `sw.js` with revalidation and keep fingerprinted assets immutable. Retain the previous fingerprinted files long enough for clients in the middle of a first load. The build logs the precache membership and byte sizes.
 
-Use the existing QNAP environment only after inspecting resources and obtaining approval. Keep Kicimondo in a separate Compose project with unique service names, bind mounts or named volumes, and its own private database network if the backend is present. Initial family version can be a static frontend only. Proposed NAS directory: /share/CACHEDEV1_DATA/Container/kicimondo. Confirm the path on the host before use.
+## QNAP family web release
 
-Follow the useful parts of the Poetry App deployment: CI builds images on GitHub, publishes to GHCR after a reviewed merge, and the NAS pulls images. Use linux/amd64 images compatible with the actual Celeron host; verify CPU features and memory headroom before choosing images. Pin immutable release tags/digests for rollback. Avoid building on the NAS. Frontend uses a small static server; backend is added only when needed.
+The QNAP TS-451 is the reference host. Confirm the actual CPU, Docker Compose v2, free disk, available memory and existing proxy setup before deployment. The local limits are 64 MiB for Nginx, 512 MiB for Java and 256 MiB for PostgreSQL. Budget additional RAM for Docker, the NAS and its existing services. The Compose defaults set Java's maximum heap to 256 MiB, cap its processor count at two and disable AVX. Set `KICIMONDO_JVM_OPTIONS` when adjusting the backend limit. Keep sufficient memory for native JVM overhead. These settings are provisional on the NAS.
 
-The existing shared Nginx/Cloudflare setup may be reused after checking network names, service names and available hostnames. Do not overwrite Poetry App, PoetryStream or WorkDone routing. Prefer same-origin /api/ proxying for the web client. No public database port, no public admin endpoints, and no new tunnel or DNS changes without approval. Keep health checks private or limited to minimal status. Never commit credentials, NAS configuration dumps or tunnel tokens.
+### 1. Select a release
 
-Before deployment: validate Compose, inspect the diff, check disk/CPU/RAM, check image availability and backup persistent data. Deploy only Kicimondo services. Verify TLS, health, first load, offline reload, asset paths and actual phone play. Document exact commands and image tags after the implementation exists. Keep a rollback plan; never use down -v on persistent production data.
+After reviewing and merging the PR, open **Actions → Release images → Run workflow**, select `main` and start the run. It re-runs frontend and Android checks, the backend tests and the production image smoke test for that checkout. The publish job uploads the two images tested in that run. PR checks build and test local images. The release workflow does not connect to the NAS.
+
+The two registry paths are `ghcr.io/widlakolak/kicimondo/frontend` and `ghcr.io/widlakolak/kicimondo/backend`. A tag of the form `sha-<full-commit>` identifies both images. Download the successful run's **release-images** artifact and retain its `release-images.env` file. Use the image digests in that file, and retain previous successful files for rollback. If a push partially succeeds, re-run failed jobs while the tested image archive is available. An existing tag can be reused when its image matches the tested archive. Use a successful run with both digests for deployment.
+
+The publish workflow uses the repository's GitHub token. If the packages are private, use a dedicated classic GitHub token with `read:packages` and access to these packages. Confirm access with the owner and keep the Docker credential store restricted to the deployment account. Package visibility decisions belong to the owner.
+
+On QNAP, disable shell tracing and enter the read-only token at the prompt. Replace `YOUR_GH_USER` with the approved account.
+
+```sh
+(
+  set -eu
+  set +x
+  terminal=$(stty -g)
+  trap 'stty "$terminal"' 0
+  trap 'exit 1' 1 2 15
+  printf 'GHCR token: ' >&2
+  stty -echo
+  IFS= read -r token
+  stty "$terminal"
+  printf '\n' >&2
+  printf '%s\n' "$token" | docker login ghcr.io -u YOUR_GH_USER --password-stdin
+)
+```
+
+### 2. Inspect the host and prepare the project
+
+Copy the reviewed `infrastructure/qnap/preflight.sh` to the NAS and run it without changing the existing Docker or proxy setup.
+
+```sh
+sh ./preflight.sh /share/CACHEDEV1_DATA/Container
+```
+
+Check `x86_64`, CPU flags, free memory, disk and running containers. Check that Docker reports a cgroup driver capable of enforcing the Compose memory limits. Verify that the NAS Docker version supports the image manifests and the Compose v2 features in the template. Record the status of Poetry App, PoetryStream and WorkDone. Choose the specific existing reverse proxy network and hostname for owner approval before attaching the network or adding a route. If the host has limited RAM or lacks the needed Compose features, use these results to scope the deployment before making changes.
+
+Prepare the project under the confirmed directory. Copy `compose.yaml`, `compose.proxy.yaml`, `compose.local.yaml`, `.env.production.example`, `backup.sh` and `preflight.sh` from the reviewed `infrastructure/qnap/`. Copy `contracts/demo-math.json` as `demo-math.json`. Keep the approved release artifact under `releases/` and name it by commit.
+
+```sh
+umask 077
+mkdir -p /share/CACHEDEV1_DATA/Container/kicimondo/releases
+cd /share/CACHEDEV1_DATA/Container/kicimondo
+chmod 644 demo-math.json
+release_file="$PWD/releases/APPROVED_COMMIT.env"
+(
+  set +x
+  set -euC
+  password=$(od -An -N32 -tx1 /dev/urandom | tr -d ' \n')
+  test "${#password}" -eq 64
+  {
+    cat "$release_file"
+    grep -vE '^KICIMONDO_(RELEASE_SHA|FRONTEND_IMAGE|BACKEND_IMAGE|DB_PASSWORD)=' .env.production.example
+    printf 'KICIMONDO_DB_PASSWORD=%s\n' "$password"
+  } > .env.production
+)
+chmod 600 .env.production
+```
+
+Run these initial configuration commands once. Keep `.env.production` outside Git with the approved operator's permissions. Compose reads the password from that file. Preserve it between releases and omit environment dumps from diagnostics. Set `KICIMONDO_PROXY_NETWORK` to the exact approved external network when using the proxy overlay. Leave `KICIMONDO_ALLOWED_ORIGINS` blank for same-origin web. Add exact origins only for approved clients that use a different origin.
+
+### 3. Pull and start
+
+Use the proxy overlay when Nginx runs in a container on the approved network. Use `compose.local.yaml` instead when Nginx runs on the host or for a local smoke test. The latter binds only to `127.0.0.1` and uses `KICIMONDO_WEB_PORT` (8088 by default). The base file alone publishes no port. Use one overlay at a time. Prefer the external Docker network overlay on older engines. Verify LAN isolation for any loopback publication before routing traffic.
+
+```sh
+overlay=compose.proxy.yaml
+dc() {
+  docker compose -p kicimondo --env-file .env.production --env-file "$release_file" \
+    -f compose.yaml -f "$overlay" "$@"
+}
+dc --profile content config --quiet
+dc --profile content pull
+dc --profile content up -d
+dc --profile content ps
+dc --profile content logs --tail 60 kicimondo-backend kicimondo-postgres
+```
+
+For a frontend-only install, run `dc config --quiet`, `dc pull kicimondo-frontend` and `dc up -d kicimondo-frontend`. To switch an existing full install to frontend-only, first run `dc --profile content stop kicimondo-backend kicimondo-postgres`. Their data volume remains available for the next full start. Before and after, compare the status of the host's existing services. Keep changes scoped to project `kicimondo`.
+
+In a full install, wait for healthy frontend, PostgreSQL and backend entries in `dc --profile content ps`. The following commands check the two private services and import the demo pack with the deployed backend image.
+
+```sh
+dc --profile content exec -T kicimondo-postgres sh -c 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"'
+dc --profile content exec -T kicimondo-backend wget -Y off -qO - http://127.0.0.1:8080/actuator/health
+dc --profile content run --rm --no-deps --volume "$PWD/demo-math.json:/import/demo-math.json:ro" \
+  kicimondo-backend import /import/demo-math.json
+```
+
+Repeat the import and check for `ALREADY_PUBLISHED`. The first successful import prints `PUBLISHED`. Backend startup runs Flyway and Hibernate schema validation. Use the last backend logs for a failed connection, migration or memory limit. Use `docker stats --no-stream` for measured RAM and CPU with real traffic.
+
+### 4. Add the approved HTTPS route
+
+Add a dedicated virtual host for the approved hostname through the owner's existing reverse proxy process. Leave all existing routes in place. For a containerized Nginx on the approved network, use this location in the new virtual host. The variable makes Docker DNS resolution refresh after frontend replacement.
+
+```nginx
+location / {
+    resolver 127.0.0.11 valid=5s ipv6=off;
+    resolver_timeout 2s;
+    set $kicimondo_web kicimondo-family-web:8080;
+    proxy_pass http://$kicimondo_web;
+    proxy_set_header Host $host;
+    proxy_connect_timeout 2s;
+    proxy_read_timeout 10s;
+}
+```
+
+For Nginx running on the NAS host with the loopback overlay, use `proxy_pass http://127.0.0.1:8088;` with the configured port. Test the additive configuration with the existing proxy's `nginx -t` procedure before any approved reload. Have Cloudflare Tunnel send the approved hostname to the existing reverse proxy virtual host. The reverse proxy forwards the complete origin to the frontend. The frontend serves static content and permits only the content pack read paths through to Java. PostgreSQL and Java have no host ports. Swagger, OpenAPI, Actuator and imports remain private.
+
+Use HTTPS for PWA installation. Configure Cloudflare and any outer proxy to respect the origin cache policy. Bypass cache for the entry page, worker, manifest and API. Fingerprinted files under `/assets/` can use long immutable caching. A fresh browser loads the current static release. The project volume retains previous fingerprinted bytes for interrupted first loads and rollback. A service worker verifying a changing entry page may defer installation until the next visit. Existing controlled windows stay on their installed worker until they close. Keep the saved browser origin stable.
+
+### 5. Verify the family experience
+
+From a workstation with HTTPS access, substitute the approved hostname and compare SHA-256 from the response header and the downloaded bytes.
+
+```sh
+site=https://APPROVED_HOSTNAME
+curl -fsSI "$site/sw.js"
+curl -fsS "$site/api/v1/content/packs/kicimondo-math/latest?gameContentVersion=4"
+curl -fsS -D pack.headers -o pack.json "$site/api/v1/content/packs/kicimondo-math/versions/1?gameContentVersion=4"
+grep -i '^X-Content-SHA256:' pack.headers
+sha256sum pack.json
+```
+
+Check that the worker and manifest are revalidated, missing hashed assets return 404, and `/actuator/health` and `/v3/api-docs` return 404 through the public route. Open the game and download the demo pack in the adult menu. Disconnect after the offline-ready message, reload, and complete the water-bowl activity for one PS. Check the earlier owner gameplay scenarios, including the 25 PS path, discoveries and progress after reloading. Recreate the backend with `dc --profile content up -d --no-deps --force-recreate kicimondo-backend` and check its health and the exact pack checksum again. The static game remains available during a backend outage. Inspect CPU, RAM and logs and check the existing apps again.
+
+For HTTP 503 on the content endpoint, check the backend health, PostgreSQL readiness and the app network. The frontend refreshes backend DNS after a short cache interval. For a failed first load after an upgrade, verify that the old hashed URL still returns its bytes, check asset volume permissions, then retry the entry page. For a 502 at the external proxy, verify the approved network, frontend health and DNS alias. If the NAS reports an illegal instruction or an unexpected image architecture, stop the affected Kicimondo service and record the image digest, CPU flags and logs.
+
+### 6. Back up, upgrade and roll back
+
+Before changing releases, make a logical backup. Run `sh ./backup.sh` from the deployment directory. It writes a timestamped directory with a restricted custom-format dump, archive listing, running image references and Flyway versions. A directory containing `incomplete` is a failed backup. Store completed copies away from the NAS and restrict access. These backups contain the server's published educational packs. Gameplay saves live on the browser or Android device in IndexedDB.
+
+Test a completed backup in a uniquely named, isolated disposable PostgreSQL container. Resolve its pinned image through the same Compose configuration used for deployment. Set `backup` to the completed backup directory before running the commands.
+
+```sh
+postgres_image=$(dc --profile content config --images kicimondo-postgres)
+restore="kicimondo-restore-$(date -u '+%Y%m%dT%H%M%SZ')-$$"
+docker run -d --rm --name "$restore" --network none -e POSTGRES_HOST_AUTH_METHOD=trust \
+  -e POSTGRES_USER=kicimondo -e POSTGRES_DB=kicimondo "$postgres_image"
+# Wait for the final server to accept connections after the init process completes.
+docker logs "$restore"
+docker exec "$restore" pg_isready -h 127.0.0.1 -U kicimondo -d kicimondo
+docker exec -i "$restore" pg_restore --exit-on-error --single-transaction --no-owner --no-privileges \
+  -U kicimondo -d kicimondo < "$backup/content.dump"
+docker exec "$restore" psql -X -v ON_ERROR_STOP=1 -U kicimondo -d kicimondo -c \
+  "SELECT pack_id, version, checksum = encode(sha256(convert_to(payload,'UTF8')),'hex') AS verified FROM published_pack ORDER BY pack_id, version"
+docker exec "$restore" psql -X -v ON_ERROR_STOP=1 -U kicimondo -d kicimondo -c \
+  "SELECT version, checksum FROM flyway_schema_history WHERE success ORDER BY installed_rank"
+docker stop "$restore"
+```
+
+Compare the restored pack rows and Flyway record with the source metadata and backup listing. For a full check, compare the SHA-256 values to the exact API responses. This verification uses the disposable container's own data directory.
+
+For an upgrade, archive the current release file and verify the backup. Set `release_file` to the next approved digest pair, then repeat `config --quiet`, `pull`, `up -d` and the health checks for the selected profile. Retain the PostgreSQL and hashed-asset volumes. Monitor asset volume growth as more images are deployed. Keep assets referenced by retained rollback releases and potentially open browsers when planning any manual cleanup.
+
+To roll back, first compare the current Flyway migration versions and checksums with the older release. Roll back on the live volume only if that backend supports the current database schema. Point `release_file` at the prior approved digest pair, validate, pull, run `up -d` and check both the content API and offline game. For an incompatible database change, verify the matching backup and older release in a separate project before planning recovery. Keep the existing data volume available for recovery.
+
 
 ## Local content service
 
@@ -90,7 +243,7 @@ Use `Remove-Item Env:VITE_CONTENT_API_ORIGIN` before building the default client
 
 ## CI/CD
 
-PR: reproducible npm ci, lint/typecheck/test/build; content validation, backend Gradle tests and Compose checks when those files exist. CI must not publish from untrusted PRs. On approved merges, build and publish only configured images with minimum workflow permissions. Pin action versions and use a checked-in lockfile and Gradle wrapper. No production secrets in build logs.
+Frontend and Backend workflows run their existing tests and produce the universal debug APK. Production images builds and tests both containers on PRs and on main. The smoke run resolves the PostgreSQL digest from Compose, explicitly pulls and verifies the Linux amd64 image, and reuses it during restore. GitHub Actions checks the effective memory limits inside the containers. Release images can be dispatched on the upstream main branch after owner review. It runs all three checks again and publishes only the two tested image digests.
 
 ## Android
 
@@ -110,6 +263,20 @@ PowerShell, from the directory containing the downloaded ZIP:
 Expand-Archive .\kicimondo-debug.zip .\kicimondo-artifact
 Get-FileHash .\kicimondo-artifact\kicimondo-debug.apk -Algorithm SHA256
 ```
+
+### Build with an approved HTTPS API
+
+For an optional Android build, set `VITE_CONTENT_API_ORIGIN` to the approved HTTPS origin before running `npm run build:android`. Use an origin without a path. Configure `KICIMONDO_ALLOWED_ORIGINS=https://localhost` on the production content backend and recreate the backend. Keep the existing TLS trust and cleartext policy. The regular CI build has no configured content origin.
+
+```powershell
+$env:VITE_CONTENT_API_ORIGIN = 'https://APPROVED_HOSTNAME'
+Set-Location .\frontend
+npm ci --engine-strict
+npm run build:android
+Remove-Item Env:VITE_CONTENT_API_ORIGIN
+```
+
+Continue with Gradle from `frontend/android` using the signing instructions below.
 
 ### Build locally and keep the same signing identity
 

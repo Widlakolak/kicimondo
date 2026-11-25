@@ -1,6 +1,6 @@
 # Stage 08: Family web release on QNAP
 
-Status: ready for infrastructure implementation. PR #7 is merged with green CI. The owner will review Stage 07 and deployment together. Stage 04–06 owner reviews, physical MediaPad T5 testing and native upgrade durability remain pending.
+Status: infrastructure implemented for owner review. PR #7 is merged with green CI. The owner will review Stage 07 and deployment together. Stage 04–06 owner reviews, physical MediaPad T5 testing and native upgrade durability remain pending.
 
 ## Goal
 
@@ -39,6 +39,31 @@ Build reproducible frontend and backend images, publish reviewed builds to GHCR,
 - PR CI: existing frontend tests, Android build, Gradle tests with PostgreSQL, generated contract, production image builds and actual Compose smoke using isolated test project. Verify static assets, same-origin API and checksum, demo import, no exposed database/admin paths, persistent data after backend recreation, service worker offline reload and safe update behaviour. Stop backend/database and verify web/PWA still plays; test frontend cold startup with backend unavailable. Validate backup and restore in disposable environment; verify rollback and previous asset strategy where possible. Report exact tests and limitations.
 - After approved merge: owner triggers or verifies successful release workflow, checks images/digests, runs read-only QNAP preflight, approves specific network/hostname/routing, then performs deployment with provided commands. Test local access, HTTPS/PWA, optional math update from real backend and offline after download, 25 PS and Kicipedia persistence, restart, backup/restore and rollback, memory/CPU on physical NAS and existing apps unchanged. Physical Huawei first install in airplane mode, WebView/provider, gameplay, rotation/lifecycle, persistence, optional native HTTPS build and same-key upgrade remain separate checks. Do not mark Stage 08 accepted until owner confirms.
 - Update README, ROADMAP, DEPLOYMENT, ARCHITECTURE, PRIVACY and this stage document with evidence, exact commands, release references and pending reviews. Concise natural English docs/code, Polish player-facing strings and owner report.
+
+## Verification
+
+- On Node.js 24.13.1 and npm 11.11.0, strict installation, lint, type checks, generated contract validation, the default and same-origin production builds, 80 unit tests and all 22 Playwright tests passed. Java 21 passed four unit tests, five PostgreSQL Testcontainers tests and `bootJar`.
+- Docker built both Linux amd64 images. The pinned bases are Nginx 1.30.8 Alpine Slim, Eclipse Temurin 21.0.9+10 Alpine JRE and PostgreSQL 17.9 Alpine. QEMU 10.0.13 started `nginx -t`, `postgres --version` and `java -version` on an x86-64 CPU profile with AVX, SSSE3, SSE4 and POPCNT disabled. The Java test retained emulation after launcher initialization and logged the guest CPU features. This was a startup check. Full load and firmware compatibility remain for the J1800 host.
+- The production Compose smoke ran with a separate project, default memory settings and a 256 MiB JVM heap cap. It verified the cache headers, retained previous hashed bytes, absent backend startup, restricted API and same-origin demo import, idempotence, checksum, CORS for the native origin, backend recreation, an offline reload and a worker that waited for the open exercise. The smoke restored the backup into a separate network-isolated database and verified it against the original rows and payload SHA-256. It rolled back to a synthetic previous image pair with compatible Flyway migrations.
+- The external proxy overlay served the frontend via its unique alias with zero published host ports. The existing local development Compose brought PostgreSQL and Java to healthy status. Compose validation and actionlint passed.
+- The first PR #8 production smoke failed before PostgreSQL startup because the digest-pinned image was missing locally. The test reproduced the failure with an uncached reference to the same digest. The full local smoke passed after explicitly pulling that reference for Linux amd64 and verifying the downloaded image. PostgreSQL was ready, Flyway recorded migration 1 as successful, and restore and rollback completed. The Compose default supplies the pin and the smoke uses the resolved reference for both startup and restore.
+- Docker in the local test environment has no cgroup driver. It accepted the 64/512/256 MiB configuration and all services started. GitHub Actions requires a cgroup driver and reads each effective limit inside the container. Measure actual RAM and CPU on the NAS before family use.
+- The universal Android debug APK built and passed signing and metadata checks. The packaged assets match Stage 07 byte for byte, so the APK keeps version 0.7.0 (7), minimum API 24, Chromium 80 and the native save origin. Physical MediaPad T5 and signed upgrades remain pending.
+- The first registry publication, owner's application review and actual HTTPS route are pending.
+
+To repeat the production smoke on a Linux development machine with Docker, Node and JDK 21, run these commands from the repository root.
+
+```sh
+(cd frontend && npm ci --engine-strict && npx playwright install chromium)
+(cd frontend && VITE_CONTENT_API_ORIGIN=same-origin npm run build -- --outDir .vite/qnap-dist)
+(cd backend && ./gradlew --no-daemon bootJar)
+docker build --platform linux/amd64 -f infrastructure/qnap/frontend.Dockerfile -t kicimondo/frontend:verify .
+docker build --platform linux/amd64 -f backend/Dockerfile -t kicimondo/backend:verify .
+(cd frontend && KICIMONDO_FRONTEND_IMAGE=kicimondo/frontend:verify \
+  KICIMONDO_BACKEND_IMAGE=kicimondo/backend:verify node scripts/qnapSmoke.mjs)
+```
+
+Follow the [owner deployment and verification guide](../DEPLOYMENT.md#qnap-family-web-release) for the read-only NAS preflight and the separate, approved release and rollout.
 
 ## Out of scope
 

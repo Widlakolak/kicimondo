@@ -1,0 +1,9 @@
+**
+!frontend/
+!frontend/.vite/
+!frontend/.vite/qnap-dist/
+!frontend/.vite/qnap-dist/**
+!infrastructure/
+!infrastructure/qnap/
+!infrastructure/qnap/nginx.conf
+!infrastructure/qnap/retain-assets.sh

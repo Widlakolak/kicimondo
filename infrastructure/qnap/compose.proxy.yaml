@@ -1,0 +1,10 @@
+services:
+  kicimondo-frontend:
+    networks:
+      application:
+      proxy:
+        aliases: [kicimondo-family-web]
+networks:
+  proxy:
+    external: true
+    name: ${KICIMONDO_PROXY_NETWORK:?Set the approved external reverse proxy network}

@@ -1,6 +1,6 @@
 # Roadmap
 
-Stage 04 and Stage 05 are merged with green CI. Stage 05 owner gameplay review and physical MediaPad T5 acceptance remain deferred. Stage 06 adds the garden at 16 PS, four visitors and Kicipedia, with 25 PS available. PR #6 is merged with green CI. Stage 05/06 owner reviews, MediaPad T5 testing and native upgrade verification are pending. The owner approved proceeding to Stage 07. PR #7 is merged with green CI. The owner will review the optional math content service during Stage 08; physical device and earlier owner acceptance checks remain pending.
+Stage 04 and Stage 05 are merged with green CI. Stage 05 owner gameplay review and physical MediaPad T5 acceptance remain deferred. Stage 06 adds the garden at 16 PS, four visitors and Kicipedia, with 25 PS available. PR #6 is merged with green CI. Stage 05/06 owner reviews, MediaPad T5 testing and native upgrade verification are pending. The owner approved proceeding to Stage 07. PR #7 is merged with green CI. The owner will review the optional math content service during Stage 08; physical device and earlier owner acceptance checks remain pending. Stage 08 adds production images and an isolated deployment template. GHCR release, NAS preflight and deployment await owner review.
 
 | Stage | Scope | Acceptance |
 | --- | --- | --- |
@@ -12,7 +12,7 @@ Stage 04 and Stage 05 are merged with green CI. Stage 05 owner gameplay review a
 | 05 | [House expansion](stages/05-house-expansion.md) | Merged in PR #5 with green CI. Owner gameplay and device review deferred. |
 | 06 | [Garden, visiting cats and Kicipedia](stages/06-garden-kicipedia.md) | Garden at 16 PS, eight restorations, four visitors and 25 total PS. Owner review pending. |
 | 07 | [Java content backend](stages/07-java-content-backend.md) | Read-only REST, immutable math packs, operator import, offline client cache and PostgreSQL integration tests. Owner review pending. |
-| 08 | [Family web release on QNAP](stages/08-qnap-family-release.md) | CI, GHCR, Compose, HTTPS, offline smoke, backup/restore and rollback |
+| 08 | [Family web release on QNAP](stages/08-qnap-family-release.md) | Isolated Compose, read-only content routing, offline update, backup/restore and rollback tested locally. Registry publication and owner verification pending. |
 | 09 | Basement workshop | Reach 32 PS, simple recipes and fixed upgrade slots; enough accessible tasks |
 | 10 | Educational refinement | Skill-based difficulty, reviewed Polish pools, local parent reports and export |
 | 11 | Forest | Reach 64 PS with sufficient pre-forest content, stories and nature challenges |

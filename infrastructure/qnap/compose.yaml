@@ -1,0 +1,66 @@
+name: kicimondo
+
+x-service-defaults: &service-defaults
+  platform: linux/amd64
+  pull_policy: missing
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: "5m"
+      max-file: "3"
+
+services:
+  kicimondo-frontend:
+    <<: *service-defaults
+    image: ${KICIMONDO_FRONTEND_IMAGE:?Set the approved frontend image}
+    networks: [application]
+    volumes:
+      - web-assets:/var/lib/kicimondo
+    mem_limit: ${KICIMONDO_FRONTEND_MEMORY:-64m}
+
+  kicimondo-backend:
+    <<: *service-defaults
+    image: ${KICIMONDO_BACKEND_IMAGE:-ghcr.io/widlakolak/kicimondo/backend:unconfigured}
+    profiles: [content]
+    depends_on:
+      kicimondo-postgres:
+        condition: service_healthy
+    networks: [application, database]
+    environment:
+      SERVER_ADDRESS: 0.0.0.0
+      KICIMONDO_DB_URL: jdbc:postgresql://kicimondo-postgres:5432/${KICIMONDO_DB_NAME:-kicimondo}
+      KICIMONDO_DB_USER: ${KICIMONDO_DB_USER:-kicimondo}
+      KICIMONDO_DB_PASSWORD: ${KICIMONDO_DB_PASSWORD:-}
+      KICIMONDO_ALLOWED_ORIGINS: ${KICIMONDO_ALLOWED_ORIGINS:-}
+      JAVA_TOOL_OPTIONS: ${KICIMONDO_JVM_OPTIONS:--Xmx256m -XX:ActiveProcessorCount=2 -XX:UseAVX=0}
+      SPRINGDOC_API_DOCS_ENABLED: "false"
+      SPRINGDOC_SWAGGER_UI_ENABLED: "false"
+    mem_limit: ${KICIMONDO_BACKEND_MEMORY:-512m}
+
+  kicimondo-postgres:
+    <<: *service-defaults
+    image: ${KICIMONDO_POSTGRES_IMAGE:-postgres:17.9-alpine@sha256:c7526c0f6c3f30260a563d7bcf8ad778effac59a44f8ffa86678c35418338609}
+    profiles: [content]
+    environment:
+      POSTGRES_DB: ${KICIMONDO_DB_NAME:-kicimondo}
+      POSTGRES_USER: ${KICIMONDO_DB_USER:-kicimondo}
+      POSTGRES_PASSWORD: ${KICIMONDO_DB_PASSWORD:-}
+    networks: [database]
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    mem_limit: ${KICIMONDO_POSTGRES_MEMORY:-256m}
+
+networks:
+  application:
+    internal: true
+  database:
+    internal: true
+volumes:
+  web-assets:
+  postgres:
