@@ -34,5 +34,6 @@ The repository currently contains the design and implementation plan. Start with
 - [Development instructions](AGENTS.md)
 - [Architecture decisions](docs/adr/0001-local-first-web-client.md)
 - [Stage 01](docs/stages/01-room-prototype.md)
+- [Codex task prompt](docs/CODEX.md)
 
 The game will initially use Polish text. Code and technical documentation are in English. Names other than Kicimondo and Kicipedia are provisional. No open-source license has been selected.
