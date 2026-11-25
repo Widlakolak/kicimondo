@@ -194,3 +194,14 @@ dialog::backdrop { background: rgba(41, 35, 41, .58); }
   .gameplay .brand { margin-bottom: .5rem; }
   .gameplay .room { padding: .85rem; }
 }
+
+.sort-choices button { display: flex; align-items: center; }
+.sort-choices svg { width: 1.55rem; height: 1.55rem; margin-right: .35rem; flex: none; }
+.pencil-counters .drop { width: .55rem; border-radius: .12rem .12rem 40% 40%; transform: none; }
+.apple-counters .drop { border-radius: 40% 40% 47% 47%; transform: none; }
+.pencil-counters, .apple-counters { gap: 0; }
+.pencil-counters .drop, .apple-counters .drop { margin: 0 .55rem .45rem 0; }
+.pencil-counters .drop:not(.crossed) { background: #a66a32; }
+.apple-counters .drop:not(.crossed) { background: #ad5552; }
+.apple-counters .drop { position: relative; }
+.apple-counters .drop::before { content: ''; position: absolute; top: -.2rem; left: .52rem; width: .42rem; height: .2rem; background: #527659; }

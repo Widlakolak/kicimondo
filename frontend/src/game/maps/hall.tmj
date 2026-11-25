@@ -1,0 +1,81 @@
+{
+  "type": "map",
+  "version": "1.10",
+  "tiledversion": "1.11.0",
+  "orientation": "orthogonal",
+  "renderorder": "right-down",
+  "infinite": false,
+  "width": 20,
+  "height": 15,
+  "tilewidth": 16,
+  "tileheight": 16,
+  "nextlayerid": 5,
+  "nextobjectid": 22,
+  "tilesets": [],
+  "layers": [
+    {
+      "id": 1,
+      "name": "Furniture",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {"id": 10, "name": "kitchen-door", "x": 48, "y": 8, "width": 32, "height": 24, "properties": [{"name": "art", "type": "string", "value": "door"}]},
+        {"id": 11, "name": "living-door", "x": 240, "y": 8, "width": 32, "height": 24, "properties": [{"name": "art", "type": "string", "value": "door"}]},
+        {"id": 12, "name": "upstairs", "x": 132, "y": 35, "width": 56, "height": 38, "properties": [{"name": "art", "type": "string", "value": "stairs"}, {"name": "solid", "type": "bool", "value": true}]},
+        {"id": 13, "name": "coat-cabinet", "x": 27, "y": 131, "width": 32, "height": 52, "properties": [{"name": "art", "type": "string", "value": "wardrobe"}, {"name": "solid", "type": "bool", "value": true}]},
+        {"id": 14, "name": "hall-bench", "x": 245, "y": 135, "width": 46, "height": 33, "properties": [{"name": "art", "type": "string", "value": "bench"}, {"name": "solid", "type": "bool", "value": true}]},
+        {"id": 15, "name": "floor-plant", "x": 270, "y": 96, "width": 20, "height": 26, "properties": [{"name": "art", "type": "string", "value": "plant"}, {"name": "solid", "type": "bool", "value": true}]}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Collisions",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {"id": 6, "name": "north-wall", "x": 0, "y": 0, "width": 320, "height": 32},
+        {"id": 7, "name": "south-wall", "x": 0, "y": 224, "width": 320, "height": 16},
+        {"id": 8, "name": "west-wall", "x": 0, "y": 32, "width": 16, "height": 192},
+        {"id": 9, "name": "east-wall", "x": 304, "y": 32, "width": 16, "height": 192}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Interactions",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {"id": 16, "name": "kitchen-door", "x": 64, "y": 43, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 17, "name": "living-door", "x": 256, "y": 43, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 18, "name": "upstairs", "x": 160, "y": 86, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]}
+      ]
+    },
+    {
+      "id": 4,
+      "name": "SpawnPoints",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {"id": 19, "name": "from-landing", "x": 160, "y": 112, "width": 0, "height": 0, "point": true},
+        {"id": 20, "name": "from-kitchen", "x": 64, "y": 72, "width": 0, "height": 0, "point": true},
+        {"id": 21, "name": "from-living", "x": 256, "y": 72, "width": 0, "height": 0, "point": true}
+      ]
+    }
+  ]
+}

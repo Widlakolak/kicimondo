@@ -1,6 +1,6 @@
 # Roadmap
 
-Current status: Stage 03 is merged and accepted (19 owner checks passed). The first family-playtest MVP is complete. Stage 04 adds the Android debug build and offline web app. PR #4 is merged and its CI passed. MediaPad T5 acceptance and native upgrade durability are pending; the owner approved proceeding with Stage 05 before device testing.
+Current status: Stage 04 is merged with green CI. Stage 05 expands the house to eight locations and 12 lifetime PS, with the ground floor opening at 8 PS. Stage 05 owner review, physical MediaPad T5 acceptance and native upgrade verification are pending.
 
 | Stage | Scope | Acceptance |
 | --- | --- | --- |
@@ -9,7 +9,7 @@ Current status: Stage 03 is merged and accepted (19 owner checks passed). The fi
 | 02 | [Tracing and progression](stages/02-first-quest.md) | Merged in PR #2. CI and all 14 owner checks passed. |
 | 03 | [First resident cat](stages/03-first-cat.md) | Merged in PR #3. CI and all 19 owner checks passed. |
 | 04 | [Android and offline web](stages/04-android-pwa.md) | Universal debug APK, PWA offline play and safe updates, MediaPad T5 lifecycle and save durability |
-| 05 | [Upstairs and ground floor](stages/05-house-expansion.md) | Enough distinct quests to reach 8 PS; NPC dialogue, sorting, return paths |
+| 05 | [House expansion](stages/05-house-expansion.md) | Nine pre-gate quests, three downstairs, dialogue and return routes. Owner review pending. |
 | 06 | Garden and visiting cats | Reach 16 PS, restore fixed habitats, deterministic visitors, basic Kicipedia |
 | 07 | Java content backend | Spring Boot, Gradle, Flyway, PostgreSQL, validated versioned packs, REST/OpenAPI and integration tests |
 | 08 | Family web release on QNAP | CI, GHCR, Compose, HTTPS, offline smoke, backup/restore and rollback |

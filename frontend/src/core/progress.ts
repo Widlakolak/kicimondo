@@ -1,4 +1,5 @@
 import { cats, contentVersion, isLocation, locations, quests, start, transitions, type Checkpoint, type Quest } from '../content/pack'
+import { reachableLocations } from '../content/routes'
 import { parseProfile, type Profile } from './profile'
 import type { LocationMap } from './tiledMap'
 
@@ -31,8 +32,8 @@ export const pointsOf = (save: Save) => save.rewards.reduce((points, reward) => 
 export const trustOf = (save: Save, cat: string) => save.trust.filter((event) => event.cat === cat).length
 export const meetsGate = (points: number, minimum: number) => points >= minimum
 
-function objectsFor(completed: readonly Quest[], type: Quest['effects'][number]['type']): WorldObject[] {
-  return completed.flatMap(({ location, effects }) => effects.filter((effect) => effect.type === type)
+function objectsFor(completed: readonly Quest[], types: readonly Quest['effects'][number]['type'][]): WorldObject[] {
+  return completed.flatMap(({ location, effects }) => effects.filter((effect) => types.includes(effect.type))
     .map(({ object }) => ({ location, object })))
 }
 
@@ -63,12 +64,12 @@ export function applyCommand(save: Save | null, command: SaveCommand): Save | nu
 
   const quest = quests.find((entry) => entry.id === command.quest && entry.location === save.checkpoint.location)
   if (!quest || save.completed.includes(quest.id) || save.rewards.some(({ id }) => id === quest.reward.id)) return save
-  const restored = objectsFor([quest], 'RESTORE_ATTRACTION')
+  const restored = objectsFor([quest], ['RESTORE_ATTRACTION', 'ORGANIZE_OBJECT'])
   return {
     ...save,
     completed: [...save.completed, quest.id],
     rewards: [...save.rewards, quest.reward],
-    hidden: [...save.hidden, ...objectsFor([quest], 'HIDE_OBJECT')],
+    hidden: [...save.hidden, ...objectsFor([quest], ['HIDE_OBJECT'])],
     restored: [...save.restored, ...restored],
     trust: [...save.trust, ...restoredTrust(restored)],
   }
@@ -82,7 +83,7 @@ export function isIncompatibleSave(raw: unknown): boolean {
   const data = record(raw)
   if (!data || (data.schemaVersion === 1 && data.contentVersion === 1)) return false
   return (typeof data.schemaVersion === 'number' && data.schemaVersion !== 2) ||
-    (typeof data.contentVersion === 'number' && data.contentVersion !== contentVersion)
+    (typeof data.contentVersion === 'number' && data.contentVersion !== 2 && data.contentVersion !== contentVersion)
 }
 
 function sameEntries(stored: unknown, expected: readonly Record<string, string | number>[]) {
@@ -99,16 +100,18 @@ export function decodeSave(raw: unknown, maps: Record<Checkpoint['location'], Lo
   if (!stored) return null
   const legacy = stored.schemaVersion === 1 && stored.contentVersion === 1
   // Stage 02 stored no attractions or trust. Keep its existing arrays and checkpoint intact.
-  const data = legacy ? { ...stored, schemaVersion: 2, contentVersion, restored: [], trust: [] } : stored
-  if (data.schemaVersion !== 2 || data.contentVersion !== contentVersion) return null
+  const data = legacy ? { ...stored, schemaVersion: 2, contentVersion: 2, restored: [], trust: [] } : stored
+  const earlierHouse = data.contentVersion === 2
+  if (data.schemaVersion !== 2 || (!earlierHouse && data.contentVersion !== contentVersion)) return null
   const profile = parseProfile(data.profile)
   if (!profile || !Array.isArray(data.completed) || new Set(data.completed).size !== data.completed.length) return null
 
   const completedIds: unknown[] = data.completed
-  const completed = quests.filter(({ id }) => completedIds.includes(id))
+  const completed = quests.filter(({ id, location }) =>
+    (!earlierHouse || location === 'bedroom') && completedIds.includes(id))
   const rewards = completed.map(({ reward }) => reward)
-  const hidden = objectsFor(completed, 'HIDE_OBJECT')
-  const restored = objectsFor(completed, 'RESTORE_ATTRACTION')
+  const hidden = objectsFor(completed, ['HIDE_OBJECT'])
+  const restored = objectsFor(completed, ['RESTORE_ATTRACTION', 'ORGANIZE_OBJECT'])
   const trust = restoredTrust(restored)
   if (Array.isArray(data.trust)) {
     const recorded: unknown[] = data.trust
@@ -124,16 +127,11 @@ export function decodeSave(raw: unknown, maps: Record<Checkpoint['location'], Lo
   const saved = record(data.checkpoint)
   const location = saved?.location
   const spawn = saved?.spawn
-  const reachable = new Set<string>([start.location])
-  let size = 0
-  while (size !== reachable.size) {
-    size = reachable.size
-    const points = rewards.reduce((total, reward) => total + reward.points, 0)
-    for (const edge of transitions) {
-      if (reachable.has(edge.location) && meetsGate(points, edge.minimumPoints)) reachable.add(edge.target.location)
-    }
-  }
-  const checkpoint = isLocation(location) && reachable.has(location)
+  const reachable = reachableLocations((visited) => completed.reduce((points, quest) =>
+    points + (visited.has(quest.location) ? quest.reward.points : 0), 0))
+  if (completed.some((quest) => !reachable.has(quest.location))) return null
+  const knownCheckpoint = !earlierHouse || location === 'bedroom' || location === 'landing'
+  const checkpoint = knownCheckpoint && isLocation(location) && reachable.has(location)
     ? { location, spawn: typeof spawn === 'string' && maps[location].spawns.has(spawn) ? spawn : locations[location].entry }
     : start
   return { ...newSave(profile), checkpoint, completed: completed.map(({ id }) => id), rewards, hidden, restored, trust }

@@ -2,8 +2,13 @@ import type { FurnitureArt } from '../core/tiledMap'
 import type { LocationId } from '../content/pack'
 import type { Box } from '../core/room'
 import type { Paint } from './avatarArt'
+import { paintHouseRoom, paintHouseFurniture } from './houseArt'
 
 export function paintRoom(paint: Paint, theme: LocationId) {
+  if (theme !== 'bedroom' && theme !== 'landing') {
+    paintHouseRoom(paint, theme)
+    return
+  }
   paint(0x4d3947, 0, 0, 320, 240)
   paint(0x8a6270, 8, 7, 304, 219)
   paint(0xb2908f, 16, 8, 288, 24)
@@ -162,5 +167,7 @@ export function paintFurniture(paint: Paint, art: FurnitureArt, box: Box, ready:
         rect(0x9db39a, 10, 16, 11, 2)
       }
       break
+    default:
+      paintHouseFurniture(paint, art, box, ready)
   }
 }

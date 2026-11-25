@@ -128,7 +128,7 @@ test('migrates a Stage 02 landing save, restores both attractions, and preserves
   await expect(trust(page, 2)).toBeVisible()
   const save = await saveRecord(page)
   expect(save).toMatchObject({
-    schemaVersion: 2, contentVersion: 2, profile: { nickname, avatar: 'girl' },
+    schemaVersion: 2, contentVersion: 3, profile: { nickname, avatar: 'girl' },
     completed: ['bedroom-clean-clothes', 'bedroom-fill-water-bowl', 'bedroom-prepare-cat-bed'],
     hidden: [{ location: 'bedroom', object: 'scattered-clothes' }],
     restored: [{ location: 'bedroom', object: 'water-bowl' }, { location: 'bedroom', object: 'cat-bed' }],

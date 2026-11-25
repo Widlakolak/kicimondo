@@ -18,7 +18,13 @@ type RoomMap = {
   layers: { name: string; type: string; objects: MapObject[] }[]
 }
 
-export const furnitureArt = ['bed', 'desk', 'wardrobe', 'door', 'clothes', 'bowl', 'cat-bed'] as const
+export const organizedArt = [
+  'satchel', 'supplies', 'books', 'sink', 'bath-shelf', 'toy-box', 'fruit', 'table', 'household-shelf',
+] as const
+export const furnitureArt = [
+  'bed', 'desk', 'wardrobe', 'door', 'clothes', 'bowl', 'cat-bed',
+  'stairs', 'guide', 'plant', 'bench', 'tub', 'basket', 'sofa', 'counter', ...organizedArt,
+] as const
 export type FurnitureArt = (typeof furnitureArt)[number]
 export type LocationMap = {
   width: number

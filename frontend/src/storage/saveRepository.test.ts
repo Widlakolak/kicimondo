@@ -83,9 +83,7 @@ it('protects an unreadable save without a backup and handles blocked IndexedDB',
   expect(await blocked.load()).toEqual({ status: 'unavailable', save: null })
 })
 
-it('rolls back the entire completion when the current record write throws', async () => {
-  const { indexed, repository } = setup()
-  await repository.commit({ type: 'profile', profile })
+async function withFailedCurrentWrite(indexed: IDBFactory, assertFailure: () => Promise<unknown>) {
   const opening = indexed.open(databaseName)
   const db = await new Promise<IDBDatabase>((resolve) => { opening.onsuccess = () => resolve(opening.result) })
   const store = db.transaction('saves').objectStore('saves')
@@ -96,11 +94,18 @@ it('rolls back the entire completion when the current record write throws', asyn
     return put.call(this, value, key)
   })
   try {
-    await expect(repository.commit({ type: 'complete', quest: 'bedroom-fill-water-bowl' })).rejects.toThrow('Full')
+    await assertFailure()
   } finally {
     fail.mockRestore()
     db.close()
   }
+}
+
+it('rolls back the entire completion when the current record write throws', async () => {
+  const { indexed, repository } = setup()
+  await repository.commit({ type: 'profile', profile })
+  await withFailedCurrentWrite(indexed, () =>
+    expect(repository.commit({ type: 'complete', quest: 'bedroom-fill-water-bowl' })).rejects.toThrow('Full'))
   const loaded = (await repository.load()).save!
   expect(loaded.completed).toEqual([])
   expect(loaded.rewards).toEqual([])
@@ -121,14 +126,14 @@ it('migrates a Stage 02 record in place on the next write and preserves its land
   await writeRaw(indexed, stage02)
   expect(await repository.load()).toEqual({
     status: 'ready',
-    save: { ...stage02, schemaVersion: 2, contentVersion: 2, restored: [], trust: [] },
+    save: { ...stage02, schemaVersion: 2, contentVersion: 3, restored: [], trust: [] },
   })
   await repository.commit({ type: 'transition', location: 'landing', interaction: 'bedroom-door' })
   const water = { type: 'complete', quest: 'bedroom-fill-water-bowl' } as const
   const other = createSaveRepository(() => indexed, () => ({ getItem: () => null }))
   await Promise.all([repository.commit(water), other.commit(water)])
   expect((await repository.load()).save).toMatchObject({
-    schemaVersion: 2, contentVersion: 2, profile,
+    schemaVersion: 2, contentVersion: 3, profile,
     checkpoint: { location: 'bedroom', spawn: 'from-landing' },
     completed: [quests[0].id, water.quest],
     hidden: stage02.hidden,
@@ -136,4 +141,28 @@ it('migrates a Stage 02 record in place on the next write and preserves its land
     trust: [{ cat: 'amber', id: 'restored:water-bowl' }],
   })
   expect(pointsOf((await repository.load()).save!)).toBe(2)
+})
+
+it('migrates an earlier landing save and rolls back a new organized prop and reward together', async () => {
+  const { indexed, repository } = setup()
+  await repository.commit({ type: 'profile', profile })
+  for (const quest of quests.filter(({ location }) => location === 'bedroom')) {
+    await repository.commit({ type: 'complete', quest: quest.id })
+  }
+  await repository.commit({ type: 'pet', cat: 'amber' })
+  const landing = await repository.commit({ type: 'transition', location: 'bedroom', interaction: 'closed-door' })
+  await writeRaw(indexed, { ...landing, contentVersion: 2 })
+  expect(await repository.load()).toEqual({ status: 'ready', save: { ...landing, contentVersion: 3 } })
+  const study = await repository.commit({ type: 'transition', location: 'landing', interaction: 'study-door' })
+  const pack = { type: 'complete', quest: 'study-pack-school-bag' } as const
+  await withFailedCurrentWrite(indexed, () => expect(repository.commit(pack)).rejects.toThrow('Full'))
+  expect((await repository.load()).save).toEqual(study)
+
+  const other = createSaveRepository(() => indexed, () => ({ getItem: () => null }))
+  await Promise.all([repository.commit(pack), other.commit(pack)])
+  const after = (await repository.load()).save!
+  expect(pointsOf(after)).toBe(4)
+  expect(after.completed.filter((id) => id === pack.quest)).toHaveLength(1)
+  expect(after.restored).toContainEqual({ location: 'study', object: 'school-bag' })
+  expect(after.trust).toEqual(landing?.trust)
 })

@@ -1,5 +1,6 @@
 import type { Point } from '../core/room.ts'
 import type { pl } from '../i18n/pl.ts'
+import { houseChallenges, houseMatchPictures, sortPictures } from './houseChallenges.ts'
 
 type ChallengeText = {
   skillId: string
@@ -22,20 +23,33 @@ export type MathChallenge = ChallengeText & {
   operations: readonly MathOperation[]
   maximum: number
   seed: number
+  counter?: keyof typeof pl.math.counters
 }
 
-export const pictureIds = ['blanket', 'pillow', 'basket'] as const
+export const pictureIds = ['blanket', 'pillow', 'basket', ...houseMatchPictures, ...sortPictures] as const
 export type PictureId = (typeof pictureIds)[number]
+type MatchPictureId = keyof typeof pl.match.pictures
 export type MatchChallenge = ChallengeText & {
   type: 'MATCH_PAIRS'
-  pairs: readonly { id: string; word: keyof typeof pl.match.words; picture: PictureId }[]
-  pictureOrder: readonly PictureId[]
+  pairs: readonly { id: string; word: keyof typeof pl.match.words; picture: MatchPictureId }[]
+  pictureOrder: readonly MatchPictureId[]
 }
 
-export type Challenge = TraceChallenge | MathChallenge | MatchChallenge
-export const contentVersion = 2
+export type SortItemId = keyof typeof pl.sort.items
+export type SortGroup = keyof typeof pl.sort.groups
+export type SortChallenge = ChallengeText & {
+  type: 'SORT_ORDER'
+  items: readonly { id: SortItemId; picture?: PictureId }[]
+} & (
+  | { mode: 'sequence'; order: readonly SortItemId[] }
+  | { mode: 'categories'; groups: readonly SortGroup[]; assignments: Partial<Record<SortItemId, SortGroup>> }
+)
+
+export type Challenge = TraceChallenge | MathChallenge | MatchChallenge | SortChallenge
+export const contentVersion = 3
 
 export const challenges = {
+  ...houseChallenges,
   'clothes-to-basket': {
     type: 'TRACE_PATH',
     skillId: 'hand-eye-coordination',
@@ -77,6 +91,12 @@ export const challenges = {
 export const locations = {
   bedroom: { entry: 'bedside', art: 'bedroom' },
   landing: { entry: 'from-bedroom', art: 'landing' },
+  study: { entry: 'from-landing', art: 'study' },
+  bathroom: { entry: 'from-landing', art: 'bathroom' },
+  playroom: { entry: 'from-landing', art: 'playroom' },
+  hall: { entry: 'from-landing', art: 'hall' },
+  kitchen: { entry: 'from-hall', art: 'kitchen' },
+  living: { entry: 'from-hall', art: 'living' },
 } as const
 
 export type LocationId = keyof typeof locations
@@ -118,7 +138,14 @@ export type Quest = {
   effects: readonly (
     | { type: 'HIDE_OBJECT'; object: string }
     | { type: 'RESTORE_ATTRACTION'; object: string }
+    | { type: 'ORGANIZE_OBJECT'; object: string }
   )[]
+}
+
+function houseQuest(location: LocationId, interaction: string, challenge: keyof typeof houseChallenges): Quest {
+  const id = location + '-' + challenge
+  return { id, location, interaction, challenge, reward: { id: id + '-first', points: 1 },
+    effects: [{ type: 'ORGANIZE_OBJECT', object: interaction }] }
 }
 
 export const quests: readonly Quest[] = [
@@ -146,6 +173,15 @@ export const quests: readonly Quest[] = [
     reward: { id: 'bedroom-prepare-cat-bed-first', points: 1 },
     effects: [{ type: 'RESTORE_ATTRACTION', object: 'cat-bed' }],
   },
+  houseQuest('study', 'school-bag', 'pack-school-bag'),
+  houseQuest('study', 'school-supplies', 'count-school-supplies'),
+  houseQuest('study', 'books', 'order-book-sizes'),
+  houseQuest('bathroom', 'hygiene', 'order-handwashing'),
+  houseQuest('bathroom', 'bathroom-items', 'match-bathroom-items'),
+  houseQuest('playroom', 'toy-box', 'sort-toys'),
+  houseQuest('kitchen', 'fruit', 'count-fruit'),
+  houseQuest('kitchen', 'table-settings', 'match-table-settings'),
+  houseQuest('living', 'household-objects', 'sort-household-objects'),
 ]
 
 export type Transition = {
@@ -153,9 +189,42 @@ export type Transition = {
   interaction: string
   target: Checkpoint
   minimumPoints: number
+  kind?: 'stairs'
 }
 
 export const transitions: readonly Transition[] = [
   { location: 'bedroom', interaction: 'closed-door', minimumPoints: 1, target: { location: 'landing', spawn: 'from-bedroom' } },
   { location: 'landing', interaction: 'bedroom-door', minimumPoints: 0, target: { location: 'bedroom', spawn: 'from-landing' } },
+  { location: 'landing', interaction: 'study-door', minimumPoints: 0, target: { location: 'study', spawn: 'from-landing' } },
+  { location: 'study', interaction: 'landing-door', minimumPoints: 0, target: { location: 'landing', spawn: 'from-study' } },
+  { location: 'landing', interaction: 'bathroom-door', minimumPoints: 0, target: { location: 'bathroom', spawn: 'from-landing' } },
+  { location: 'bathroom', interaction: 'landing-door', minimumPoints: 0, target: { location: 'landing', spawn: 'from-bathroom' } },
+  { location: 'landing', interaction: 'playroom-door', minimumPoints: 0, target: { location: 'playroom', spawn: 'from-landing' } },
+  { location: 'playroom', interaction: 'landing-door', minimumPoints: 0, target: { location: 'landing', spawn: 'from-playroom' } },
+  { location: 'landing', interaction: 'ground-stairs', kind: 'stairs', minimumPoints: 8, target: { location: 'hall', spawn: 'from-landing' } },
+  { location: 'hall', interaction: 'upstairs', kind: 'stairs', minimumPoints: 0, target: { location: 'landing', spawn: 'from-hall' } },
+  { location: 'hall', interaction: 'kitchen-door', minimumPoints: 0, target: { location: 'kitchen', spawn: 'from-hall' } },
+  { location: 'kitchen', interaction: 'hall-door', minimumPoints: 0, target: { location: 'hall', spawn: 'from-kitchen' } },
+  { location: 'hall', interaction: 'living-door', minimumPoints: 0, target: { location: 'living', spawn: 'from-hall' } },
+  { location: 'living', interaction: 'hall-door', minimumPoints: 0, target: { location: 'hall', spawn: 'from-living' } },
 ]
+
+type DialogueHint = Exclude<keyof typeof pl.dialogue, 'hania'>
+
+export type Dialogue = {
+  location: LocationId
+  interaction: string
+  speaker: 'hania'
+  hints: readonly { location: LocationId; text: DialogueHint }[]
+  gate: string
+  afterGate: DialogueHint
+}
+
+export const dialogues: readonly Dialogue[] = [{
+  location: 'landing', interaction: 'guide', speaker: 'hania', gate: 'ground-stairs', afterGate: 'downstairs',
+  hints: [
+    { location: 'study', text: 'study' },
+    { location: 'bathroom', text: 'bathroom' },
+    { location: 'playroom', text: 'playroom' },
+  ],
+}]

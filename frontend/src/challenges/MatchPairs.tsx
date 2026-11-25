@@ -1,29 +1,9 @@
 import { useState } from 'react'
-import type { MatchChallenge, PictureId } from '../content/pack'
+import type { MatchChallenge } from '../content/pack'
 import { matchPair } from '../core/education'
 import { pl } from '../i18n/pl'
 
-function Picture({ id }: { id: PictureId }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" shapeRendering="crispEdges">
-      {id === 'blanket' && <>
-        <path fill="#9c695e" d="M4 4h16v15H4zM5 19h2v3H5zM9 19h2v3H9zM13 19h2v3h-2zM17 19h2v3h-2z" />
-        <path fill="#d9907d" d="M6 6h12v11H6z" />
-        <path fill="#f9cd95" d="M6 9h12v2H6zM6 14h12v2H6z" />
-      </>}
-      {id === 'pillow' && <>
-        <path fill="#648d80" d="M4 7h16v2h2v7h-2v2H4v-2H2V9h2z" />
-        <path fill="#a6c8aa" d="M5 9h14v7H5z" />
-        <path fill="#d3ddaf" d="M7 10h9v2H7z" />
-      </>}
-      {id === 'basket' && <>
-        <path fill="#946648" d="M5 13V7h2V4h10v3h2v6h3v4h-2v4H4v-4H2v-4zm2 0h10V8h-2V6H9v2H7z" />
-        <path fill="#d4a56e" d="M3 13h18v3H3zM6 17h12v3H6z" />
-        <path fill="#a77653" d="M8 16h2v4H8zM14 16h2v4h-2z" />
-      </>}
-    </svg>
-  )
-}
+import { Picture } from './Picture'
 
 export function MatchPairs({ challenge, busy, onComplete }: {
   challenge: MatchChallenge

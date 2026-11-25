@@ -1,3 +1,5 @@
+import { housePl } from './housePl.ts'
+
 export const pl = {
   title: 'Kicimondo',
   welcome: 'Witaj w Kicimondo!',
@@ -11,6 +13,7 @@ export const pl = {
   edit: 'Zmień postać',
   cancel: 'Anuluj',
   locations: {
+    ...housePl.locations,
     bedroom: { title: 'Twój pokój', map: 'Widok pokoju z góry' },
     landing: { title: 'Półpiętro', map: 'Widok półpiętra z góry' },
   },
@@ -44,6 +47,7 @@ export const pl = {
     petting: (name: string) => `Głaszczesz kota: ${name}.`,
   },
   interactions: {
+    ...housePl.interactions,
     'water-bowl': { prompt: 'Obok stoi pusta miska na wodę.' },
     'cat-bed': { prompt: 'Obok jest legowisko do przygotowania.' },
     'scattered-clothes': {
@@ -57,11 +61,18 @@ export const pl = {
       prompt: 'Tędy wrócisz do pokoju.',
     },
   },
+  dialogue: housePl.dialogue,
+  sort: housePl.sort,
+  stairs: {
+    title: 'Schody na parter',
+    progress: (points: number, goal: number) => `Masz ${points} PS. Potrzebujesz ${goal} PS, żeby zejść na parter.`,
+  },
   lockedDoor: {
     title: 'Zamknięte drzwi',
     requirement: (minimum: number) => `Aby otworzyć drzwi, zdobądź ${minimum} PS (punkt samodzielności). Rozejrzyj się za zadaniem.`,
   },
   challenges: {
+    ...housePl.challenges,
     clothesTrace: {
       title: 'Rozrzucone ubrania',
       instructions: 'Przesuń palcem lub myszką od startu do mety, żeby przenieść ubrania do kosza.',
@@ -84,6 +95,10 @@ export const pl = {
   math: {
     progress: (current: number, total: number) => `Zagadka ${current} z ${total}`,
     count: 'Ile widzisz kropli?',
+    counters: {
+      pencil: { count: 'Ile widzisz ołówków?', item: 'Ołówek', crossed: 'Przekreślony ołówek' },
+      apple: { count: 'Ile widzisz jabłek?', item: 'Jabłko', crossed: 'Przekreślone jabłko' },
+    },
     add: (left: number, right: number) => `Ile to ${left} + ${right}?`,
     subtract: (left: number, right: number) => `Ile to ${left} − ${right}?`,
     choices: 'Odpowiedzi',
@@ -94,8 +109,8 @@ export const pl = {
     crossedDrop: 'Przekreślona kropla',
   },
   match: {
-    words: { blanket: 'Koc', pillow: 'Poduszka', basket: 'Koszyk' },
-    pictures: { blanket: 'Obrazek: koc', pillow: 'Obrazek: poduszka', basket: 'Obrazek: koszyk' },
+    words: { ...housePl.words, blanket: 'Koc', pillow: 'Poduszka', basket: 'Koszyk' },
+    pictures: { ...housePl.pictures, blanket: 'Obrazek: koc', pillow: 'Obrazek: poduszka', basket: 'Obrazek: koszyk' },
     wordGroup: 'Słowa',
     pictureGroup: 'Obrazki',
     chooseWord: 'Najpierw wybierz słowo.',

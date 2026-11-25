@@ -17,7 +17,8 @@ export function MathChoice({ challenge, busy, onComplete }: {
   const last = index === questions.length - 1
   const text = pl.challenges[challenge.text]
   const math = pl.math
-  const prompt = operation === 'count' ? math.count : math[operation](left, right)
+  const counter = challenge.counter && math.counters[challenge.counter]
+  const prompt = operation === 'count' ? counter?.count ?? math.count : math[operation](left, right)
 
   function advance() {
     setIndex(index + 1)
@@ -31,10 +32,10 @@ export function MathChoice({ challenge, busy, onComplete }: {
       <p className="activity-progress">{math.progress(index + 1, questions.length)}</p>
       <p className="activity-question">{prompt}</p>
       {(operation === 'count' || hint) && (
-        <div className="drops">
+        <div className={challenge.counter ? `drops ${challenge.counter}-counters` : "drops"}>
           {Array.from({ length: operation === 'add' ? left + right : left }, (_, i) => {
             const crossed = operation === 'subtract' && i >= left - right
-            return <span key={i} role="img" aria-label={crossed ? math.crossedDrop : math.drop}
+            return <span key={i} role="img" aria-label={crossed ? counter?.crossed ?? math.crossedDrop : counter?.item ?? math.drop}
               className={crossed ? 'drop crossed' : i >= left ? 'drop added' : 'drop'} />
           })}
         </div>
