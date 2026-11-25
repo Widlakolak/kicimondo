@@ -1,0 +1,61 @@
+{
+  "gameContentVersion": 4,
+  "math": {
+    "count-fruit": {
+      "maximum": 10,
+      "operations": [
+        "count",
+        "add",
+        "subtract"
+      ]
+    },
+    "count-garden-flowers": {
+      "maximum": 10,
+      "operations": [
+        "count",
+        "add",
+        "subtract"
+      ]
+    },
+    "count-school-supplies": {
+      "maximum": 10,
+      "operations": [
+        "count",
+        "add",
+        "subtract"
+      ]
+    },
+    "count-towels": {
+      "maximum": 10,
+      "operations": [
+        "count",
+        "add",
+        "subtract"
+      ]
+    },
+    "count-water-drops": {
+      "maximum": 10,
+      "operations": [
+        "count",
+        "add",
+        "subtract"
+      ]
+    },
+    "fill-garden-water": {
+      "maximum": 10,
+      "operations": [
+        "count",
+        "add",
+        "subtract"
+      ]
+    },
+    "restore-scratching-post": {
+      "maximum": 10,
+      "operations": [
+        "count",
+        "add",
+        "subtract"
+      ]
+    }
+  }
+}

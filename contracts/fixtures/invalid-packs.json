@@ -1,0 +1,126 @@
+[
+  {
+    "name": "unsupported-schema",
+    "overrides": {
+      "schemaVersion": 2
+    }
+  },
+  {
+    "name": "incompatible-content",
+    "overrides": {
+      "gameContentVersion": 3
+    }
+  },
+  {
+    "name": "unsupported-locale",
+    "overrides": {
+      "locale": "en"
+    }
+  },
+  {
+    "name": "invalid-version",
+    "overrides": {
+      "version": 0
+    }
+  },
+  {
+    "name": "invalid-id",
+    "overrides": {
+      "packId": "bad-id\n"
+    }
+  },
+  {
+    "name": "non-math-reference",
+    "overrides": {
+      "variants": [
+        {
+          "id": "fresh-water-count",
+          "challengeId": "clothes-to-basket",
+          "seed": 123456789
+        }
+      ]
+    }
+  },
+  {
+    "name": "duplicate-variant",
+    "overrides": {
+      "variants": [
+        {
+          "id": "fresh-water-count",
+          "challengeId": "count-water-drops",
+          "seed": 123456789
+        },
+        {
+          "id": "fresh-water-count",
+          "challengeId": "count-water-drops",
+          "seed": 123456789
+        }
+      ]
+    }
+  },
+  {
+    "name": "negative-seed",
+    "overrides": {
+      "variants": [
+        {
+          "id": "fresh-water-count",
+          "challengeId": "count-water-drops",
+          "seed": -1
+        }
+      ]
+    }
+  },
+  {
+    "name": "fractional-seed",
+    "overrides": {
+      "variants": [
+        {
+          "id": "fresh-water-count",
+          "challengeId": "count-water-drops",
+          "seed": 1.5
+        }
+      ]
+    }
+  },
+  {
+    "name": "excessive-seed",
+    "overrides": {
+      "variants": [
+        {
+          "id": "fresh-water-count",
+          "challengeId": "count-water-drops",
+          "seed": 4294967296
+        }
+      ]
+    }
+  },
+  {
+    "name": "invalid-operation",
+    "overrides": {
+      "variants": [
+        {
+          "id": "fresh-water-count",
+          "challengeId": "count-water-drops",
+          "seed": 123456789,
+          "operations": [
+            "divide"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "name": "unsafe-field",
+    "overrides": {
+      "assets": [
+        "https://example.invalid/exercise.svg"
+      ]
+    }
+  },
+  {
+    "name": "empty-variants",
+    "overrides": {
+      "variants": []
+    }
+  }
+]

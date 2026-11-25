@@ -62,6 +62,14 @@ Each quest awards one lifetime PS. The 17 indoor quests let the player leave one
 
 The garden map contains fixed plots for water, a sheltered bed, a scratching post, a tunnel, toys, a platform, a shelter and flowers. Each plot has one restoration quest and one validated activity position. Garden visitors require all their tags to come from restored plots in that location. Flowers contribute visual changes and a reward. The other tags are used by visitor requirements. The cat catalog also defines the resident's original bedroom spots and palette. Kicipedia uses the same portraits and attraction names as the scene and habitat rules.
 
+## Downloadable math variants
+
+The [version 1 schema](../contracts/educational-pack.v1.schema.json) sets the JSON shape. A pack targets one bundled game version and the Polish locale. Each variant references an existing math challenge by ID and supplies one unsigned 32-bit seed. The bundled definition still controls the skill, operations, maximum, illustration, instructions and rewards. Multiple variants may reference the same challenge. The game selects one at the start of an attempt and uses it throughout that attempt.
+
+The client and backend permit up to 32 distinct variant IDs and 16 KiB of UTF-8 JSON per pack. They reject unknown fields and references, unsupported versions and invalid generated questions. The deterministic generator follows the existing operation sequence, keeps answers within the bundled maximum and gives three distinct choices. The [shared fixtures](../contracts/fixtures) exercise both implementations.
+
+Run `npm run contracts:generate` in `frontend` after changing bundled math definitions. The generated [compatibility manifest](../contracts/compatibility.json) is checked in and included in the backend JAR, and `npm run contracts:check` checks it against the game. To publish variants, start with the [demo pack](../contracts/demo-math.json) and use the [local operator command](DEPLOYMENT.md#local-content-service). Publish a higher version for changed content under the same pack ID.
+
 ## Asset provenance
 
 Every externally sourced or generated asset needs a provenance entry. Do not include unverified images, commercial game assets, scraped media or fonts without a compatible license. Use original geometric placeholder art where necessary; label it as such. Record attribution requirements and keep required notices with distributed builds.

@@ -9,6 +9,8 @@
   },
   "scripts": {
     "dev": "vite",
+    "contracts:generate": "node scripts/export-compatibility.mjs",
+    "contracts:check": "node scripts/export-compatibility.mjs --check",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test": "vitest run src",

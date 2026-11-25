@@ -1,0 +1,43 @@
+services:
+  database:
+    image: postgres:17.9-alpine
+    environment:
+      POSTGRES_DB: kicimondo
+      POSTGRES_USER: kicimondo
+      POSTGRES_PASSWORD: ${KICIMONDO_DB_PASSWORD:?Copy .env.example to .env for local development}
+    volumes:
+      - postgres:/var/lib/postgresql/data
+    networks: [database]
+    healthcheck:
+      test: [CMD-SHELL, pg_isready -h 127.0.0.1 -U kicimondo -d kicimondo]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    mem_limit: 256m
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      SERVER_ADDRESS: 0.0.0.0
+      KICIMONDO_DB_URL: jdbc:postgresql://database:5432/kicimondo
+      KICIMONDO_DB_PASSWORD: ${KICIMONDO_DB_PASSWORD:?Copy .env.example to .env for local development}
+      KICIMONDO_ALLOWED_ORIGINS: ${KICIMONDO_ALLOWED_ORIGINS:-}
+    ports:
+      - "127.0.0.1:${KICIMONDO_API_PORT:-8080}:8080"
+    networks: [default, database]
+    healthcheck:
+      test: [CMD, wget, -Y, "off", -qO, /dev/null, "http://127.0.0.1:8080/actuator/health"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+    mem_limit: 512m
+volumes:
+  postgres:
+networks:
+  database:
+    internal: true

@@ -1,0 +1,158 @@
+[
+  {
+    "challengeId": "count-water-drops",
+    "seed": 3041,
+    "questions": [
+      {
+        "operation": "count",
+        "left": 5,
+        "right": 0,
+        "answer": 5,
+        "options": [
+          1,
+          0,
+          5
+        ]
+      },
+      {
+        "operation": "add",
+        "left": 4,
+        "right": 1,
+        "answer": 5,
+        "options": [
+          4,
+          7,
+          5
+        ]
+      },
+      {
+        "operation": "subtract",
+        "left": 4,
+        "right": 1,
+        "answer": 3,
+        "options": [
+          4,
+          3,
+          5
+        ]
+      }
+    ]
+  },
+  {
+    "challengeId": "count-water-drops",
+    "seed": 123456789,
+    "questions": [
+      {
+        "operation": "count",
+        "left": 3,
+        "right": 0,
+        "answer": 3,
+        "options": [
+          3,
+          5,
+          9
+        ]
+      },
+      {
+        "operation": "add",
+        "left": 4,
+        "right": 2,
+        "answer": 6,
+        "options": [
+          5,
+          3,
+          6
+        ]
+      },
+      {
+        "operation": "subtract",
+        "left": 4,
+        "right": 2,
+        "answer": 2,
+        "options": [
+          8,
+          3,
+          2
+        ]
+      }
+    ]
+  },
+  {
+    "challengeId": "count-school-supplies",
+    "seed": 4294967295,
+    "questions": [
+      {
+        "operation": "count",
+        "left": 4,
+        "right": 0,
+        "answer": 4,
+        "options": [
+          4,
+          2,
+          1
+        ]
+      },
+      {
+        "operation": "add",
+        "left": 8,
+        "right": 2,
+        "answer": 10,
+        "options": [
+          9,
+          10,
+          7
+        ]
+      },
+      {
+        "operation": "subtract",
+        "left": 2,
+        "right": 2,
+        "answer": 0,
+        "options": [
+          8,
+          10,
+          0
+        ]
+      }
+    ]
+  },
+  {
+    "challengeId": "count-towels",
+    "seed": 0,
+    "questions": [
+      {
+        "operation": "count",
+        "left": 4,
+        "right": 0,
+        "answer": 4,
+        "options": [
+          2,
+          4,
+          9
+        ]
+      },
+      {
+        "operation": "add",
+        "left": 6,
+        "right": 2,
+        "answer": 8,
+        "options": [
+          8,
+          4,
+          6
+        ]
+      },
+      {
+        "operation": "subtract",
+        "left": 8,
+        "right": 5,
+        "answer": 3,
+        "options": [
+          3,
+          0,
+          9
+        ]
+      }
+    ]
+  }
+]

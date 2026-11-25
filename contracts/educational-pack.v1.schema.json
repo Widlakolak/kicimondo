@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:kicimondo:educational-pack:1",
+  "title": "Kicimondo math variant pack",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "packId", "version", "gameContentVersion", "locale", "variants"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "packId": { "$ref": "#/$defs/id" },
+    "version": { "type": "integer", "minimum": 1, "maximum": 2147483647 },
+    "gameContentVersion": { "type": "integer", "minimum": 1, "maximum": 2147483647 },
+    "locale": { "const": "pl" },
+    "variants": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 32,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "challengeId", "seed"],
+        "properties": {
+          "id": { "$ref": "#/$defs/id" },
+          "challengeId": { "$ref": "#/$defs/id" },
+          "seed": { "type": "integer", "minimum": 0, "maximum": 4294967295 }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "id": { "type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[a-z][a-z0-9]*(-[a-z0-9]+)*$" }
+  }
+}

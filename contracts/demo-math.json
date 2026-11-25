@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "packId": "kicimondo-math",
+  "version": 1,
+  "gameContentVersion": 4,
+  "locale": "pl",
+  "variants": [
+    { "id": "fresh-water-count", "challengeId": "count-water-drops", "seed": 123456789 },
+    { "id": "fresh-school-count", "challengeId": "count-school-supplies", "seed": 4294967295 }
+  ]
+}

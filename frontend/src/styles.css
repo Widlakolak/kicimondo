@@ -219,3 +219,13 @@ dialog::backdrop { background: rgba(41, 35, 41, .58); }
 .cat-collection p { font-size: .92rem; margin: .35rem 0; }
 .cat-portrait { display: block; width: 4.5rem; height: 3.25rem; image-rendering: pixelated; }
 .cat-details h3 { margin: .4rem 0; }
+
+.educational-updates {
+  width: 100%;
+  margin-top: 0.75rem;
+}
+.educational-updates summary {
+  cursor: pointer;
+  min-height: 44px;
+  padding: 0.55rem;
+}

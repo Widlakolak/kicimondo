@@ -2,6 +2,15 @@ import { gardenPl } from './gardenPl.ts'
 import { housePl } from './housePl.ts'
 
 export const pl = {
+  contentPacks: {
+    title: 'Dla dorosłych · zadania dodatkowe',
+    bundled: 'Korzystasz z zadań dołączonych do gry.',
+    active: (version: number) => `Aktywny pakiet zadań, wersja ${version}.`,
+    download: 'Sprawdź i pobierz pakiet zadań',
+    reset: 'Wróć do zadań dołączonych do gry',
+    checking: 'Zapisywanie wyboru zadań…',
+    failed: 'Nie udało się zmienić zadań. Dotychczasowe zadania są nadal dostępne.',
+  },
   title: 'Kicimondo',
   welcome: 'Witaj w Kicimondo!',
   choose: 'Wybierz postać',

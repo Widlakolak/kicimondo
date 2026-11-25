@@ -1,0 +1,43 @@
+server:
+  address: ${SERVER_ADDRESS:127.0.0.1}
+  port: ${SERVER_PORT:8080}
+  error:
+    include-message: never
+spring:
+  application:
+    name: kicimondo-content
+  datasource:
+    url: ${KICIMONDO_DB_URL:jdbc:postgresql://127.0.0.1:5432/kicimondo}
+    username: ${KICIMONDO_DB_USER:kicimondo}
+    password: ${KICIMONDO_DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: 4
+      minimum-idle: 0
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  mvc:
+    problemdetails:
+      enabled: true
+management:
+  endpoints:
+    web:
+      discovery:
+        enabled: false
+      exposure:
+        include: health
+    access:
+      default: none
+  endpoint:
+    health:
+      access: read-only
+      show-details: never
+      show-components: never
+      probes:
+        enabled: false
+springdoc:
+  swagger-ui:
+    disable-swagger-default-url: true
+kicimondo:
+  allowed-origins: ${KICIMONDO_ALLOWED_ORIGINS:}
