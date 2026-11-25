@@ -33,9 +33,12 @@ export function TraceChallenge({ challenge, busy, onComplete }: {
       attempt.cancel()
       setView(attempt.view())
     }
+    const visibility = () => { if (document.hidden) cancel() }
+    document.addEventListener('visibilitychange', visibility)
     window.addEventListener('blur', cancel)
     window.addEventListener('resize', cancel)
     return () => {
+      document.removeEventListener('visibilitychange', visibility)
       window.removeEventListener('blur', cancel)
       window.removeEventListener('resize', cancel)
     }

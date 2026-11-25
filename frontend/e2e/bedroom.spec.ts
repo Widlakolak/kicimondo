@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import { challenges } from '../src/content/pack'
-import { enterRoom, holdKey, nickname, pixelAt, reach, roomTitle, saveRecord, stage, start } from './roomHelpers'
+import { enterRoom, holdKey, nickname, pixelAt, reach, roomTitle, saveRecord, stage, start, walkToClothes, buttonAlternative } from './roomHelpers'
 
 const clothes = 'Rozrzucone ubrania'
 const profileKey = 'kicimondo.profile'
@@ -22,27 +22,9 @@ async function expectStill(page: Page, axis: 'x' | 'y') {
   expect(new Set(samples).size).toBe(1)
 }
 
-async function walkToClothes(page: Page) {
-  await holdKey(page, 'd', () => reach(page, 'x', 183, 1))
-  await holdKey(page, 's', () => reach(page, 'y', 144, 1))
-  await expect(page.getByText('Obok leżą rozrzucone ubrania.')).toBeVisible()
-  await page.keyboard.press('e')
-  await expect(page.getByRole('dialog', { name: clothes })).toBeVisible()
-}
-
 async function traceCoordinates(page: Page) {
   const box = (await board(page).boundingBox())!
   return path.map(({ x, y }) => ({ x: box.x + x * box.width, y: box.y + y * box.height }))
-}
-
-async function buttonAlternative(page: Page) {
-  await page.getByRole('button', { name: 'Wybierz przyciski' }).click()
-  await page.getByRole('button', { name: 'Przycisk 3' }).click()
-  await expect(page.getByText('Wybierz najpierw niższy numer.')).toBeVisible()
-  for (let target = 1; target <= 5; target++) {
-    await page.getByRole('button', { name: `Przycisk ${target}` }).press('Enter')
-  }
-  await expect(page.getByRole('dialog', { name: rewardTitle })).toBeVisible()
 }
 
 test('chooses and edits an avatar, validates the nickname, and keeps the saved profile on reload', async ({ page }) => {

@@ -11,4 +11,6 @@ Record each asset before adding it to the repository or a distributed build:
 | [Bursztynek](frontend/src/game/catArt.ts) | Original Stage 03 pixel shapes authored with Codex | Project license pending | Coat, readiness cue and activity frames | No third-party attribution |
 | [Matching pictures](frontend/src/challenges/MatchPairs.tsx) and [water drops](frontend/src/styles.css) | Original Stage 03 geometric artwork authored with Codex | Project license pending | Blanket, pillow, basket and counting aids | No third-party attribution |
 
+| [Cat icon](frontend/pwa/icon.svg), PWA PNGs and Android launcher/splash icon | Original Stage 04 pixel art authored with Codex | Project license pending | Raster variants, maskable padding and adaptive Android layers | No third-party attribution |
+
 For original placeholder assets, note their creator/provenance and whether they are temporary. For generated artwork, record the tool/source, date and relevant usage terms without exposing private prompts or personal information. Retain license text when required. Review fonts, icons, sounds, music, tilesets and sprite sheets separately. Dependency licenses are tracked independently through package metadata and notices.

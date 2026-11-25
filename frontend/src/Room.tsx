@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useRef, useState, type RefObject } from 'react'
 import { Challenge } from './challenges/Challenge'
 import { cats, challenges, quests, transitions, type Quest, type Transition } from './content/pack'
 import { meetsGate, pointsOf, trustOf, type Save, type SaveCommand } from './core/progress'
@@ -66,12 +66,15 @@ function worldState(save: Save): WorldState {
   }
 }
 
-export default function Room({ save, commit, busy, notice, onEdit }: {
+export default function Room({ save, commit, busy, notice, nativeActive, backHandlerRef, onEdit, onMenu }: {
   save: Save
   commit: (command: SaveCommand) => Promise<Save | null>
   busy: boolean
   notice: string | null
+  nativeActive: boolean
+  backHandlerRef: RefObject<(() => void) | null>
   onEdit: () => void
+  onMenu: () => void
 }) {
   const { profile, checkpoint } = save
   const { location, spawn } = checkpoint
@@ -89,6 +92,40 @@ export default function Room({ save, commit, busy, notice, onEdit }: {
   const [input] = useState(() => new RoomInput())
   const [target, setTarget] = useState<{ id: InteractionId | null; cue: CatCue | null }>({ id: null, cue: null })
   const [open, setOpen] = useState<Overlay | null>(null)
+
+  const syncVisibility = useEffectEvent(() => {
+    const backgrounded = document.hidden || !nativeActive
+    input.setBackgrounded(backgrounded)
+    engine.current?.setBackgrounded(backgrounded)
+  })
+  const openPause = (focus: Element | null) => {
+    previousFocus.current = focus instanceof HTMLElement ? focus : null
+    input.setPaused(true)
+    setOpen({ type: 'pause' })
+  }
+  function closeOverlay() {
+    const overlay = dialog.current
+    if (busy || !overlay?.open) return
+    overlay.close()
+    dismissTap.current = null
+    setOpen(null)
+    const focus = previousFocus.current
+    if (focus && focus !== document.body && focus.isConnected && !focus.matches(':disabled')) focus.focus()
+    else heading.current?.focus()
+    // The browser dispatches "close" later. Restore input before another keydown can arrive.
+    input.setPaused(false)
+  }
+
+  const goBack = useEffectEvent(() => {
+    if (busy) return
+    if (dialog.current?.open) closeOverlay()
+    else openPause(document.activeElement)
+  })
+
+  useEffect(() => {
+    backHandlerRef.current = () => goBack()
+    return () => { backHandlerRef.current = null }
+  }, [backHandlerRef])
 
   const initialWorld = useEffectEvent(() => worldState(save))
   const onInteraction = useEffectEvent(async (id: InteractionId) => {
@@ -122,9 +159,12 @@ export default function Room({ save, commit, busy, notice, onEdit }: {
     engine.current = created
 
     const clear = () => input.clear()
-    const syncVisibility = () => input.setBackgrounded(document.hidden)
-    const hide = () => input.setBackgrounded(true)
-    syncVisibility()
+    const visibility = () => syncVisibility()
+    const hide = () => {
+      input.setBackgrounded(true)
+      created.setBackgrounded(true)
+    }
+    visibility()
     const keydown = (event: KeyboardEvent) => {
       const direction = keyboardDirections.get(event.code)
       if ((!direction && event.code !== 'KeyE') || event.altKey || event.ctrlKey || event.metaKey ||
@@ -135,23 +175,29 @@ export default function Room({ save, commit, busy, notice, onEdit }: {
       else input.requestInteraction()
     }
     const keyup = (event: KeyboardEvent) => input.release(event.code)
-    const listeners = new AbortController()
-    const options = { signal: listeners.signal }
-    window.addEventListener('keydown', keydown, options)
-    window.addEventListener('keyup', keyup, options)
-    window.addEventListener('blur', clear, options)
-    window.addEventListener('resize', clear, options)
-    window.addEventListener('pagehide', hide, options)
-    window.addEventListener('pageshow', syncVisibility, options)
-    document.addEventListener('visibilitychange', syncVisibility, options)
+    window.addEventListener('keydown', keydown)
+    window.addEventListener('keyup', keyup)
+    window.addEventListener('blur', clear)
+    window.addEventListener('resize', clear)
+    window.addEventListener('pagehide', hide)
+    window.addEventListener('pageshow', visibility)
+    document.addEventListener('visibilitychange', visibility)
     return () => {
-      listeners.abort()
+      window.removeEventListener('keydown', keydown)
+      window.removeEventListener('keyup', keyup)
+      window.removeEventListener('blur', clear)
+      window.removeEventListener('resize', clear)
+      window.removeEventListener('pagehide', hide)
+      window.removeEventListener('pageshow', visibility)
+      document.removeEventListener('visibilitychange', visibility)
       input.setPaused(false)
       created.destroy()
       engine.current = null
       stage.remove()
     }
   }, [input, location, profile.avatar, spawn])
+
+  useEffect(() => { syncVisibility() }, [nativeActive])
 
   useEffect(() => {
     engine.current?.setWorld(worldState(save))
@@ -186,11 +232,7 @@ export default function Room({ save, commit, busy, notice, onEdit }: {
         <div className="room-actions">
           <span className="points" title={pl.pointsLabel}>{pl.points(points)}</span>
           <button type="button" className="secondary" disabled={busy} onClick={onEdit}>{pl.edit}</button>
-          <button type="button" className="secondary" disabled={busy} onClick={(event) => {
-            previousFocus.current = event.currentTarget
-            input.setPaused(true)
-            setOpen({ type: 'pause' })
-          }}>{pl.pause.title}</button>
+          <button type="button" className="secondary" disabled={busy} onClick={(event) => openPause(event.currentTarget)}>{pl.pause.title}</button>
         </div>
       </header>
       <div className="world" ref={host} role="img" aria-label={text.map} />
@@ -213,14 +255,9 @@ export default function Room({ save, commit, busy, notice, onEdit }: {
         ref={dialog}
         aria-labelledby="interaction-title"
         aria-describedby="interaction-body"
-        onCancel={(event) => { if (busy) event.preventDefault() }}
-        onClose={() => {
-          input.setPaused(false)
-          dismissTap.current = null
-          setOpen(null)
-          const focus = previousFocus.current
-          if (focus && focus !== document.body && focus.isConnected && !focus.matches(':disabled')) focus.focus()
-          else heading.current?.focus()
+        onCancel={(event) => {
+          event.preventDefault()
+          closeOverlay()
         }}
       >
         {open?.type === 'quest' && <>
@@ -232,6 +269,7 @@ export default function Room({ save, commit, busy, notice, onEdit }: {
         {open?.type === 'pause' && <>
           <h2 id="interaction-title">{pl.pause.title}</h2>
           <p id="interaction-body">{pl.pause.body}</p>
+          <button type="button" className="secondary pause-menu" disabled={busy} onClick={onMenu}>{pl.pause.menu}</button>
         </>}
         {open?.type === 'locked' && <>
           <h2 id="interaction-title">{pl.lockedDoor.title}</h2>
@@ -244,7 +282,7 @@ export default function Room({ save, commit, busy, notice, onEdit }: {
           {notice && <p className="notice" role="status">{notice}</p>}
         </>}
         <button type="button" className="primary" disabled={busy}
-          onClick={() => dialog.current?.close()}
+          onClick={closeOverlay}
           onPointerDown={(event) => {
             if (event.pointerType === 'touch' && event.isPrimary) {
               dismissTap.current = { id: event.pointerId, x: event.clientX, y: event.clientY }
@@ -260,7 +298,7 @@ export default function Room({ save, commit, busy, notice, onEdit }: {
             // A drawing gesture can suppress the next synthesized click on touch browsers.
             if (Math.hypot(tap.x - event.clientX, tap.y - event.clientY) <= 10 &&
                 event.currentTarget.contains(document.elementFromPoint(event.clientX, event.clientY))) {
-              dialog.current?.close()
+              closeOverlay()
             }
           }}>
           {busy ? pl.saving : open?.type === 'quest' ? pl.cancel : open?.type === 'pause' ? pl.pause.resume : pl.close}

@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Kicimondo</string>
+    <string name="title_activity_main">Kicimondo</string>
+    <string name="webview_unavailable">Nie udało się otworzyć Kicimondo. Poproś dorosłego o sprawdzenie, czy Android WebView jest włączony i czy są dostępne aktualizacje systemu.</string>
+</resources>

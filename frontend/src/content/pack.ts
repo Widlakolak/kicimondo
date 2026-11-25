@@ -85,7 +85,7 @@ export type Checkpoint = { location: LocationId; spawn: string }
 export const start: Checkpoint = { location: 'bedroom', spawn: locations.bedroom.entry }
 
 export function isLocation(value: unknown): value is LocationId {
-  return typeof value === 'string' && Object.hasOwn(locations, value)
+  return typeof value === 'string' && Object.prototype.hasOwnProperty.call(locations, value)
 }
 
 export type CatDefinition = {

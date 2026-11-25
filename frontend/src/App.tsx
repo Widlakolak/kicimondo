@@ -1,9 +1,11 @@
-import { lazy, Suspense, useEffect, useRef, useState, type FormEvent } from 'react'
+import { lazy, Suspense, useEffect, useEffectEvent, useRef, useState, type FormEvent } from 'react'
 import { avatars, validateNickname, type Avatar, type Profile } from './core/profile'
 import { paintAvatar } from './game/avatarArt'
 import { pl } from './i18n/pl'
 import { applyCommand, type Save, type SaveCommand } from './core/progress'
 import { createSaveRepository } from './storage/saveRepository'
+import { minimizeAndroid, watchAndroid } from './platform/android'
+import { OfflineStatus } from './platform/OfflineStatus'
 
 const Room = lazy(() => import('./Room'))
 
@@ -50,7 +52,7 @@ function ProfileForm({ initial, busy, onSave, onCancel }: {
         <legend>{pl.choose}</legend>
         <div className="avatar-options">
           {avatars.map((option) => (
-            <label key={option} className={`avatar-option ${option}`}>
+            <label key={option} className={`avatar-option ${option}${avatar === option ? ' selected' : ''}`}>
               <input type="radio" name="avatar" value={option} checked={avatar === option}
                 onChange={() => setAvatar(option)} />
               <span className="avatar-portrait"><AvatarPortrait avatar={option} /></span>
@@ -88,6 +90,17 @@ export function App() {
   const [screen, setScreen] = useState<Screen>('loading')
   const [busy, setBusy] = useState(false)
   const busyRef = useRef(false)
+  const [nativeActive, setNativeActive] = useState(true)
+  const roomBack = useRef<(() => void) | null>(null)
+
+  const goBack = useEffectEvent(() => {
+    if (busyRef.current || screen === 'loading') return
+    if (screen === 'room') roomBack.current?.()
+    else if (screen === 'edit' && save) setScreen('welcome')
+    else minimizeAndroid()
+  })
+
+  useEffect(() => watchAndroid(() => goBack(), setNativeActive), [])
 
   useEffect(() => {
     let active = true
@@ -136,7 +149,8 @@ export function App() {
         screen === 'room' && save ? (
           <Suspense fallback={<p role="status">{pl.loadingRoom}</p>}>
             <Room key={save.checkpoint.location + '/' + save.checkpoint.spawn} save={save}
-              commit={commit} busy={busy} notice={notice} onEdit={() => setScreen('edit')} />
+              commit={commit} busy={busy} notice={notice} nativeActive={nativeActive} backHandlerRef={roomBack}
+              onEdit={() => setScreen('edit')} onMenu={() => setScreen('welcome')} />
           </Suspense>
         ) : (
           <section className="welcome" aria-labelledby="welcome-title">
@@ -157,6 +171,7 @@ export function App() {
             )}
           </section>
         )}
+      {import.meta.env.PROD && import.meta.env.MODE !== 'android' && <OfflineStatus showUpdate={screen === 'welcome'} />}
     </main>
   )
 }

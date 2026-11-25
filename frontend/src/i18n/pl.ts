@@ -16,6 +16,10 @@ export const pl = {
   },
   points: (points: number) => `${points} PS`,
   pointsLabel: 'Punkty samodzielności',
+  offline: {
+    ready: 'Gra gotowa do działania bez internetu.',
+    update: 'Jest nowa wersja gry. Zamknij wszystkie okna Kicimondo i otwórz grę ponownie.',
+  },
   loadingRoom: 'Otwieranie pokoju…',
   loadingSave: 'Wczytywanie zapisu…',
   saving: 'Zapisywanie…',
@@ -24,7 +28,7 @@ export const pl = {
   directions: { left: 'W lewo', right: 'W prawo', up: 'W górę', down: 'W dół' },
   interact: 'Sprawdź',
   close: 'Zamknij',
-  pause: { title: 'Pauza', body: 'Gra jest wstrzymana. Wróć, kiedy chcesz.', resume: 'Wznów grę' },
+  pause: { title: 'Pauza', body: 'Gra jest wstrzymana. Wróć, kiedy chcesz.', resume: 'Wznów grę', menu: 'Wróć do menu' },
   explore: 'Podejdź do przedmiotu, żeby go sprawdzić.',
   save: {
     recovered: 'Przywrócono poprzedni zapis.',

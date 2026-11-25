@@ -1,4 +1,6 @@
-import { expect, type Page } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
+import { challenges } from '../src/content/pack'
+import { mathQuestions } from '../src/core/education'
 import type { Save } from '../src/core/progress'
 
 export const start = 'Wejdź do pokoju'
@@ -48,4 +50,69 @@ export async function pixelAt(page: Page, x: number, y: number) {
   return stage(page).locator('canvas').evaluate((canvas, point) =>
     Array.from((canvas as HTMLCanvasElement).getContext('2d')!.getImageData(point.x, point.y, 1, 1).data),
   { x, y })
+}
+
+export async function walkToClothes(page: Page) {
+  await holdKey(page, 'd', () => reach(page, 'x', 183, 1))
+  await holdKey(page, 's', () => reach(page, 'y', 144, 1))
+  await expect(page.getByText('Obok leżą rozrzucone ubrania.')).toBeVisible()
+  await page.keyboard.press('e')
+  await expect(page.getByRole('dialog', { name: 'Rozrzucone ubrania' })).toBeVisible()
+}
+
+export async function buttonAlternative(page: Page) {
+  await page.getByRole('button', { name: 'Wybierz przyciski' }).click()
+  await page.getByRole('button', { name: 'Przycisk 3' }).click()
+  await expect(page.getByText('Wybierz najpierw niższy numer.')).toBeVisible()
+  for (let target = 1; target <= 5; target++) {
+    await page.getByRole('button', { name: `Przycisk ${target}` }).press('Enter')
+  }
+  await expect(page.getByRole('dialog', { name: 'Zadanie ukończone!' })).toBeVisible()
+}
+
+export async function expectRoomReady(page: Page) {
+  await expect(page.locator('.room dialog')).toBeHidden()
+  await expect(page.locator('.room dialog h2')).toHaveCount(0)
+}
+
+async function closeQuestSuccess(page: Page) {
+  await page.getByRole('dialog', { name: 'Zadanie ukończone!' }).getByRole('button', { name: 'Zamknij' }).click()
+  await expectRoomReady(page)
+}
+
+export async function matchBed(page: Page, choose = (control: Locator) => control.click()) {
+  const dialog = page.getByRole('dialog', { name: 'Legowisko dla kota' })
+  await expect(dialog).toBeVisible()
+  await choose(dialog.getByRole('button', { name: 'Koc', exact: true }))
+  await dialog.getByRole('button', { name: 'Obrazek: koszyk' }).click()
+  await expect(dialog.getByText('To inna para.', { exact: false })).toBeVisible()
+  await dialog.getByRole('button', { name: 'Podpowiedź' }).click()
+  await expect(dialog.getByText('Koc grzeje', { exact: false })).toBeVisible()
+  await choose(dialog.getByRole('button', { name: 'Obrazek: koc' }))
+  await dialog.getByRole('button', { name: 'Poduszka', exact: true }).press('Enter')
+  await dialog.getByRole('button', { name: 'Obrazek: poduszka' }).press('Enter')
+  await dialog.getByRole('button', { name: 'Koszyk', exact: true }).click()
+  await dialog.getByRole('button', { name: 'Obrazek: koszyk' }).click()
+  await expect(page.getByRole('dialog', { name: 'Zadanie ukończone!' })).toContainText('Legowisko jest gotowe.')
+  await closeQuestSuccess(page)
+}
+
+export async function fillWater(page: Page) {
+  const dialog = page.getByRole('dialog', { name: 'Woda dla kota' })
+  await expect(dialog).toBeVisible()
+  const questions = mathQuestions(challenges['count-water-drops'])
+  for (const [index, question] of questions.entries()) {
+    const group = dialog.getByRole('group', { name: 'Odpowiedzi' })
+    await expect(dialog.getByText(`Zagadka ${index + 1} z 3`)).toBeVisible()
+    if (index === 1) {
+      await group.getByRole('button', { name: String(question.options.find((n) => n !== question.answer)), exact: true }).click()
+      await expect(dialog.getByText('Spróbuj jeszcze raz.', { exact: false })).toBeVisible()
+      await dialog.getByRole('button', { name: 'Podpowiedź' }).click()
+      await expect(dialog.getByRole('img', { name: 'Kropla', exact: true })).toHaveCount(question.answer)
+    }
+    await group.getByRole('button', { name: String(question.answer), exact: true }).click()
+    if (index < questions.length - 1) await dialog.getByRole('button', { name: 'Następna zagadka' }).click()
+  }
+  await expect(page.getByRole('dialog', { name: 'Zadanie ukończone!' })).toContainText('W misce jest świeża woda.')
+  await closeQuestSuccess(page)
 }

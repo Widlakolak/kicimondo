@@ -2,6 +2,9 @@ name: Frontend
 
 on:
   pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -26,4 +29,66 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:browser
+      - name: Run Playwright
+        id: playwright
+        run: npm run test:browser -- --reporter=dot,html
+        env:
+          PLAYWRIGHT_HTML_OPEN: never
+      - name: Upload Playwright failure diagnostics
+        if: ${{ failure() && steps.playwright.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-failure
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
+
+  android-debug:
+    needs: checks
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: true
+      - name: Install Android SDK
+        run: |
+          sdk="$RUNNER_TEMP/android-sdk"
+          archive="$RUNNER_TEMP/android-command-line-tools.zip"
+          curl --fail --silent --show-error --location --retry 3 \
+            https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip \
+            --output "$archive"
+          printf '7ec965280a073311c339e571cd5de778b9975026cfcbe79f2b1cdcb1e15317ee  %s\n' "$archive" | sha256sum --check
+          mkdir -p "$sdk/cmdline-tools"
+          unzip -q "$archive" -d "$sdk/cmdline-tools"
+          mv "$sdk/cmdline-tools/cmdline-tools" "$sdk/cmdline-tools/19.0"
+          sdkmanager="$sdk/cmdline-tools/19.0/bin/sdkmanager"
+          (set +o pipefail; yes | "$sdkmanager" --sdk_root="$sdk" --licenses >/dev/null)
+          "$sdkmanager" --sdk_root="$sdk" 'platforms;android-36' 'build-tools;35.0.0' 'build-tools;36.0.0'
+          printf 'ANDROID_HOME=%s\nANDROID_SDK_ROOT=%s\n' "$sdk" "$sdk" >> "$GITHUB_ENV"
+      - run: npm install --global npm@11.11.0
+      - run: npm ci --engine-strict
+      - run: npm run build:android
+      - run: ./gradlew --no-daemon --max-workers=4 assembleDebug
+        working-directory: frontend/android
+      - name: Verify and name the universal debug APK
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk kicimondo-debug.apk
+          bash scripts/verify-apk.sh kicimondo-debug.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: kicimondo-debug
+          path: frontend/kicimondo-debug.apk
+          if-no-files-found: error

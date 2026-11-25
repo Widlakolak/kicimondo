@@ -2,12 +2,31 @@
 <html lang="pl">
   <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="theme-color" content="#f7efe4">
     <title>Kicimondo</title>
   </head>
   <body>
     <div id="root"></div>
+    <main id="compatibility" style="max-width:34rem;margin:2rem auto;padding:0 1rem;font:1rem/1.5 sans-serif">
+      <h1>Kicimondo</h1>
+      <p>Jeśli gra się nie otwiera, przeglądarka lub Android WebView może być za stary.</p>
+      <p>Poproś dorosłego o sprawdzenie dostępnych aktualizacji systemu.</p>
+    </main>
+    <script>
+      (function () {
+        var chromium = /Chrom(?:e|ium)\/(\d+)/.exec(navigator.userAgent);
+        var dialog = document.createElement('dialog');
+        var canvas = document.createElement('canvas');
+        if ((!chromium || Number(chromium[1]) >= 80) &&
+            'noModule' in document.createElement('script') &&
+            typeof dialog.showModal === 'function' && typeof window.PointerEvent === 'function' &&
+            typeof canvas.setPointerCapture === 'function' && canvas.getContext('2d') &&
+            typeof Array.prototype.flatMap === 'function' && typeof Object.fromEntries === 'function') {
+          document.documentElement.setAttribute('data-compatible', '');
+        }
+      }());
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
