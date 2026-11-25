@@ -85,8 +85,10 @@ type Screen = 'loading' | 'welcome' | 'edit' | 'room'
 type Notice = keyof typeof pl.save | null
 
 export function App() {
-  const [status, setStatus] = useState<Notice>(null)
-  const [save, setSave] = useState<Save | null>(null)
+  const [record, setRecord] = useState<{ save: Save | null; status: Notice }>({ save: null, status: null })
+  const current = useRef(record)
+  const saveQueue = useRef<Promise<unknown>>(Promise.resolve())
+  const { save, status } = record
   const [screen, setScreen] = useState<Screen>('loading')
   const [busy, setBusy] = useState(false)
   const busyRef = useRef(false)
@@ -106,32 +108,42 @@ export function App() {
     let active = true
     void repository.load().then(({ save, status }) => {
       if (!active) return
-      setSave(save)
-      setStatus(status === 'ready' ? null : status)
+      current.current = { save, status: status === 'ready' ? null : status }
+      setRecord(current.current)
       setScreen(save ? 'welcome' : 'edit')
     })
     return () => { active = false }
   }, [])
 
+  function persist(command: SaveCommand): Promise<Save | null> {
+    const operation = saveQueue.current.then(async () => {
+      const before = current.current
+      let after: typeof before
+      if (before.status === 'invalid' || before.status === 'unavailable') {
+        after = { ...before, save: applyCommand(before.save, command) }
+      } else {
+        try {
+          after = { save: await repository.commit(command), status: null }
+        } catch {
+          after = { save: applyCommand(before.save, command), status: 'unavailable' }
+        }
+      }
+      current.current = after
+      setRecord(after)
+      return after.save
+    })
+    saveQueue.current = operation.catch(() => undefined)
+    return operation
+  }
+
   async function commit(command: SaveCommand) {
+    // Encounters queue alongside actions without temporarily disabling the controls.
+    if (command.type === 'discover') return persist(command)
     if (busyRef.current) return null
     busyRef.current = true
     setBusy(true)
     try {
-      let next: Save | null
-      if (status === 'invalid' || status === 'unavailable') {
-        next = applyCommand(save, command)
-      } else {
-        try {
-          next = await repository.commit(command)
-          setStatus(null)
-        } catch {
-          setStatus('unavailable')
-          next = applyCommand(save, command)
-        }
-      }
-      setSave(next)
-      return next
+      return await persist(command)
     } finally {
       busyRef.current = false
       setBusy(false)

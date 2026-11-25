@@ -1,5 +1,6 @@
 import type { Point } from '../core/room.ts'
 import type { pl } from '../i18n/pl.ts'
+import { gardenChallenges, gardenPictures } from './gardenChallenges.ts'
 import { houseChallenges, houseMatchPictures, sortPictures } from './houseChallenges.ts'
 
 type ChallengeText = {
@@ -26,7 +27,7 @@ export type MathChallenge = ChallengeText & {
   counter?: keyof typeof pl.math.counters
 }
 
-export const pictureIds = ['blanket', 'pillow', 'basket', ...houseMatchPictures, ...sortPictures] as const
+export const pictureIds = ['blanket', 'pillow', 'basket', ...houseMatchPictures, ...sortPictures, ...gardenPictures] as const
 export type PictureId = (typeof pictureIds)[number]
 type MatchPictureId = keyof typeof pl.match.pictures
 export type MatchChallenge = ChallengeText & {
@@ -46,10 +47,11 @@ export type SortChallenge = ChallengeText & {
 )
 
 export type Challenge = TraceChallenge | MathChallenge | MatchChallenge | SortChallenge
-export const contentVersion = 3
+export const contentVersion = 4
 
 export const challenges = {
   ...houseChallenges,
+  ...gardenChallenges,
   'clothes-to-basket': {
     type: 'TRACE_PATH',
     skillId: 'hand-eye-coordination',
@@ -97,6 +99,7 @@ export const locations = {
   hall: { entry: 'from-landing', art: 'hall' },
   kitchen: { entry: 'from-hall', art: 'kitchen' },
   living: { entry: 'from-hall', art: 'living' },
+  garden: { entry: 'from-hall', art: 'garden' },
 } as const
 
 export type LocationId = keyof typeof locations
@@ -108,26 +111,7 @@ export function isLocation(value: unknown): value is LocationId {
   return typeof value === 'string' && Object.prototype.hasOwnProperty.call(locations, value)
 }
 
-export type CatDefinition = {
-  id: string
-  location: LocationId
-  name: keyof typeof pl.cat.names
-  greet: Point
-  rest: Point
-  attractions: readonly { object: string; position: Point; activity: 'drinking' | 'resting' }[]
-}
-
-export const cats: readonly CatDefinition[] = [{
-  id: 'amber',
-  location: 'bedroom',
-  name: 'amber',
-  greet: { x: 124, y: 188 },
-  rest: { x: 148, y: 188 },
-  attractions: [
-    { object: 'water-bowl', position: { x: 210, y: 188 }, activity: 'drinking' },
-    { object: 'cat-bed', position: { x: 255, y: 188 }, activity: 'resting' },
-  ],
-}]
+export { cats, type CatDefinition } from './catCatalog.ts'
 
 export type Quest = {
   id: string
@@ -135,6 +119,7 @@ export type Quest = {
   interaction: string
   challenge: keyof typeof challenges
   reward: { id: string; points: number }
+  introduced?: 4
   effects: readonly (
     | { type: 'HIDE_OBJECT'; object: string }
     | { type: 'RESTORE_ATTRACTION'; object: string }
@@ -146,6 +131,12 @@ function houseQuest(location: LocationId, interaction: string, challenge: keyof 
   const id = location + '-' + challenge
   return { id, location, interaction, challenge, reward: { id: id + '-first', points: 1 },
     effects: [{ type: 'ORGANIZE_OBJECT', object: interaction }] }
+}
+
+function newQuest(location: LocationId, interaction: string, challenge: keyof typeof gardenChallenges, object = interaction): Quest {
+  const id = location + '-' + challenge
+  return { id, location, interaction, challenge, introduced: 4, reward: { id: id + '-first', points: 1 },
+    effects: [{ type: location === 'garden' ? 'RESTORE_ATTRACTION' : 'ORGANIZE_OBJECT', object }] }
 }
 
 export const quests: readonly Quest[] = [
@@ -182,6 +173,19 @@ export const quests: readonly Quest[] = [
   houseQuest('kitchen', 'fruit', 'count-fruit'),
   houseQuest('kitchen', 'table-settings', 'match-table-settings'),
   houseQuest('living', 'household-objects', 'sort-household-objects'),
+  newQuest('bedroom', 'desk-reading', 'read-desk-words', 'desk'),
+  newQuest('study', 'pencil-case', 'order-pencils'),
+  newQuest('bathroom', 'count-towels', 'count-towels', 'laundry'),
+  newQuest('kitchen', 'sort-counter', 'sort-counter-items', 'counter'),
+  newQuest('living', 'living-shelf', 'match-living-items', 'bookcase'),
+  newQuest('garden', 'garden-water', 'fill-garden-water'),
+  newQuest('garden', 'garden-bed', 'prepare-sheltered-bed'),
+  newQuest('garden', 'garden-post', 'restore-scratching-post'),
+  newQuest('garden', 'garden-tunnel', 'clear-tunnel'),
+  newQuest('garden', 'garden-toys', 'sort-garden-toys'),
+  newQuest('garden', 'garden-platform', 'order-platform-boards'),
+  newQuest('garden', 'garden-shelter', 'prepare-garden-shelter'),
+  newQuest('garden', 'garden-flowers', 'count-garden-flowers'),
 ]
 
 export type Transition = {
@@ -189,7 +193,7 @@ export type Transition = {
   interaction: string
   target: Checkpoint
   minimumPoints: number
-  kind?: 'stairs'
+  kind?: 'stairs' | 'gate'
 }
 
 export const transitions: readonly Transition[] = [
@@ -207,6 +211,8 @@ export const transitions: readonly Transition[] = [
   { location: 'kitchen', interaction: 'hall-door', minimumPoints: 0, target: { location: 'hall', spawn: 'from-kitchen' } },
   { location: 'hall', interaction: 'living-door', minimumPoints: 0, target: { location: 'living', spawn: 'from-hall' } },
   { location: 'living', interaction: 'hall-door', minimumPoints: 0, target: { location: 'hall', spawn: 'from-living' } },
+  { location: 'hall', interaction: 'garden-gate', kind: 'gate', minimumPoints: 16, target: { location: 'garden', spawn: 'from-hall' } },
+  { location: 'garden', interaction: 'return-hall', kind: 'gate', minimumPoints: 0, target: { location: 'hall', spawn: 'from-garden' } },
 ]
 
 type DialogueHint = Exclude<keyof typeof pl.dialogue, 'hania'>

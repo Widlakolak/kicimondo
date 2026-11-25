@@ -205,3 +205,17 @@ dialog::backdrop { background: rgba(41, 35, 41, .58); }
 .apple-counters .drop:not(.crossed) { background: #ad5552; }
 .apple-counters .drop { position: relative; }
 .apple-counters .drop::before { content: ''; position: absolute; top: -.2rem; left: .52rem; width: .42rem; height: .2rem; background: #527659; }
+
+.towel-counters .drop, .board-counters .drop, .flower-counters .drop { transform: none; position: relative; }
+.towel-counters .drop { border-radius: .1rem; width: 1.45rem; box-shadow: inset 0 -.2rem 0 #3f7980; }
+.board-counters .drop { border-radius: .1rem; width: 1.65rem; }
+.board-counters .drop:not(.crossed) { background: #a6744d; }
+.flower-counters .drop { border-radius: 45%; }
+.flower-counters .drop:not(.crossed) { background: #a55e87; }
+.flower-counters .drop::before { content: ''; position: absolute; width: .35rem; height: .35rem; border-radius: 50%; background: #f7d886; top: .4rem; left: .4rem; }
+
+.cat-collection { display: grid; grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr)); gap: .55rem; list-style: none; padding: 0; }
+.cat-collection li { background: #f2eadc; border: 1px solid #d8c8b6; border-radius: .45rem; padding: .45rem; }
+.cat-collection p { font-size: .92rem; margin: .35rem 0; }
+.cat-portrait { display: block; width: 4.5rem; height: 3.25rem; image-rendering: pixelated; }
+.cat-details h3 { margin: .4rem 0; }

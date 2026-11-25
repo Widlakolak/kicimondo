@@ -28,14 +28,14 @@ it('provides nine pre-gate rewards, three optional floor rewards, and routes hom
   const after = reachableLocations(8)
   expect(before.has('hall')).toBe(false)
   expect(before.size).toBe(5)
-  expect(quests.filter((quest) => before.has(quest.location))).toHaveLength(9)
-  expect(after.size).toBe(locationIds.length)
-  expect(quests.filter((quest) => !before.has(quest.location))).toHaveLength(3)
-  expect(quests.reduce((total, { reward }) => total + reward.points, 0)).toBe(12)
+  expect(quests.filter((quest) => !quest.introduced && before.has(quest.location))).toHaveLength(9)
+  expect(after.size).toBe(locationIds.length - 1)
+  expect(quests.filter((quest) => !quest.introduced && !before.has(quest.location))).toHaveLength(3)
+  expect(quests.filter((quest) => !quest.introduced).reduce((total, { reward }) => total + reward.points, 0)).toBe(12)
   for (const edge of transitions) {
     const back = transitions.find((candidate) => candidate.location === edge.target.location &&
       candidate.target.location === edge.location)!
-    const earliest = [0, 1, 8].find((budget) =>
+    const earliest = [0, 1, 8, 16].find((budget) =>
       reachableLocations(budget).has(edge.location) && budget >= edge.minimumPoints)!
     expect(back.minimumPoints).toBeLessThanOrEqual(earliest)
     expect(maps[edge.target.location].spawns.has(edge.target.spawn)).toBe(true)

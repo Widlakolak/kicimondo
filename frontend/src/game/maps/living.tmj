@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 5,
-  "nextobjectid": 19,
+  "nextobjectid": 20,
   "tilesets": [],
   "layers": [
     {
@@ -58,7 +58,8 @@
       "y": 0,
       "objects": [
         {"id": 15, "name": "household-objects", "x": 160, "y": 89, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
-        {"id": 18, "name": "hall-door", "x": 160, "y": 194, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 16}]}
+        {"id": 18, "name": "hall-door", "x": 160, "y": 194, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 16}]},
+        {"id": 19, "name": "living-shelf", "x": 257, "y": 177, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]}
       ]
     },
     {

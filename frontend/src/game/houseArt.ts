@@ -1,5 +1,6 @@
 import type { Box } from '../core/room'
 import type { FurnitureArt } from '../core/tiledMap'
+import type { GardenFurniture } from './gardenArt'
 import type { Paint } from './avatarArt'
 
 const palettes = {
@@ -47,7 +48,7 @@ export function paintHouseRoom(paint: Paint, location: keyof typeof palettes) {
   }
 }
 
-type HouseFurniture = Exclude<FurnitureArt, 'bed' | 'desk' | 'wardrobe' | 'door' | 'clothes' | 'bowl' | 'cat-bed'>
+type HouseFurniture = Exclude<FurnitureArt, GardenFurniture | 'bed' | 'desk' | 'wardrobe' | 'door' | 'clothes' | 'bowl' | 'cat-bed'>
 
 export function paintHouseFurniture(paint: Paint, art: HouseFurniture, box: Box, ready: boolean) {
   const { x, y, width, height } = box
@@ -133,12 +134,21 @@ export function paintHouseFurniture(paint: Paint, art: HouseFurniture, box: Box,
       trim(5)
       rect(0x8f685f, 4, 2, 24, 5)
       for (let y = 10; y < 22; y += 4) rect(light, 3, y, 26, 1)
+      if (ready) {
+        rect(blue, 7, 1, 17, 5)
+        rect(paper, 11, 0, 14, 3)
+      }
       break
     case 'counter':
       trim(0, 0xa88c79)
       rect(paper, 3, 2, 26, 10)
       rect(shadow, 5, 4, 9, 7)
       rect(blue, 19, 4, 8, 6)
+      if (ready) {
+        rect(leaf, 7, 4, 6, 5)
+        rect(paper, 20, 5, 3, 4)
+        rect(paper, 24, 5, 2, 4)
+      }
       rect(paper, 7, 16, 5, 2)
       rect(paper, 21, 16, 5, 2)
       break

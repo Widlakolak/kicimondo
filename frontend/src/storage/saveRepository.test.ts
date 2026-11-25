@@ -1,3 +1,4 @@
+import { earn, fromHouse, travel } from '../../e2e/gardenFixtures'
 import { IDBFactory } from 'fake-indexeddb'
 import { expect, it, vi } from 'vitest'
 import { quests } from '../content/pack'
@@ -126,19 +127,19 @@ it('migrates a Stage 02 record in place on the next write and preserves its land
   await writeRaw(indexed, stage02)
   expect(await repository.load()).toEqual({
     status: 'ready',
-    save: { ...stage02, schemaVersion: 2, contentVersion: 3, restored: [], trust: [] },
+    save: { ...stage02, schemaVersion: 3, contentVersion: 4, restored: [], trust: [], discovered: [] },
   })
   await repository.commit({ type: 'transition', location: 'landing', interaction: 'bedroom-door' })
   const water = { type: 'complete', quest: 'bedroom-fill-water-bowl' } as const
   const other = createSaveRepository(() => indexed, () => ({ getItem: () => null }))
   await Promise.all([repository.commit(water), other.commit(water)])
   expect((await repository.load()).save).toMatchObject({
-    schemaVersion: 2, contentVersion: 3, profile,
+    schemaVersion: 3, contentVersion: 4, profile,
     checkpoint: { location: 'bedroom', spawn: 'from-landing' },
     completed: [quests[0].id, water.quest],
     hidden: stage02.hidden,
     restored: [{ location: 'bedroom', object: 'water-bowl' }],
-    trust: [{ cat: 'amber', id: 'restored:water-bowl' }],
+    trust: [{ cat: 'amber', id: 'restored:water-bowl' }], discovered: [],
   })
   expect(pointsOf((await repository.load()).save!)).toBe(2)
 })
@@ -146,13 +147,13 @@ it('migrates a Stage 02 record in place on the next write and preserves its land
 it('migrates an earlier landing save and rolls back a new organized prop and reward together', async () => {
   const { indexed, repository } = setup()
   await repository.commit({ type: 'profile', profile })
-  for (const quest of quests.filter(({ location }) => location === 'bedroom')) {
+  for (const quest of quests.filter(({ location, introduced }) => location === 'bedroom' && !introduced)) {
     await repository.commit({ type: 'complete', quest: quest.id })
   }
   await repository.commit({ type: 'pet', cat: 'amber' })
   const landing = await repository.commit({ type: 'transition', location: 'bedroom', interaction: 'closed-door' })
-  await writeRaw(indexed, { ...landing, contentVersion: 2 })
-  expect(await repository.load()).toEqual({ status: 'ready', save: { ...landing, contentVersion: 3 } })
+  await writeRaw(indexed, { ...landing, schemaVersion: 2, contentVersion: 2 })
+  expect(await repository.load()).toEqual({ status: 'ready', save: landing })
   const study = await repository.commit({ type: 'transition', location: 'landing', interaction: 'study-door' })
   const pack = { type: 'complete', quest: 'study-pack-school-bag' } as const
   await withFailedCurrentWrite(indexed, () => expect(repository.commit(pack)).rejects.toThrow('Full'))
@@ -165,4 +166,31 @@ it('migrates an earlier landing save and rolls back a new organized prop and rew
   expect(after.completed.filter((id) => id === pack.quest)).toHaveLength(1)
   expect(after.restored).toContainEqual({ location: 'study', object: 'school-bag' })
   expect(after.trust).toEqual(landing?.trust)
+})
+
+it('serializes an encounter, restoration and greeting across tabs and rolls back an aborted discovery', async () => {
+  const { indexed, repository } = setup()
+  await repository.load()
+  const seed = travel(earn(fromHouse(), ({ id }) => id === 'living-match-living-items'), 'garden')
+  await writeRaw(indexed, seed)
+  await repository.commit({ type: 'complete', quest: 'garden-fill-garden-water' })
+  await repository.commit({ type: 'complete', quest: 'garden-prepare-sheltered-bed' })
+  const discover = { type: 'discover', cat: 'puszek' } as const
+  await withFailedCurrentWrite(indexed, () => expect(repository.commit(discover)).rejects.toThrow('Full'))
+  expect((await repository.load()).save?.discovered).toEqual(['amber'])
+
+  const other = createSaveRepository(() => indexed, () => ({ getItem: () => null }))
+  await Promise.all([
+    repository.commit(discover),
+    other.commit({ type: 'complete', quest: 'garden-restore-scratching-post' }),
+    other.commit(discover),
+    repository.commit({ type: 'pet', cat: 'puszek' }),
+    other.commit({ type: 'pet', cat: 'puszek' }),
+  ])
+  const result = (await repository.load()).save!
+  expect(pointsOf(result)).toBe(19)
+  expect(result.discovered).toEqual(['amber', 'puszek'])
+  expect(result.trust.filter(({ cat }) => cat === 'puszek')).toEqual([
+    { cat: 'puszek', id: 'habitat-ready' }, { cat: 'puszek', id: 'first-pet' },
+  ])
 })

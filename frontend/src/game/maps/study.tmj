@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 5,
-  "nextobjectid": 21,
+  "nextobjectid": 23,
   "tilesets": [],
   "layers": [
     {
@@ -28,7 +28,8 @@
         {"id": 12, "name": "books", "x": 226, "y": 38, "width": 54, "height": 34, "properties": [{"name": "art", "type": "string", "value": "books"}, {"name": "solid", "type": "bool", "value": true}]},
         {"id": 13, "name": "window-plant", "x": 252, "y": 148, "width": 21, "height": 28, "properties": [{"name": "art", "type": "string", "value": "plant"}, {"name": "solid", "type": "bool", "value": true}]},
         {"id": 14, "name": "study-desk", "x": 36, "y": 128, "width": 54, "height": 39, "properties": [{"name": "art", "type": "string", "value": "desk"}, {"name": "solid", "type": "bool", "value": true}]},
-        {"id": 19, "name": "landing-door", "x": 144, "y": 205, "width": 32, "height": 19, "properties": [{"name": "art", "type": "string", "value": "door"}]}
+        {"id": 19, "name": "landing-door", "x": 144, "y": 205, "width": 32, "height": 19, "properties": [{"name": "art", "type": "string", "value": "door"}]},
+        {"id": 22, "name": "pencil-case", "x": 240, "y": 193, "width": 46, "height": 24, "properties": [{"name": "art", "type": "string", "value": "supplies"}, {"name": "solid", "type": "bool", "value": true}]}
       ]
     },
     {
@@ -60,7 +61,8 @@
         {"id": 15, "name": "school-bag", "x": 66, "y": 85, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
         {"id": 16, "name": "school-supplies", "x": 160, "y": 85, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
         {"id": 17, "name": "books", "x": 253, "y": 85, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
-        {"id": 20, "name": "landing-door", "x": 160, "y": 194, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 16}]}
+        {"id": 20, "name": "landing-door", "x": 160, "y": 194, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 16}]},
+        {"id": 21, "name": "pencil-case", "x": 263, "y": 183, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]}
       ]
     },
     {

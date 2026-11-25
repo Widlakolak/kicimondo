@@ -1,6 +1,6 @@
 # Stage 06: Garden, visiting cats and Kicipedia
 
-Status: ready for implementation after PR #5 is merged. Stage 05 CI passed; owner gameplay review and physical MediaPad T5 testing are deferred by owner approval. Do not mark either as accepted.
+Status: implemented for owner review after PR #5 merged. Stage 05 CI passed; owner gameplay review and physical MediaPad T5 testing are deferred by owner approval. Do not mark either as accepted.
 
 ## Goal
 
@@ -47,6 +47,19 @@ Introduce the first outdoor habitat loop: explore, restore fixed attractions thr
 - Run npm ci --engine-strict, lint, typecheck, unit tests, production build and Playwright; retain existing regression and offline/update tests. Add unit tests for habitat eligibility/rotation, slot reservation, movement, discovery, migration and gate graph. Add browser flow for 15/16 gate, garden tasks, visitor discovery, Kicipedia and reload offline. Test all 25 rewards in domain/browser coverage as appropriate. Verify portrait/landscape layout, Android build and artifact. Re-run legacy Chromium smoke if available; distinguish browser testing from native testing.
 - Update README, ROADMAP, GAME_DESIGN, ARCHITECTURE, CONTENT, stage notes and ASSET_LICENSES with actual results. Link this stage in the roadmap. Record the deferred owner reviews accurately. Code/docs concise English, player UI Polish.
 
+## Verification
+
+- On Node.js 24.13.1 and npm 11.11.0, strict installation, lint, type checks, all 60 unit tests, the production build and all 19 Playwright tests passed.
+- Browser coverage exercised the 15 and 16 PS gate, all eight garden restorations offline, encounters with all four visitors, and a return to the house to finish at 25 PS. It also exercised discovery persistence, Back navigation and tablet layouts. The production precache includes all 10 generated assets, including the lazy room bundle with the maps and artwork.
+- Headless Chromium 80.0.3987.0 on Linux ran the garden offline and preserved a Kicipedia discovery across reload.
+- The local universal debug APK was built and verified with a debug signature, application ID `io.github.widlakolak.kicimondo`, minimum Android API 24, target API 36 and version 6 (0.6.0). Physical MediaPad T5 compatibility, performance and same-key upgrades remain for owner review.
+
+## Manual review
+
+1. Load a Stage 05 save on the same origin. Check the 12 PS, checkpoint, house props and Bursztynek's trust. A prior accepted greeting reveals his entry.
+2. Try the gate with 15 PS. Earn one more point and enter with one indoor task unfinished. Restore the eight plots, return through the hall and finish the remaining indoor task for 25 PS.
+3. Restore all four habitat combinations and stay on the garden path in active play. Watch the visitors change and approach the cats from the path. Open Kicipedia from gameplay and from Pause. Check that Back returns through the collection and that the entries and trust survive reload.
+4. On web, wait for the offline-ready message at a secure origin, disconnect, reload and repeat the garden flow in landscape and portrait. On a physical MediaPad T5, test the debug APK in airplane mode, hardware Back and application lifecycle. Verify a same-key upgrade with a suitably signed build. Physical-device performance and signing upgrade checks remain pending.
 ## Out of scope
 
 Backend, PostgreSQL, cloud sync, QNAP deployment, garden free placement, crafting, coins, basement, forest, academy, public profiles, advertising, store release, production signing and adaptive learning.

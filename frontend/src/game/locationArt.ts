@@ -2,9 +2,14 @@ import type { FurnitureArt } from '../core/tiledMap'
 import type { LocationId } from '../content/pack'
 import type { Box } from '../core/room'
 import type { Paint } from './avatarArt'
+import { paintGarden, paintGardenFurniture } from './gardenArt'
 import { paintHouseRoom, paintHouseFurniture } from './houseArt'
 
 export function paintRoom(paint: Paint, theme: LocationId) {
+  if (theme === 'garden') {
+    paintGarden(paint)
+    return
+  }
   if (theme !== 'bedroom' && theme !== 'landing') {
     paintHouseRoom(paint, theme)
     return
@@ -112,6 +117,11 @@ export function paintFurniture(paint: Paint, art: FurnitureArt, box: Box, ready:
       rect(0xeab960, w - 15, 8, 2, 6)
       rect(0x6c8d91, w - 11, 6, 2, 8)
       rect(0xe6b07e, w - 19, 31, 8, 2)
+      if (ready) {
+        rect(0x79698a, 27, 8, 15, 12)
+        rect(0xffeed6, 28, 9, 13, 9)
+        rect(0xb89085, 34, 9, 1, 9)
+      }
       break
     case 'wardrobe':
       rect(0x6a4652, 0, 0, w, h)
@@ -166,6 +176,17 @@ export function paintFurniture(paint: Paint, art: FurnitureArt, box: Box, ready:
         rect(0x9db39a, 8, 12, 13, 3)
         rect(0x9db39a, 10, 16, 11, 2)
       }
+      break
+    case 'gate':
+    case 'garden-bowl':
+    case 'garden-bed':
+    case 'garden-post':
+    case 'garden-tunnel':
+    case 'garden-toys':
+    case 'garden-platform':
+    case 'garden-shelter':
+    case 'garden-flowers':
+      paintGardenFurniture(paint, art, box, ready)
       break
     default:
       paintHouseFurniture(paint, art, box, ready)
