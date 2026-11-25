@@ -1,0 +1,34 @@
+# Client
+node_modules/
+**/dist/
+**/.vite/
+**/coverage/
+**/playwright-report/
+**/test-results/
+
+# JVM / Android
+.gradle/
+**/build/
+**/local.properties
+**/.cxx/
+*.apk
+*.aab
+*.jks
+*.keystore
+
+# Local configuration and data
+.env
+.env.*
+!.env.example
+**/application-local.yaml
+**/application-local.yml
+postgres-data/
+backups/
+*.log
+*.save.json
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

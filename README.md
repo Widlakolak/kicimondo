@@ -15,6 +15,10 @@ The first milestone is a small playable room: choose a character, move around, c
 - Java 21, Spring Boot, Gradle, PostgreSQL and Flyway for content management and optional progress sync in later stages.
 - Capacitor for Android; Docker and GitHub Actions for a web deployment on QNAP.
 
+## Getting started
+
+The repository currently contains the design and implementation plan. Start with [Stage 01](docs/stages/01-room-prototype.md) when setting up the client. Build and run commands will be added here once they exist.
+
 ## Documentation
 
 - [Game design](docs/GAME_DESIGN.md)
@@ -28,5 +32,7 @@ The first milestone is a small playable room: choose a character, move around, c
 - [Originality](docs/ORIGINALITY.md)
 - [Asset licenses](ASSET_LICENSES.md)
 - [Development instructions](AGENTS.md)
+- [Architecture decisions](docs/adr/0001-local-first-web-client.md)
+- [Stage 01](docs/stages/01-room-prototype.md)
 
 The game will initially use Polish text. Code and technical documentation are in English. Names other than Kicimondo and Kicipedia are provisional. No open-source license has been selected.
