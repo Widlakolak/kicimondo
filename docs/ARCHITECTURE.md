@@ -1,6 +1,6 @@
 # Architecture
 
-Status: Stage 03 client implemented. Later systems described here are planned.
+Status: Stage 04 web and Android packaging implemented. Later systems described here are planned.
 
 ## Stack and boundaries
 
@@ -14,7 +14,7 @@ One Phaser scene loads the current location from the Tiled map registry and reso
 
 ## Intended layout
 
-    frontend/             game client and Android wrapper (when added)
+    frontend/             game client and Android wrapper
       src/game/           Phaser scenes, input, interactions
       src/core/           game rules, domain state
       src/challenges/     educational components and validators
@@ -38,7 +38,9 @@ The client is authoritative for single-player state. The game stores one local p
 
 Each command reads the current record inside an IndexedDB read-write transaction. Quest completion adds its ID, unique reward, world effects and any associated restoration trust in the same transaction. The first accepted pet interaction adds its own trust event. Trust is derived from unique event IDs and persists independently of PS. Lifetime PS comes from the ledger. Door access uses the resulting point total. The previous valid snapshot is retained in the same transaction. A malformed record can be recovered from that snapshot. Unsupported versions and records with no recoverable snapshot are preserved for a compatible reader. If a write fails, the UI warns that later changes last only for the current session.
 
-Bundle core maps, content, graphics and sounds. PWA must cache a coherent version after the initial online load; Android ships a bundled client. A network failure cannot stop a local exercise. Do not force refresh during gameplay. Handle cache/save schema migrations explicitly. Export/import user-controlled backups; imported data is untrusted and validated. Browser storage can be cleared.
+The production web build generates a manifest and a versioned service worker. The worker verifies integrity and precaches every emitted application file, including lazy chunks, before it can control a page. The old version continues serving its own cache while windows are open. A waiting worker activates after those windows close, then cleans up older caches within the scope. The menu shows update instructions; the app does not reload itself. IndexedDB stays independent of caches.
+
+The Android build uses a separate output without a manifest or worker. Capacitor serves bundled content under `https://localhost`; retain that origin and the application ID for IndexedDB. Browser and APK data are separate. Capacitor App forwards Back and foreground state; the existing room bridge cancels an unfinished exercise, toggles pause, and suspends the renderer while backgrounded. Completed transactions survive normal restarts. Physical Android persistence and signing upgrades have their own acceptance checks. Backup/export/import remains deferred.
 
 ## Content and optional server
 

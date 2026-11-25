@@ -1,14 +1,21 @@
 import { canPet, type CatState } from '../core/cat'
 import type { Paint } from './avatarArt'
 
-export function paintCat(paint: Paint, cat: CatState) {
-  const { activity, elapsed, facing } = cat
+export function catFrame(cat: CatState) {
+  const beat = Math.floor(cat.elapsed / (cat.activity === 'walking' ? 125 : 260)) % 2
+  const receptive = canPet(cat)
+  return beat + (receptive ? 2 : 0) + (receptive && cat.elapsed % 2200 > 1950 ? 4 : 0)
+}
+
+export function paintCat(paint: Paint, { activity, facing }: CatState, frame: number) {
+  const beat = frame % 2
+  const receptive = frame >= 2
+  const blink = frame >= 4
   const stripe = 0xa75c39
   const coat = 0xd78a4f
   const cream = 0xf3c993
   const ink = 0x4a333c
   const blush = 0xb96972
-  const beat = Math.floor(elapsed / (activity === 'walking' ? 125 : 260)) % 2
   const lying = activity === 'resting' || activity === 'petting'
   const head = activity === 'drinking' ? -7 + beat : lying ? -9 : -13
   const rect: Paint = (color, x, y, width, height) =>
@@ -31,15 +38,15 @@ export function paintCat(paint: Paint, cat: CatState) {
   rect(stripe, 1, head, 10, 8)
   rect(coat, 2, head + 1, 9, 7)
   rect(stripe, 2, head - 3, 3, 4)
-  rect(stripe, 8, head - 3 + Number(canPet(cat) && beat === 1), 3, 4)
+  rect(stripe, 8, head - 3 + Number(receptive && beat === 1), 3, 4)
   rect(cream, 7, head + 5, 6, 3)
-  rect(ink, 8, head + 3, 2, lying || (canPet(cat) && elapsed % 2200 > 1950) ? 1 : 2)
+  rect(ink, 8, head + 3, 2, lying || blink ? 1 : 2)
   rect(blush, 12, head + 5, 2, 1)
 
   if (activity === 'drinking') {
     rect(0x648eaa, 11 + beat, head + 8, 3, 2)
     rect(0xb1d5d9, 15 - beat, head + 10, 3, 1)
-  } else if (canPet(cat) || activity === 'petting') {
+  } else if (receptive || activity === 'petting') {
     const height = activity === 'petting' ? -24 - beat * 3 : -23
     rect(0xbb626a, -4, height, 3, 3)
     rect(0xbb626a, 0, height, 3, 3)

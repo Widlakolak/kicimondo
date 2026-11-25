@@ -6,7 +6,9 @@ Kicimondo is a 2D adventure game for children in the first years of primary scho
 
 Meet Bursztynek, the resident cat. Put away the clothes by tracing, fill the water bowl with counting and arithmetic, and prepare the cat bed by matching Polish words to pictures. The cat uses the restored spots and shows when it is ready for petting. The first independence point opens the door to the landing.
 
-The browser stores the profile, quest progress, location and trust in IndexedDB. Earlier saves carry over on the same local address and browser profile.
+The browser stores the profile, quest progress, location and trust in IndexedDB. Earlier saves carry over on the same origin and browser profile.
+
+The production web build is installable on supported browsers and plays offline after “Gra gotowa do działania bez internetu” appears. The Android debug build bundles the game for a first launch in airplane mode. Android and browser saves are separate. MediaPad T5 device acceptance is pending. See the [installation and upgrade guide](docs/DEPLOYMENT.md#android).
 
 ## Getting started
 
@@ -52,6 +54,7 @@ The browser suite serves the production build. On Linux, use `npx playwright ins
 - [Stage 01](docs/stages/01-room-prototype.md)
 - [Stage 02](docs/stages/02-first-quest.md)
 - [Stage 03](docs/stages/03-first-cat.md)
+- [Stage 04](docs/stages/04-android-pwa.md)
 - [Codex task prompt](docs/CODEX.md)
 
 The game uses Polish text. Code and technical documentation are in English. Names other than Kicimondo and Kicipedia are provisional. No open-source license has been selected.

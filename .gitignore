@@ -1,6 +1,7 @@
 # Client
 node_modules/
 **/dist/
+/frontend/dist-android/
 **/.vite/
 **/coverage/
 **/playwright-report/

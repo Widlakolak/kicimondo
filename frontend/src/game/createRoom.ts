@@ -4,7 +4,7 @@ import { cats, locations } from '../content/pack'
 import { maps } from '../content/world'
 import { solidsFor } from '../core/tiledMap'
 import { canPet, petCat, startCat, stepCat } from '../core/cat'
-import { paintCat } from './catArt'
+import { catFrame, paintCat } from './catArt'
 import type { Avatar } from '../core/profile'
 import { moveInRoom, nearbyInteraction, type Direction, type InteractionId } from '../core/room'
 import { paintAvatar, type Paint } from './avatarArt'
@@ -48,6 +48,7 @@ export function createRoom(
     private player!: Phaser.GameObjects.Graphics
     private catSprite?: Phaser.GameObjects.Graphics
     private cat = resident ? startCat(resident) : null
+    private lastCatFrame = ''
     private catCue: CatCue | null = null
     private marker!: Phaser.GameObjects.Graphics
     private position = { ...spawn! }
@@ -130,14 +131,20 @@ export function createRoom(
       const x = Math.round(cat.position.x)
       const y = Math.round(cat.position.y)
       this.catSprite.setPosition(x, y)
-      paintCat(painter(this.catSprite.clear()), cat)
+      const frame = catFrame(cat)
+      const frameKey = cat.activity + ':' + cat.facing + ':' + frame
+      if (frameKey !== this.lastCatFrame) {
+        this.lastCatFrame = frameKey
+        paintCat(painter(this.catSprite.clear()), cat, frame)
+      }
       // Depth sorting leaves the cat and avatar free to share walkable space.
       this.catSprite.setDepth(y)
       this.player.setDepth(Math.round(this.position.y))
-      const observed = { catActivity: cat.activity, catX: String(x), catY: String(y), catElapsed: String(Math.floor(cat.elapsed)) }
-      for (const [key, value] of Object.entries(observed)) {
-        if (parent.dataset[key] !== value) parent.dataset[key] = value
-      }
+      if (parent.dataset.catActivity !== cat.activity) parent.dataset.catActivity = cat.activity
+      if (parent.dataset.catX !== String(x)) parent.dataset.catX = String(x)
+      if (parent.dataset.catY !== String(y)) parent.dataset.catY = String(y)
+      const elapsed = String(Math.floor(cat.elapsed))
+      if (parent.dataset.catElapsed !== elapsed) parent.dataset.catElapsed = elapsed
     }
 
     private renderPlayer(walking: boolean, delta: number) {
@@ -172,6 +179,10 @@ export function createRoom(
   })
   return {
     setWorld(next: WorldState) { world = next },
+    setBackgrounded(backgrounded: boolean) {
+      if (backgrounded) game.pause()
+      else game.resume()
+    },
     destroy() { game.destroy(true) },
   }
 }

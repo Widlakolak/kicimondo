@@ -1,49 +1,8 @@
-import { expect, test, type Locator, type Page } from '@playwright/test'
-import { challenges } from '../src/content/pack'
-import { mathQuestions } from '../src/core/education'
-import { enterRoom, holdKey, nickname, pixelAt, reach, roomTitle, saveRecord, stage } from './roomHelpers'
+import { expect, test, type Page } from '@playwright/test'
+import { enterRoom, holdKey, nickname, pixelAt, reach, roomTitle, saveRecord, stage, matchBed, fillWater } from './roomHelpers'
 
 const interact = (page: Page) => page.getByRole('button', { name: 'Sprawdź' })
 const trust = (page: Page, count: number) => page.getByText(`Zaufanie · Bursztynek: ${count}`, { exact: true })
-
-async function matchBed(page: Page, choose = (control: Locator) => control.click()) {
-  const dialog = page.getByRole('dialog', { name: 'Legowisko dla kota' })
-  await expect(dialog).toBeVisible()
-  await choose(dialog.getByRole('button', { name: 'Koc', exact: true }))
-  await dialog.getByRole('button', { name: 'Obrazek: koszyk' }).click()
-  await expect(dialog.getByText('To inna para.', { exact: false })).toBeVisible()
-  await dialog.getByRole('button', { name: 'Podpowiedź' }).click()
-  await expect(dialog.getByText('Koc grzeje', { exact: false })).toBeVisible()
-  await choose(dialog.getByRole('button', { name: 'Obrazek: koc' }))
-  await dialog.getByRole('button', { name: 'Poduszka', exact: true }).press('Enter')
-  await dialog.getByRole('button', { name: 'Obrazek: poduszka' }).press('Enter')
-  await dialog.getByRole('button', { name: 'Koszyk', exact: true }).click()
-  await dialog.getByRole('button', { name: 'Obrazek: koszyk' }).click()
-  await expect(page.getByRole('dialog', { name: 'Zadanie ukończone!' })).toContainText('Legowisko jest gotowe.')
-  await page.getByRole('button', { name: 'Zamknij' }).click()
-  await expect(page.getByRole('dialog')).toHaveCount(0)
-}
-
-async function fillWater(page: Page) {
-  const dialog = page.getByRole('dialog', { name: 'Woda dla kota' })
-  await expect(dialog).toBeVisible()
-  const questions = mathQuestions(challenges['count-water-drops'])
-  for (const [index, question] of questions.entries()) {
-    const group = dialog.getByRole('group', { name: 'Odpowiedzi' })
-    await expect(dialog.getByText(`Zagadka ${index + 1} z 3`)).toBeVisible()
-    if (index === 1) {
-      await group.getByRole('button', { name: String(question.options.find((n) => n !== question.answer)), exact: true }).click()
-      await expect(dialog.getByText('Spróbuj jeszcze raz.', { exact: false })).toBeVisible()
-      await dialog.getByRole('button', { name: 'Podpowiedź' }).click()
-      await expect(dialog.getByRole('img', { name: 'Kropla', exact: true })).toHaveCount(question.answer)
-    }
-    await group.getByRole('button', { name: String(question.answer), exact: true }).click()
-    if (index < questions.length - 1) await dialog.getByRole('button', { name: 'Następna zagadka' }).click()
-  }
-  await expect(page.getByRole('dialog', { name: 'Zadanie ukończone!' })).toContainText('W misce jest świeża woda.')
-  await page.getByRole('button', { name: 'Zamknij' }).click()
-  await expect(page.getByRole('dialog')).toHaveCount(0)
-}
 
 async function catClock(page: Page) {
   return stage(page).evaluate(async (element: HTMLElement) => {

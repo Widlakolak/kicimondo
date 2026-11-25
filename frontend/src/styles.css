@@ -43,6 +43,7 @@ button, input, .avatar-option { -webkit-tap-highlight-color: transparent; }
   border: 1px solid var(--outline);
   border-radius: 1.35rem;
   box-shadow: 0 7px 0 #eadbc8;
+  padding: 1rem;
   padding: clamp(.85rem, 3vw, 1.8rem);
 }
 h1, h2 { font-family: Georgia, serif; line-height: 1.08; margin: 0; }
@@ -64,9 +65,9 @@ legend, .field label { font-weight: 700; padding: 0; margin-bottom: .55rem; }
   font-size: clamp(.8rem, 3.6vw, 1rem);
   cursor: pointer;
 }
-.avatar-option:has(:checked) { border-color: #447051; box-shadow: inset 0 0 0 1px #447051; background: #eff4e8; }
-.avatar-option:has(:focus-visible) { outline: 3px solid #24664f; outline-offset: 3px; }
-.avatar-option input { position: absolute; inset: .55rem auto auto .5rem; margin: 0; accent-color: var(--green); }
+.avatar-option.selected { border-color: #447051; box-shadow: inset 0 0 0 1px #447051; background: #eff4e8; }
+.avatar-option:focus-within { outline: 3px solid #24664f; outline-offset: 3px; }
+.avatar-option input { position: absolute; top: .55rem; left: .5rem; margin: 0; accent-color: var(--green); }
 .avatar-portrait {
   height: 5.65rem;
   width: min(100%, 7rem);
@@ -126,26 +127,26 @@ legend, .field label { font-weight: 700; padding: 0; margin-bottom: .55rem; }
 .interact { min-width: 6rem; }
 .interact:disabled { background: #e8e6dc; color: #66685b; }
 dialog { width: min(26rem, calc(100% - 2rem)); border: 1px solid var(--outline); border-radius: 1rem; padding: 1.35rem; background: var(--paper); color: var(--ink); }
-dialog::backdrop { background: rgb(41 35 41 / 58%); }
+dialog::backdrop { background: rgba(41, 35, 41, .58); }
 
 @media (max-width: 34rem) {
   .shell { padding: .75rem .6rem 1.25rem; }
   .brand { margin-bottom: .65rem; }
 }
 
-@media (orientation: landscape) and (max-height: 32rem) and (min-width: 36rem) {
-  .gameplay { max-width: 53rem; }
-  .room { display: grid; grid-template-columns: minmax(0, 1fr) minmax(10rem, .55fr); gap: .5rem .9rem; }
+@media (orientation: landscape) and (min-width: 36rem) {
+  .gameplay { max-width: 62rem; }
+  .room { display: grid; grid-template-columns: minmax(0, 1fr) minmax(10rem, .43fr); gap: .5rem .9rem; }
   .room-header { grid-column: 1 / -1; margin-bottom: 0; }
-  .world { grid-row: span 3; align-self: start; width: min(100%, 78vh); }
+  .world { grid-row: span 3; align-self: start; width: min(100%, max(14rem, calc((100vh - 16rem) * 4 / 3))); }
   .controls { align-content: start; }
 }
 
 .room-actions { display: flex; align-items: center; gap: .6rem; flex-wrap: wrap; }
 .points { border-radius: .6rem; background: #f2e7c8; color: #644c29; padding: .45rem .7rem; font-weight: 750; }
-.quest-dialog { width: min(34rem, calc(100% - 1rem)); max-height: calc(100dvh - 1rem); padding: clamp(.85rem, 3vw, 1.35rem); }
+.quest-dialog { width: min(34rem, calc(100% - 1rem)); max-height: calc(100vh - 1rem); max-height: calc(100dvh - 1rem); padding: clamp(.85rem, 3vw, 1.35rem); }
 .challenge p { margin: .55rem 0; }
-.trace-board { margin: .65rem auto; width: min(100%, 19rem, 48dvh); }
+.trace-board { margin: .65rem auto; width: min(100%, 19rem, 48vh); width: min(100%, 19rem, 48dvh); }
 .trace-board svg { display: block; width: 100%; background: #f7eddb; border: 1px solid #dfd2b9; border-radius: .85rem; touch-action: none; user-select: none; }
 .trace-board polyline { fill: none; stroke-linejoin: round; stroke-linecap: round; }
 .trace-corridor { stroke: #e5d6af; }
@@ -175,3 +176,21 @@ dialog::backdrop { background: rgb(41 35 41 / 58%); }
 .picture-choice { display: grid; place-items: center; position: relative; min-width: 3.7rem; min-height: 3.7rem; }
 .picture-choice svg { display: block; width: 2.6rem; height: 2.6rem; }
 .picture-choice span { position: absolute; right: .2rem; bottom: .1rem; }
+
+/* Older Chromium keeps the fallback declarations and sizes the canvas from its intrinsic ratio. */
+.shell {
+  padding-left: max(.6rem, env(safe-area-inset-left));
+  padding-right: max(.6rem, env(safe-area-inset-right));
+  padding-top: max(1rem, env(safe-area-inset-top));
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom));
+}
+.offline-status { margin-top: .9rem; color: var(--muted); font-size: .9rem; }
+.pause-menu { margin-right: .55rem; }
+.room-actions > * + *, .profile-actions > * + * { margin-left: .5rem; }
+@supports (selector(:focus-visible)) {
+  .room-actions > * + *, .profile-actions > * + * { margin-left: 0; }
+}
+@media (orientation: landscape) and (max-height: 42rem) and (min-width: 36rem) {
+  .gameplay .brand { margin-bottom: .5rem; }
+  .gameplay .room { padding: .85rem; }
+}
