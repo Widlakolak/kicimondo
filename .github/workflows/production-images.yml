@@ -53,7 +53,8 @@ jobs:
             --label "org.opencontainers.image.source=$source" -t "$KICIMONDO_BACKEND_IMAGE" .
       - working-directory: frontend
         run: npx playwright install --with-deps chromium
-      - working-directory: frontend
+      - name: Run production smoke with the pinned PostgreSQL image
+        working-directory: frontend
         run: node scripts/qnapSmoke.mjs
       - uses: actions/upload-artifact@v4
         if: failure()

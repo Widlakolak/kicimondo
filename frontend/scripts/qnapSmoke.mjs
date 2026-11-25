@@ -15,7 +15,6 @@ const project = 'kicimondo-smoke-' + pid + '-' + randomBytes(3).toString('hex')
 const previous = { frontend: project + '-frontend:previous', backend: project + '-backend:previous' }
 const current = { frontend: env.KICIMONDO_FRONTEND_IMAGE, backend: env.KICIMONDO_BACKEND_IMAGE }
 assert(current.frontend && current.backend, 'Set the two locally built production image references')
-const postgres = 'postgres:17.9-alpine@sha256:c7526c0f6c3f30260a563d7bcf8ad778effac59a44f8ffa86678c35418338609'
 const tmp = await mkdtemp(join(tmpdir(), project + '-'))
 const release = join(tmp, 'release.env')
 const archiveDir = join(tmp, 'backups')
@@ -86,14 +85,14 @@ function checksums() {
   return ['psql', '-XAt', '-v', 'ON_ERROR_STOP=1', '-U', 'kicimondo', '-d', 'kicimondo', '-c', query]
 }
 
-async function checkBackup() {
+async function checkBackup(postgres) {
   const saved = execFileSync('sh', [join(directory, 'backup.sh'), archiveDir, release, project], {
     encoding: 'utf8', env: { ...env, KICIMONDO_FRONTEND_IMAGE: current.frontend, KICIMONDO_BACKEND_IMAGE: current.backend },
   }).trim()
   const dump = join(saved, 'content.dump')
   assert.equal((await stat(dump)).mode & 0o777, 0o600)
   assert((await readFile(join(saved, 'release.txt'), 'utf8')).includes(current.backend))
-  docker(['run', '-d', '--name', restore, '--network', 'none', '-e', 'POSTGRES_USER=kicimondo',
+  docker(['run', '--pull', 'never', '-d', '--name', restore, '--network', 'none', '-e', 'POSTGRES_USER=kicimondo',
     '-e', 'POSTGRES_DB=kicimondo', '-e', 'POSTGRES_HOST_AUTH_METHOD=trust', postgres, '-c', 'listen_addresses='])
   // The official image starts a temporary server during initialization.
   await expect.poll(() => docker(['logs', restore]), { timeout: 30_000 }).toContain('init process complete')
@@ -140,6 +139,10 @@ try {
   }
 
   compose(['config', '--quiet'])
+  const postgres = compose(['config', '--images', 'kicimondo-postgres'])
+  assert.match(postgres, /^\S+@sha256:[a-f0-9]{64}$/, 'PostgreSQL must use a digest-pinned image')
+  globalThis.console.log(docker(['pull', '--platform', 'linux/amd64', postgres]))
+  assert.equal(docker(['image', 'inspect', '--format', '{{.Os}}/{{.Architecture}}', postgres]), 'linux/amd64')
   docker(['compose', '-p', project, '--env-file', release, '-f', join(directory, 'compose.yaml'),
     '-f', join(directory, 'compose.proxy.yaml'), 'config', '--quiet'], {
     env: { ...env, KICIMONDO_PROXY_NETWORK: project + '-example-proxy' },
@@ -185,6 +188,8 @@ try {
   up(previous)
   const ids = (service) => compose(['ps', '-q', service])
   const cgroupDriver = docker(['info', '--format', '{{.CgroupDriver}}'])
+  assert(cgroupDriver !== 'none' || env.GITHUB_ACTIONS !== 'true',
+    'The GitHub Actions smoke runner must enforce cgroup memory limits')
   const cgroupVersion = docker(['info', '--format', '{{.CgroupVersion}}'])
   const memoryLimitPath = cgroupVersion === '2'
     ? '/sys/fs/cgroup/memory.max' : '/sys/fs/cgroup/memory/memory.limit_in_bytes'
@@ -202,7 +207,7 @@ try {
   const fixture = join(tmp, 'demo-math.json')
   await writeFile(fixture, await readFile('../contracts/demo-math.json'))
   await chmod(fixture, 0o644)
-  const importPack = () => compose(['run', '--rm', '--no-deps', '--volume', fixture + ':/import/demo-math.json:ro',
+  const importPack = () => compose(['run', '--pull', 'never', '--rm', '--no-deps', '--volume', fixture + ':/import/demo-math.json:ro',
     'kicimondo-backend', 'import', '/import/demo-math.json'], previous)
   assert.match(importPack(), /^PUBLISHED$/m)
   assert.match(importPack(), /^ALREADY_PUBLISHED$/m)
@@ -275,7 +280,7 @@ try {
   await reopened.getByRole('button', { name: 'Wróć do gry' }).click()
   await expect(reopened.getByText('1 PS', { exact: true })).toBeVisible()
   await context.setOffline(false)
-  await checkBackup()
+  await checkBackup(postgres)
 
   if (cgroupDriver === 'none') {
     globalThis.console.log('Compose memory settings checked. This Docker daemon cannot enforce cgroup limits.')

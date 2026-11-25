@@ -143,10 +143,10 @@ For HTTP 503 on the content endpoint, check the backend health, PostgreSQL readi
 
 Before changing releases, make a logical backup. Run `sh ./backup.sh` from the deployment directory. It writes a timestamped directory with a restricted custom-format dump, archive listing, running image references and Flyway versions. A directory containing `incomplete` is a failed backup. Store completed copies away from the NAS and restrict access. These backups contain the server's published educational packs. Gameplay saves live on the browser or Android device in IndexedDB.
 
-Test a completed backup in a uniquely named, isolated disposable PostgreSQL container. Use the same approved PostgreSQL image reference from `.env.production`. Set `backup` to the completed backup directory before running the commands.
+Test a completed backup in a uniquely named, isolated disposable PostgreSQL container. Resolve its pinned image through the same Compose configuration used for deployment. Set `backup` to the completed backup directory before running the commands.
 
 ```sh
-postgres_image=$(sed -n 's/^KICIMONDO_POSTGRES_IMAGE=//p' .env.production)
+postgres_image=$(dc --profile content config --images kicimondo-postgres)
 restore="kicimondo-restore-$(date -u '+%Y%m%dT%H%M%SZ')-$$"
 docker run -d --rm --name "$restore" --network none -e POSTGRES_HOST_AUTH_METHOD=trust \
   -e POSTGRES_USER=kicimondo -e POSTGRES_DB=kicimondo "$postgres_image"
@@ -243,7 +243,7 @@ Use `Remove-Item Env:VITE_CONTENT_API_ORIGIN` before building the default client
 
 ## CI/CD
 
-Frontend and Backend workflows run their existing tests and produce the universal debug APK. Production images builds and tests both containers on PRs and on main. Release images can be dispatched on the upstream main branch after owner review. It runs all three checks again and publishes only the two tested image digests.
+Frontend and Backend workflows run their existing tests and produce the universal debug APK. Production images builds and tests both containers on PRs and on main. The smoke run resolves the PostgreSQL digest from Compose, explicitly pulls and verifies the Linux amd64 image, and reuses it during restore. GitHub Actions checks the effective memory limits inside the containers. Release images can be dispatched on the upstream main branch after owner review. It runs all three checks again and publishes only the two tested image digests.
 
 ## Android
 
