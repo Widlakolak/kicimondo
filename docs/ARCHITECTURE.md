@@ -1,6 +1,6 @@
 # Architecture
 
-Status: design, not an implemented system.
+Status: Stage 01 client implemented. Later systems described here are planned.
 
 ## Stack and boundaries
 
@@ -9,6 +9,8 @@ The client is the game runtime: React, TypeScript, Vite, Phaser 3.x and Tiled JS
 Phaser scenes own map rendering, animations, input and collisions. React renders the profile, menus, educational overlays and parent settings. A typed, disposable bridge carries interaction requests and results; neither side reaches directly into the other's internals. Pure TypeScript domain functions decide whether an interaction is eligible, validate challenges, complete quests and update world state. No game state is derived from sprite visibility alone.
 
 The server is a modular monolith. Planned feature packages: content, player, quest/progression, learning, sync and shared infrastructure. Separate application/domain/infrastructure where useful; no boilerplate layers for their own sake. Keep HTTP DTOs separate from persistence entities. Use REST under /api/v1, validation, consistent errors and OpenAPI when endpoints exist.
+
+In Stage 01, the Phaser bedroom scene owns the avatar's position and resolves movement against map rectangles using pure TypeScript rules. React translates keyboard and pointer events into held directions on the typed room input bridge. The scene reports the nearest eligible interaction and hands deliberate requests back to React for the dialog. The room is loaded when the player enters it.
 
 ## Intended layout
 

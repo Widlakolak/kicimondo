@@ -1,6 +1,6 @@
 # Stage 01: Client and playable room
 
-Status: ready for implementation; not started.
+Status: implemented and locally verified. Owner acceptance pending.
 
 ## Goal
 
@@ -31,3 +31,31 @@ Tracing, PS, unlocked map transitions, cats, other minigames, database, backend,
 ## Handoff
 
 Return the branch/PR if created, a brief change summary, actual test commands/results and manual test steps in Polish for the owner. Mark code implemented only if verified; leave owner acceptance pending. Stop here and wait for approval before Stage 02.
+
+## Implementation and verification
+
+The client uses Node.js 24.22.3, npm 11.19.1, React 19.2.9, Phaser 3.90.0, Vite 8.3.8 and TypeScript 6.0.3. The npm lockfile fixes dependency resolution. The nickname limit counts Unicode code points after trimming. A cancelled profile edit retains the saved profile. The profile uses version 1 of the local browser storage record; the avatar starts beside the bed on entry.
+
+The editable Tiled object map defines the spawn, furniture footprints, walls and walkable interaction anchors. The production build validates the map. Phaser renders the room and owns movement and collision updates. React handles the profile, on-screen controls and native dialog, with a typed input and interaction bridge. The clothes interaction displays a placeholder and the door stays closed.
+
+Local checks from `frontend/`:
+
+| Command | Result |
+| --- | --- |
+| `npm ci --engine-strict` | Passed with the pinned Node.js and npm versions |
+| `npm run lint` | Passed |
+| `npm run typecheck` | Passed |
+| `npm test` | 18 passed across 4 files |
+| `npm run build` | Passed, including map validation. Vite flagged the separately loaded Phaser chunk for size |
+| `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:browser` | 4 passed on system Chromium 156 with desktop and emulated touch coverage |
+
+The cloud network blocked the Playwright browser download. The pull-request workflow installs Playwright Chromium on GitHub Actions.
+
+### Manual review
+
+- On desktop, choose each avatar and try an empty nickname and a nickname with Polish characters. Reload and check that the saved profile can be resumed or edited.
+- Move with arrows and WASD. Walk into a wall and the furniture. Release movement, then switch away while holding a key and return.
+- Approach the scattered clothes and press E or **Sprawdź**. Read the placeholder, try moving while the dialog is open, then close it. Approach the door and check that it stays closed.
+- On an Android phone, repeat movement and interaction with the on-screen buttons in portrait and landscape. Release a direction, rotate the device while holding a direction, and check that movement stops. Check text and button sizes in both layouts.
+
+Hands-on desktop play and testing on a physical Android device are pending.
