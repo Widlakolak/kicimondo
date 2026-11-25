@@ -37,6 +37,8 @@ Allowed effects are typed commands interpreted by the game, never arbitrary Java
 
 Use orthogonal JSON tilemaps, initially 16 × 16 px tiles. Use layers Ground, Decorations, Furniture, AbovePlayer, Collisions, Interactions, NPC, Transitions, SpawnPoints as needed. Define collisions and interaction areas explicitly; no pixel-colour tests. Object custom properties use stable IDs such as interactionId, questId, destinationLocationId and destinationSpawnId. Resolve an interaction only within range; avoid multiple triggers per input. Define an interaction anchor beside blocked furniture. Keep tileset/image paths relative and valid.
 
+Stage 01 uses [bedroom.tmj](../frontend/src/game/maps/bedroom.tmj) as the editable and bundled source. The object layers define furniture, collision rectangles, interaction anchors and the spawn. Furniture with the `solid` property contributes its footprint to collisions. The build validates object IDs, geometry and interaction anchors. Pixel art is drawn by the client.
+
 ## Initial content
 
 Bedroom: bed, desk, wardrobe, scattered clothes, door, resident cat, water bowl and bed for the cat. Upstairs: corridor and a small set of everyday tasks. Ground floor: table, fruit, kitchen and recycling. Garden: clean water, shelter, drapak (scratching post), toys, flower beds and visitor slots.

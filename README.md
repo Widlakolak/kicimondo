@@ -4,20 +4,34 @@ Kicimondo is a 2D adventure game for children in the first years of primary scho
 
 ## Status
 
-Planning stage. There is no playable build, API or deployment yet.
-
-The first milestone is a small playable room: choose a character, move around, complete a tracing exercise, earn an independence point and unlock the door. A resident cat and two more educational tasks complete the first release.
-
-## Planned stack
-
-- React, TypeScript, Vite and Phaser for the game client.
-- Tiled for maps; local-first progress storage and offline support.
-- Java 21, Spring Boot, Gradle, PostgreSQL and Flyway for content management and optional progress sync in later stages.
-- Capacitor for Android; Docker and GitHub Actions for a web deployment on QNAP.
+Stage 01 includes a playable bedroom prototype. Choose an avatar and nickname, explore with a keyboard or on-screen controls, and inspect the scattered clothes and closed door. The avatar and nickname are stored in the browser. The room and avatars use original placeholder pixel art. Owner acceptance is pending.
 
 ## Getting started
 
-The repository currently contains the design and implementation plan. Start with [Stage 01](docs/stages/01-room-prototype.md) when setting up the client. Build and run commands will be added here once they exist.
+Use Node.js `24.22.3` (see `.nvmrc`) and npm `11.19.1`.
+
+```sh
+cd frontend
+npm ci --engine-strict
+npm run dev
+```
+
+Open the local address printed by Vite. Move with arrows, WASD, or the on-screen controls. Press E or **Sprawdź** when the interaction prompt appears.
+
+## Checks
+
+Run these commands from `frontend/`:
+
+```sh
+npm run lint
+npm run typecheck
+npm test
+npm run build
+npx playwright install chromium
+npm run test:browser
+```
+
+The browser suite serves the production build. On Linux, use `npx playwright install --with-deps chromium` when browser system libraries are missing. Where browser downloads are restricted, set `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH` to an installed Chromium executable before running the suite.
 
 ## Documentation
 
@@ -36,4 +50,4 @@ The repository currently contains the design and implementation plan. Start with
 - [Stage 01](docs/stages/01-room-prototype.md)
 - [Codex task prompt](docs/CODEX.md)
 
-The game will initially use Polish text. Code and technical documentation are in English. Names other than Kicimondo and Kicipedia are provisional. No open-source license has been selected.
+The game uses Polish text. Code and technical documentation are in English. Names other than Kicimondo and Kicipedia are provisional. No open-source license has been selected.
