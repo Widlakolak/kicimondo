@@ -1,0 +1,8 @@
+# Loopback access for local testing or a host-side proxy.
+services:
+  kicimondo-frontend:
+    networks: [application, loopback]
+    ports:
+      - "127.0.0.1:${KICIMONDO_WEB_PORT:-8088}:8080"
+networks:
+  loopback:

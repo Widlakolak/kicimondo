@@ -1,0 +1,96 @@
+name: Release images
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: family-web-release
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require the upstream main branch
+        env:
+          RELEASE_REF: ${{ github.ref }}
+          RELEASE_REPOSITORY: ${{ github.repository }}
+        run: |
+          test "$RELEASE_REF" = refs/heads/main
+          test "$RELEASE_REPOSITORY" = Widlakolak/kicimondo
+
+  frontend:
+    needs: gate
+    uses: ./.github/workflows/frontend.yml
+
+  backend:
+    needs: gate
+    uses: ./.github/workflows/backend.yml
+
+  images:
+    needs: gate
+    uses: ./.github/workflows/production-images.yml
+    with:
+      retain_images: true
+
+  publish:
+    needs: [frontend, backend, images]
+    if: github.ref == 'refs/heads/main' && github.repository == 'Widlakolak/kicimondo'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: tested-production-images
+          path: ${{ runner.temp }}
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Publish the tested commit and record digests
+        env:
+          REGISTRY_ROOT: ghcr.io/widlakolak/kicimondo
+        run: |
+          docker load -i "$RUNNER_TEMP/production-images.tar.gz"
+          for component in frontend backend; do
+            local_image="kicimondo/$component:ci"
+            ref="$REGISTRY_ROOT/$component:sha-$GITHUB_SHA"
+            test "$(docker image inspect --format '{{.Os}}/{{.Architecture}}' "$local_image")" = linux/amd64
+            test "$(docker image inspect --format '{{index .Config.Labels "org.opencontainers.image.revision"}}' "$local_image")" = "$GITHUB_SHA"
+            if output=$(docker buildx imagetools inspect "$ref" 2>&1); then
+              docker pull "$ref"
+              if [ "$(docker image inspect --format '{{.Id}}' "$ref")" != "$(docker image inspect --format '{{.Id}}' "$local_image")" ]; then
+                echo "Release tag already points to a different image: $ref"
+                exit 1
+              fi
+            elif ! printf '%s\n' "$output" | grep -Eiq 'not found|manifest unknown|manifest_unknown'; then
+              printf '%s\n' "$output" >&2
+              exit 1
+            fi
+          done
+          release="$RUNNER_TEMP/release-images.env"
+          printf 'KICIMONDO_RELEASE_SHA=%s\n' "$GITHUB_SHA" > "$release"
+          for component in frontend backend; do
+            image="$REGISTRY_ROOT/$component"
+            ref="$image:sha-$GITHUB_SHA"
+            if ! docker image inspect "$ref" >/dev/null 2>&1; then
+              docker tag "kicimondo/$component:ci" "$ref"
+              docker push "$ref"
+            fi
+            digest=$(docker buildx imagetools inspect "$ref" | awk '$1 == "Digest:" && !found++ {print $2}')
+            printf '%s\n' "$digest" | grep -Eq '^sha256:[a-f0-9]{64}$'
+            key=$(printf '%s' "$component" | tr '[:lower:]' '[:upper:]')
+            printf 'KICIMONDO_%s_IMAGE=%s@%s\n' "$key" "$image" "$digest" >> "$release"
+          done
+          cat "$release" >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-images
+          path: ${{ runner.temp }}/release-images.env
+          if-no-files-found: error

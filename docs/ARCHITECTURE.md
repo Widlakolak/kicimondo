@@ -23,6 +23,7 @@ One Phaser scene loads the current location from the Tiled map registry and reso
       src/i18n/           Polish strings
     backend/              optional Spring Boot content service
     contracts/            pack schema, shared fixtures and generated manifest
+    infrastructure/qnap/ production images, Compose and operator scripts
     docs/                 design, decisions and stages
 
 ## Persistence and offline
@@ -44,6 +45,14 @@ The frontend exports math challenge IDs, operation sequences and maxima from its
 The client only checks the API when an adult uses the main menu. A download shares an eight-second request deadline across metadata and payload, limits bytes before JSON parsing and verifies SHA-256 with Web Crypto. The client activates the pack after the separate IndexedDB transaction commits. Each challenge attempt snapshots its selected seed when opened. A reload revalidates the cached bytes without contacting the service. Choosing bundled content deletes the cached selection without touching the gameplay database. The existing service worker caches the application assets independently.
 
 Sync is deferred until there is a clear need. Model immutable completion events with profile ID, event ID, quest/reward ID and content version. Server deduplicates events and awards in a transaction; duplicate deliveries return the same outcome. Merge completed quest sets by stable IDs, avoid double rewards, and explicitly define conflicts for mutable settings and object placement before enabling multi-device sync. Authenticate ownership on every profile operation; never trust a client-supplied profile ID as authorization. No public writable APIs in the initial deployment.
+
+## Production web boundary
+
+The Linux amd64 frontend image serves the same-origin build through Nginx. It revalidates entry files and caches fingerprinted assets as immutable. At startup it archives the release's hashed assets into a project volume so a browser that already fetched an older entry page can finish loading after the image changes. The service worker still verifies the full release before installation and waits for open windows before activation.
+
+Nginx queries Docker DNS at request time for content pack reads and returns a bounded 503 when the backend is unavailable. The frontend has an optional ingress network. Java joins a separate internal database network as well as the internal application network. PostgreSQL joins only the database network. The frontend has no startup dependency on Java. The content profile enables Java and PostgreSQL together.
+
+An explicit main-branch workflow tests the checkout, promotes the exact tested images, writes their digests and leaves host deployment to the owner. The PostgreSQL volume stores the educational packs across image replacements. A backup uses `pg_dump` and records running images and Flyway versions. Restoring or rolling back the server does not change IndexedDB on clients.
 
 ## Performance
 

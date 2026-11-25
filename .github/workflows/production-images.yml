@@ -1,0 +1,75 @@
+name: Production images
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_call:
+    inputs:
+      retain_images:
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    env:
+      KICIMONDO_FRONTEND_IMAGE: kicimondo/frontend:ci
+      KICIMONDO_BACKEND_IMAGE: kicimondo/backend:ci
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: true
+      - run: npm install --global npm@11.11.0
+      - working-directory: frontend
+        run: npm ci --engine-strict
+      - working-directory: frontend
+        env:
+          VITE_CONTENT_API_ORIGIN: same-origin
+        run: npm run build -- --outDir .vite/qnap-dist
+      - working-directory: backend
+        run: ./gradlew --no-daemon --max-workers=4 bootJar
+      - name: Build amd64 images
+        run: |
+          source="https://github.com/$GITHUB_REPOSITORY"
+          docker build --platform linux/amd64 -f infrastructure/qnap/frontend.Dockerfile \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --label "org.opencontainers.image.source=$source" -t "$KICIMONDO_FRONTEND_IMAGE" .
+          docker build --platform linux/amd64 -f backend/Dockerfile \
+            --label "org.opencontainers.image.revision=$GITHUB_SHA" \
+            --label "org.opencontainers.image.source=$source" -t "$KICIMONDO_BACKEND_IMAGE" .
+      - working-directory: frontend
+        run: npx playwright install --with-deps chromium
+      - working-directory: frontend
+        run: node scripts/qnapSmoke.mjs
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: production-browser-trace
+          path: frontend/.vite/qnap-smoke-trace.zip
+          include-hidden-files: true
+      - name: Archive the tested images for the dispatch release
+        if: ${{ inputs.retain_images && github.ref == 'refs/heads/main' }}
+        shell: bash
+        run: docker save "$KICIMONDO_FRONTEND_IMAGE" "$KICIMONDO_BACKEND_IMAGE" | gzip > "$RUNNER_TEMP/production-images.tar.gz"
+      - uses: actions/upload-artifact@v4
+        if: ${{ inputs.retain_images && github.ref == 'refs/heads/main' }}
+        with:
+          name: tested-production-images
+          path: ${{ runner.temp }}/production-images.tar.gz
+          retention-days: 1
+          compression-level: 0
+          if-no-files-found: error
