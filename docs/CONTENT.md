@@ -1,6 +1,6 @@
 # Content model
 
-Status: Stage 02 uses a bundled content pack and two editable Tiled maps. Later content types describe the planned contract.
+Status: Stage 03 uses a bundled content pack and two editable Tiled maps. Later content types describe the planned contract.
 
 Keep stable ASCII IDs separate from Polish and English display strings. Use UTF-8 and locale keys. Source content lives in content/ and design/tiled/; a build step validates and packages the runtime data. Do not keep hand-edited duplicate exports.
 
@@ -37,13 +37,13 @@ Allowed effects are typed commands interpreted by the game, never arbitrary Java
 
 Use orthogonal JSON tilemaps, initially 16 × 16 px tiles. Use layers Ground, Decorations, Furniture, AbovePlayer, Collisions, Interactions, NPC, Transitions, SpawnPoints as needed. Define collisions and interaction areas explicitly; no pixel-colour tests. Object custom properties use stable IDs such as interactionId, questId, destinationLocationId and destinationSpawnId. Resolve an interaction only within range; avoid multiple triggers per input. Define an interaction anchor beside blocked furniture. Keep tileset/image paths relative and valid.
 
-The [bedroom](../frontend/src/game/maps/bedroom.tmj) and [landing](../frontend/src/game/maps/landing.tmj) are the editable and bundled sources. The object layers define furniture, collisions, anchors and named spawns. A furniture object selects its drawing through `art`; `solid` adds its footprint to collisions. The [Stage 02 pack](../frontend/src/content/pack.ts) connects anchor IDs to a challenge or transition. It stores tracing waypoints, tolerance, ordered coverage and alternative targets alongside quest and reward data. The build checks map geometry, locale references, content links, return transitions and reward availability for gates.
+The [bedroom](../frontend/src/game/maps/bedroom.tmj) and [landing](../frontend/src/game/maps/landing.tmj) are the editable and bundled sources. The object layers define furniture, collisions, anchors and named spawns. A furniture object selects its drawing through `art`; `solid` adds its footprint to collisions. The [Stage 03 pack](../frontend/src/content/pack.ts) connects anchor IDs to a challenge or transition. It stores the inputs for each challenge type, quest and reward data, and the resident cat’s greeting spot and attraction destinations. Build validation checks cat routes and requires a restoration quest for each attraction. The build checks map geometry, locale references, content links, return transitions and reward availability for gates.
 
 ## Initial content
 
 Bedroom: bed, desk, wardrobe, scattered clothes, door, resident cat, water bowl and bed for the cat. Upstairs: corridor and a small set of everyday tasks. Ground floor: table, fruit, kitchen and recycling. Garden: clean water, shelter, drapak (scratching post), toys, flower beds and visitor slots.
 
-Stage 02 includes the bedroom, the clothes quest and a small landing with a return door. Stage 03 is planned to add the resident cat and the next educational activities.
+Stage 03 includes the bedroom and the landing, with clothes, water bowl and cat bed quests. Restoring an attraction enables its corresponding cat activity.
 
 ## Asset provenance
 

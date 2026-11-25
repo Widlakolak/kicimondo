@@ -1,42 +1,14 @@
 import { expect, test, type Page } from '@playwright/test'
 import { challenges } from '../src/content/pack'
-import type { Save } from '../src/core/progress'
+import { enterRoom, holdKey, nickname, pixelAt, reach, roomTitle, saveRecord, stage, start } from './roomHelpers'
 
-const start = 'Wejdź do pokoju'
-const roomTitle = 'Twój pokój'
-const nickname = 'Żółwik'
 const clothes = 'Rozrzucone ubrania'
 const profileKey = 'kicimondo.profile'
-const stage = (page: Page) => page.locator('.world .stage')
 const board = (page: Page) => page.getByRole('img', { name: 'Ścieżka od startu do mety' })
 const path = challenges['clothes-to-basket'].path
 const continueButton = 'Wróć do gry'
 const rewardTitle = 'Zadanie ukończone!'
 const position = async (page: Page, axis: 'x' | 'y') => Number(await stage(page).getAttribute(`data-${axis}`))
-
-async function enterRoom(page: Page) {
-  await page.getByLabel('Pseudonim', { exact: true }).fill(nickname)
-  await page.getByRole('button', { name: start }).click()
-  await expect(page.getByRole('heading', { name: roomTitle })).toBeVisible()
-  await expect(stage(page)).toHaveAttribute('data-x', '106')
-  await expect(stage(page).locator('canvas')).toBeVisible()
-}
-
-async function holdKey(page: Page, key: string, until: () => Promise<void>) {
-  await page.keyboard.down(key)
-  try {
-    await until()
-  } finally {
-    await page.keyboard.up(key)
-  }
-}
-
-async function reach(page: Page, axis: 'x' | 'y', target: number, direction: 1 | -1) {
-  await page.waitForFunction(({ axis, target, direction }) => {
-    const value = Number(document.querySelector<HTMLElement>('.stage')?.dataset[axis])
-    return direction * value >= direction * target
-  }, { axis, target, direction }, { timeout: 5000 })
-}
 
 async function expectStill(page: Page, axis: 'x' | 'y') {
   const samples = await stage(page).evaluate(async (element, key) => {
@@ -58,19 +30,6 @@ async function walkToClothes(page: Page) {
   await expect(page.getByRole('dialog', { name: clothes })).toBeVisible()
 }
 
-async function saveRecord(page: Page) {
-  return page.evaluate(() => new Promise<Save>((resolve, reject) => {
-    const opening = indexedDB.open('kicimondo')
-    opening.onerror = () => reject(opening.error)
-    opening.onsuccess = () => {
-      const db = opening.result
-      const read = db.transaction('saves').objectStore('saves').get('current')
-      read.onsuccess = () => { db.close(); resolve(read.result) }
-      read.onerror = () => { db.close(); reject(read.error) }
-    }
-  }))
-}
-
 async function traceCoordinates(page: Page) {
   const box = (await board(page).boundingBox())!
   return path.map(({ x, y }) => ({ x: box.x + x * box.width, y: box.y + y * box.height }))
@@ -84,12 +43,6 @@ async function buttonAlternative(page: Page) {
     await page.getByRole('button', { name: `Przycisk ${target}` }).press('Enter')
   }
   await expect(page.getByRole('dialog', { name: rewardTitle })).toBeVisible()
-}
-
-async function pixelAt(page: Page, x: number, y: number) {
-  return stage(page).locator('canvas').evaluate((canvas, point) =>
-    Array.from((canvas as HTMLCanvasElement).getContext('2d')!.getImageData(point.x, point.y, 1, 1).data),
-  { x, y })
 }
 
 test('chooses and edits an avatar, validates the nickname, and keeps the saved profile on reload', async ({ page }) => {

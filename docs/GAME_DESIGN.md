@@ -14,11 +14,11 @@ A second loop runs alongside it: repair or place an attraction -> meet cats -> b
 
 ## Opening
 
-Stage 02 covers avatar selection, bedroom exploration, the clothes quest and the landing. The first quest can be completed by tracing or using numbered buttons in order.
+Stage 03 includes bedroom exploration, the landing and three quests. The clothes task can be completed by tracing or using numbered buttons. Each quest grants 1 PS and the first point opens the door.
 
 The player chooses a boy or girl avatar and an in-game name (not a real name requirement). Start next to the bed in a bedroom. The first mission is picking up scattered clothes by tracing a path. On success, remove the clothes, award one independence point (PS in Polish) and unlock the bedroom door. Return to exploration rather than chaining another exercise automatically.
 
-A resident cat is introduced in the first playable release. The child can prepare its water bowl and bed through counting and image/word matching. Petting is available only when the cat is receptive. The room remains accessible after leaving it.
+Bursztynek is the bedroom’s resident cat. The player can fill his water bowl with counting and arithmetic and prepare his bed with word-picture matching, in either order. The cat shows a heart when receptive. The first accepted petting interaction and each restored attraction grant lasting trust.
 
 ## World and progression
 

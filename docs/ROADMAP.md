@@ -1,13 +1,13 @@
 # Roadmap
 
-Current status: Stage 01 was merged and accepted by the owner after a local Windows playtest. Stage 02 is implemented and awaiting owner review. Physical Android testing has yet to take place.
+Current status: Stage 02 was merged after CI passed and the owner confirmed all 14 manual checks. Stage 03 is implemented and awaiting the owner playtest. Physical Android testing has yet to take place.
 
 | Stage | Scope | Acceptance |
 | --- | --- | --- |
 | 00 | Project design and agent instructions | Documents consistent; initial stage ready for Codex |
 | 01 | [Client and playable room](stages/01-room-prototype.md) | Merged. Owner confirmed local Windows play. Automated touch coverage used emulation. |
-| 02 | [Tracing and progression](stages/02-first-quest.md) | Tracing and the button alternative, one-time PS, round-trip landing transitions and save/reload verified. Owner review pending. |
-| 03 | [First resident cat](stages/03-first-cat.md) | Cat activity and consent-based petting, water maths and bed matching, simple trust; first playable release |
+| 02 | [Tracing and progression](stages/02-first-quest.md) | Merged in PR #2. CI and all 14 owner checks passed. |
+| 03 | [First resident cat](stages/03-first-cat.md) | Cat activities, consent, both quests, trust and migration verified locally. Owner review pending. |
 | 04 | Android/PWA feasibility | Capacitor debug build on device, local assets and lifecycle, PWA offline reload, verify save adapter |
 | 05 | Upstairs and ground floor | Enough distinct quests to reach 8 PS; NPC dialogue, sorting, return paths |
 | 06 | Garden and visiting cats | Reach 16 PS, restore fixed habitats, deterministic visitors, basic Kicipedia |

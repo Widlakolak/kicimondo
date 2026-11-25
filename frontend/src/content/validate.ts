@@ -1,6 +1,8 @@
-import type { LocationMap } from '../core/tiledMap.ts'
+import { clearCatRoute } from '../core/cat.ts'
+import { mathQuestions } from '../core/education.ts'
+import { solidsFor, type LocationMap } from '../core/tiledMap.ts'
 import { pl } from '../i18n/pl.ts'
-import { challenges, locationIds, locations, quests, transitions, type LocationId } from './pack.ts'
+import { cats, challenges, locationIds, locations, mathOperations, pictureIds, quests, transitions, type LocationId } from './pack.ts'
 
 export function validateContent(maps: Record<LocationId, LocationMap>) {
   const require = (condition: unknown, message: string) => {
@@ -8,8 +10,27 @@ export function validateContent(maps: Record<LocationId, LocationMap>) {
   }
   const unique = (ids: readonly string[]) => new Set(ids).size === ids.length
   for (const [id, challenge] of Object.entries(challenges)) {
-    const { path, tolerance, coverage, targets } = challenge
     require(Object.hasOwn(pl.challenges, challenge.text), 'missing challenge text for ' + id)
+    if (challenge.type === 'MATH_CHOICE') {
+      require(Number.isSafeInteger(challenge.maximum) && challenge.maximum >= 2 && challenge.maximum <= 10 &&
+        Number.isSafeInteger(challenge.seed) && challenge.operations.length > 0 &&
+        challenge.operations.every((operation) => mathOperations.includes(operation)), 'invalid maths settings for ' + id)
+      require(mathQuestions(challenge).every(({ answer, options }) => options.length === 3 &&
+        new Set(options).size === 3 && options.filter((option) => option === answer).length === 1 &&
+        options.every((option) => Number.isInteger(option) && option >= 0 && option <= challenge.maximum)),
+      'invalid maths question for ' + id)
+      continue
+    }
+    if (challenge.type === 'MATCH_PAIRS') {
+      const { pairs, pictureOrder } = challenge
+      require(pairs.length >= 2 && pairs.length === pictureOrder.length && unique(pictureOrder) &&
+        unique(pairs.map((pair) => pair.id)) && unique(pairs.map((pair) => pl.match.words[pair.word])) &&
+        unique(pairs.map((pair) => pair.picture)) && pairs.every(({ word, picture }) =>
+          Object.hasOwn(pl.match.words, word) && pictureIds.includes(picture) && pictureOrder.some((id) => id === picture)),
+      'ambiguous matching pairs for ' + id)
+      continue
+    }
+    const { path, tolerance, coverage, targets } = challenge
     require(tolerance > 0 && tolerance <= 0.15 && coverage >= 0.9 && coverage <= 1 &&
       path.length >= 3 && path.every(({ x, y }, index) => x >= tolerance && x <= 1 - tolerance &&
         y >= tolerance && y <= 1 - tolerance &&
@@ -22,6 +43,25 @@ export function validateContent(maps: Record<LocationId, LocationMap>) {
 
   require(unique(quests.map((quest) => quest.id)), 'duplicate quest ID')
   require(unique(quests.map((quest) => quest.reward.id)), 'duplicate reward ID')
+  require(unique(cats.map(({ id }) => id)), 'duplicate cat ID')
+  for (const cat of cats) {
+    const map = maps[cat.location]
+    const solids = solidsFor(map)
+    require(Object.hasOwn(pl.cat.names, cat.name) && unique(cat.attractions.map(({ object }) => object)),
+      'invalid resident cat ' + cat.id)
+    for (const target of [cat.rest, ...cat.attractions.map(({ position }) => position)]) {
+      require([cat.greet, target].every(({ x, y }) => x >= 5 && x <= map.width - 5 && y >= 3 && y <= map.height - 3) &&
+        clearCatRoute(cat.greet, target, solids), 'blocked cat route for ' + cat.id)
+    }
+    for (const { object, activity } of cat.attractions) {
+      require(map.furniture.some(({ id, art }) => id === object && art === (activity === 'drinking' ? 'bowl' : 'cat-bed')) &&
+        quests.filter((quest) => quest.location === cat.location && quest.effects.some((effect) =>
+          effect.type === 'RESTORE_ATTRACTION' && effect.object === object)).length === 1,
+      'missing restoration quest or art for ' + object)
+    }
+  }
+  const affectedObjects = quests.flatMap(({ location, effects }) => effects.map(({ object }) => location + '/' + object))
+  require(unique(affectedObjects), 'object affected by multiple quest effects')
   for (const quest of quests) {
     require(Object.hasOwn(challenges, quest.challenge) && Number.isSafeInteger(quest.reward.points) &&
       quest.reward.points > 0, 'invalid challenge or reward for ' + quest.id)

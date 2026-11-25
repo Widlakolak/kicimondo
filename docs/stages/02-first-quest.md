@@ -1,6 +1,6 @@
 # Stage 02: First quest and progression
 
-Status: implemented and locally verified. Owner acceptance is pending.
+Status: merged in PR #2. GitHub Actions passed and the owner accepted Stage 02 after all 14 manual checks passed.
 
 ## Goal
 
@@ -46,7 +46,7 @@ The clean install and checks below ran on Linux with the owner's Node.js 24.13.1
 | `npm run build` | Passed, including content and map validation. Vite warned about the size of the separately loaded Phaser chunk |
 | `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:browser` | 7 passed on Chromium 156, including mouse tracing, emulated touch, keyboard alternative, migration, save errors and the landing round trip |
 
-The cloud network denied the Playwright Chromium download. The browser suite ran on the installed Chromium. Stage 02 Windows play and physical Android testing await owner review.
+The cloud network denied the Playwright Chromium download. The browser suite ran on the installed Chromium. The owner later confirmed all 14 manual acceptance checks, including installation, tracing, progression, transitions and persistent saves. Physical Android testing has yet to take place.
 
 ### Manual review
 

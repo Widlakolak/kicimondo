@@ -96,7 +96,7 @@ it('rolls back the entire completion when the current record write throws', asyn
     return put.call(this, value, key)
   })
   try {
-    await expect(repository.commit(command)).rejects.toThrow('Full')
+    await expect(repository.commit({ type: 'complete', quest: 'bedroom-fill-water-bowl' })).rejects.toThrow('Full')
   } finally {
     fail.mockRestore()
     db.close()
@@ -105,4 +105,35 @@ it('rolls back the entire completion when the current record write throws', asyn
   expect(loaded.completed).toEqual([])
   expect(loaded.rewards).toEqual([])
   expect(loaded.hidden).toEqual([])
+  expect(loaded.restored).toEqual([])
+  expect(loaded.trust).toEqual([])
+})
+
+it('migrates a Stage 02 record in place on the next write and preserves its landing checkpoint', async () => {
+  const { indexed, repository } = setup()
+  await repository.load()
+  const stage02 = {
+    schemaVersion: 1, contentVersion: 1, profile,
+    checkpoint: { location: 'landing', spawn: 'from-bedroom' },
+    completed: [quests[0].id], rewards: [quests[0].reward],
+    hidden: [{ location: 'bedroom', object: 'scattered-clothes' }],
+  }
+  await writeRaw(indexed, stage02)
+  expect(await repository.load()).toEqual({
+    status: 'ready',
+    save: { ...stage02, schemaVersion: 2, contentVersion: 2, restored: [], trust: [] },
+  })
+  await repository.commit({ type: 'transition', location: 'landing', interaction: 'bedroom-door' })
+  const water = { type: 'complete', quest: 'bedroom-fill-water-bowl' } as const
+  const other = createSaveRepository(() => indexed, () => ({ getItem: () => null }))
+  await Promise.all([repository.commit(water), other.commit(water)])
+  expect((await repository.load()).save).toMatchObject({
+    schemaVersion: 2, contentVersion: 2, profile,
+    checkpoint: { location: 'bedroom', spawn: 'from-landing' },
+    completed: [quests[0].id, water.quest],
+    hidden: stage02.hidden,
+    restored: [{ location: 'bedroom', object: 'water-bowl' }],
+    trust: [{ cat: 'amber', id: 'restored:water-bowl' }],
+  })
+  expect(pointsOf((await repository.load()).save!)).toBe(2)
 })
