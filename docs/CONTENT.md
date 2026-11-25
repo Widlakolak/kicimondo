@@ -1,8 +1,8 @@
 # Content model
 
-Status: Stage 03 uses a bundled content pack and two editable Tiled maps. Later content types describe the planned contract.
+Stage 05 bundles content version 3 and eight editable Tiled maps.
 
-Keep stable ASCII IDs separate from Polish and English display strings. Use UTF-8 and locale keys. Source content lives in content/ and design/tiled/; a build step validates and packages the runtime data. Do not keep hand-edited duplicate exports.
+Keep stable ASCII IDs separate from Polish and English display strings. Use UTF-8 and locale keys. Runtime content lives in `frontend/src/content/`, with editable sources in `frontend/src/game/maps/` and Polish strings in `frontend/src/i18n/`. The build validates and packages these files. Do not keep hand-edited duplicate exports.
 
 ## Content types
 
@@ -37,13 +37,26 @@ Allowed effects are typed commands interpreted by the game, never arbitrary Java
 
 Use orthogonal JSON tilemaps, initially 16 × 16 px tiles. Use layers Ground, Decorations, Furniture, AbovePlayer, Collisions, Interactions, NPC, Transitions, SpawnPoints as needed. Define collisions and interaction areas explicitly; no pixel-colour tests. Object custom properties use stable IDs such as interactionId, questId, destinationLocationId and destinationSpawnId. Resolve an interaction only within range; avoid multiple triggers per input. Define an interaction anchor beside blocked furniture. Keep tileset/image paths relative and valid.
 
-The [bedroom](../frontend/src/game/maps/bedroom.tmj) and [landing](../frontend/src/game/maps/landing.tmj) are the editable and bundled sources. The object layers define furniture, collisions, anchors and named spawns. A furniture object selects its drawing through `art`; `solid` adds its footprint to collisions. The [Stage 03 pack](../frontend/src/content/pack.ts) connects anchor IDs to a challenge or transition. It stores the inputs for each challenge type, quest and reward data, and the resident cat’s greeting spot and attraction destinations. Build validation checks cat routes and requires a restoration quest for each attraction. The build checks map geometry, locale references, content links, return transitions and reward availability for gates.
+The maps in [frontend/src/game/maps](../frontend/src/game/maps) are the canonical editable sources. Each has furniture, collision, interaction and spawn layers. A furniture object selects its drawing through `art`, and `solid` adds its footprint to collision geometry. A shared scene renders all eight rooms.
 
-## Initial content
+The [content pack](../frontend/src/content/pack.ts) connects anchors to quests, doors, stairs and dialogue. Quest effects hide an object, restore a cat attraction or organize an existing prop. All effects are validated and stored with the completion and reward. A prop drawing reflects the stored effect. Cats and quest rewards use independent ledgers.
 
-Bedroom: bed, desk, wardrobe, scattered clothes, door, resident cat, water bowl and bed for the cat. Upstairs: corridor and a small set of everyday tasks. Ground floor: table, fruit, kitchen and recycling. Garden: clean water, shelter, drapak (scratching post), toys, flower beds and visitor slots.
+`SORT_ORDER` challenges define a unique item list and either one ordered permutation or one group assignment per item. Sequencing accepts the next correct item, while category sorting accepts items in any order. Each mode supports tap and keyboard buttons, a hint, reset and cancellation. Matching and maths reuse the existing exercise types with new picture sets and counting objects.
 
-Stage 03 includes the bedroom and the landing, with clothes, water bowl and cat bed quests. Restoring an attraction enables its corresponding cat activity.
+## House content
+
+| Location | Activities |
+| --- | --- |
+| Bedroom | Clothes, water bowl and cat bed |
+| Upstairs landing | Ciocia Hania, three room doors and the stairway |
+| Study | School bag matching, arithmetic with supplies and book sizes |
+| Bathroom | Handwashing sequence and object matching |
+| Playroom | Sort toys into vehicles and plush toys |
+| Ground-floor hall | Return stairway and doors to kitchen and living room |
+| Kitchen | Fruit arithmetic and table setting matching |
+| Living room | Sort household objects into clothes and dishes |
+
+Each eligible quest awards one lifetime PS. The three bedroom and six upstairs quests can earn nine PS before taking the 8 PS stairway. The three downstairs activities bring the total to twelve. The garden remains planned.
 
 ## Asset provenance
 

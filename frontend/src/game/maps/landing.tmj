@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 5,
-  "nextobjectid": 16,
+  "nextobjectid": 32,
   "tilesets": [],
   "layers": [
     {
@@ -23,7 +23,14 @@
       "x": 0,
       "y": 0,
       "objects": [
-        {"id": 1, "name": "bedroom-door", "x": 144, "y": 8, "width": 32, "height": 24, "properties": [{"name": "art", "type": "string", "value": "door"}]}
+        {"id": 1, "name": "bedroom-door", "x": 144, "y": 8, "width": 32, "height": 24, "properties": [{"name": "art", "type": "string", "value": "door"}]},
+        {"id": 16, "name": "study-door", "x": 48, "y": 8, "width": 32, "height": 24, "properties": [{"name": "art", "type": "string", "value": "door"}]},
+        {"id": 17, "name": "bathroom-door", "x": 240, "y": 8, "width": 32, "height": 24, "properties": [{"name": "art", "type": "string", "value": "door"}]},
+        {"id": 18, "name": "playroom-door", "x": 48, "y": 205, "width": 32, "height": 19, "properties": [{"name": "art", "type": "string", "value": "door"}]},
+        {"id": 19, "name": "ground-stairs", "x": 228, "y": 170, "width": 56, "height": 47, "properties": [{"name": "art", "type": "string", "value": "stairs"}, {"name": "solid", "type": "bool", "value": true}]},
+        {"id": 20, "name": "guide", "x": 146, "y": 105, "width": 27, "height": 32, "properties": [{"name": "art", "type": "string", "value": "guide"}, {"name": "solid", "type": "bool", "value": true}]},
+        {"id": 21, "name": "hall-plant", "x": 24, "y": 94, "width": 20, "height": 26, "properties": [{"name": "art", "type": "string", "value": "plant"}, {"name": "solid", "type": "bool", "value": true}]},
+        {"id": 22, "name": "bench", "x": 265, "y": 52, "width": 30, "height": 39, "properties": [{"name": "art", "type": "string", "value": "bench"}, {"name": "solid", "type": "bool", "value": true}]}
       ]
     },
     {
@@ -52,7 +59,12 @@
       "x": 0,
       "y": 0,
       "objects": [
-        {"id": 11, "name": "bedroom-door", "x": 160, "y": 43, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]}
+        {"id": 11, "name": "bedroom-door", "x": 160, "y": 43, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 23, "name": "study-door", "x": 64, "y": 43, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 24, "name": "bathroom-door", "x": 256, "y": 43, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 25, "name": "playroom-door", "x": 64, "y": 192, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 26, "name": "ground-stairs", "x": 256, "y": 157, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 27, "name": "guide", "x": 160, "y": 144, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]}
       ]
     },
     {
@@ -65,7 +77,11 @@
       "x": 0,
       "y": 0,
       "objects": [
-        {"id": 15, "name": "from-bedroom", "x": 160, "y": 72, "width": 0, "height": 0, "point": true}
+        {"id": 15, "name": "from-bedroom", "x": 160, "y": 72, "width": 0, "height": 0, "point": true},
+        {"id": 28, "name": "from-study", "x": 64, "y": 73, "width": 0, "height": 0, "point": true},
+        {"id": 29, "name": "from-bathroom", "x": 256, "y": 72, "width": 0, "height": 0, "point": true},
+        {"id": 30, "name": "from-playroom", "x": 64, "y": 166, "width": 0, "height": 0, "point": true},
+        {"id": 31, "name": "from-hall", "x": 256, "y": 129, "width": 0, "height": 0, "point": true}
       ]
     }
   ]

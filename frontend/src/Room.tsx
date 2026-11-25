@@ -1,6 +1,6 @@
 import { useEffect, useEffectEvent, useRef, useState, type RefObject } from 'react'
 import { Challenge } from './challenges/Challenge'
-import { cats, challenges, quests, transitions, type Quest, type Transition } from './content/pack'
+import { cats, challenges, dialogues, quests, transitions, type Dialogue, type Quest, type Transition } from './content/pack'
 import { meetsGate, pointsOf, trustOf, type Save, type SaveCommand } from './core/progress'
 import type { Direction, InteractionId } from './core/room'
 import { createRoom, type CatCue, type WorldState } from './game/createRoom'
@@ -45,6 +45,7 @@ function DirectionButton({ direction, input }: { direction: Direction; input: Ro
 type Overlay =
   | { type: 'quest'; quest: Quest }
   | { type: 'locked'; edge: Transition }
+  | { type: 'dialogue'; dialogue: Dialogue }
   | { type: 'pause' }
   | { type: 'success'; quest: Quest }
 
@@ -60,6 +61,7 @@ function worldState(save: Save): WorldState {
     openDoors: edges.filter((edge) => meetsGate(pointsOf(save), edge.minimumPoints)).map(({ interaction }) => interaction),
     active: [
       ...edges.map(({ interaction }) => interaction),
+      ...dialogues.filter((dialogue) => dialogue.location === location).map(({ interaction }) => interaction),
       ...quests.filter((quest) => quest.location === location && !save.completed.includes(quest.id))
         .map(({ interaction }) => interaction),
     ],
@@ -127,6 +129,17 @@ export default function Room({ save, commit, busy, notice, nativeActive, backHan
     return () => { backHandlerRef.current = null }
   }, [backHandlerRef])
 
+  function dialogueBody(dialogue: Dialogue) {
+    const gate = transitions.find((edge) => edge.location === dialogue.location && edge.interaction === dialogue.gate)!
+    const unlocked = meetsGate(points, gate.minimumPoints)
+    const hint = dialogue.hints.find((hint) =>
+      quests.some((quest) => quest.location === hint.location && !save.completed.includes(quest.id)))
+    return {
+      hint: hint && pl.dialogue[hint.text],
+      progression: unlocked ? pl.dialogue[dialogue.afterGate] : pl.stairs.progress(points, gate.minimumPoints),
+    }
+  }
+
   const initialWorld = useEffectEvent(() => worldState(save))
   const onInteraction = useEffectEvent(async (id: InteractionId) => {
     if (resident && id === resident.id) {
@@ -138,9 +151,12 @@ export default function Room({ save, commit, busy, notice, nativeActive, backHan
     const quest = quests.find((entry) => entry.location === location && entry.interaction === id &&
       !save.completed.includes(entry.id))
     const edge = transitions.find((entry) => entry.location === location && entry.interaction === id)
+    const dialogue = dialogues.find((entry) => entry.location === location && entry.interaction === id)
     previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
     if (quest) {
       setOpen({ type: 'quest', quest })
+    } else if (dialogue) {
+      setOpen({ type: 'dialogue', dialogue })
     } else if (edge && !meetsGate(points, edge.minimumPoints)) {
       setOpen({ type: 'locked', edge })
     } else {
@@ -219,7 +235,11 @@ export default function Room({ save, commit, busy, notice, nativeActive, backHan
   const interaction = active ? interactionText(active) : null
   const unlocked = active && world.openDoors.includes(active)
   const catPrompt = target.cue && catName ? pl.cat[target.cue](catName) : null
-  const prompt = catPrompt ?? (unlocked ? interaction?.unlocked : null) ?? interaction?.prompt
+  const stairs = active && !unlocked
+    ? transitions.find((edge) => edge.location === location && edge.interaction === active && edge.kind === 'stairs')
+    : null
+  const prompt = (stairs && pl.stairs.progress(points, stairs.minimumPoints)) || (catPrompt ?? (unlocked ? interaction?.unlocked : null) ?? interaction?.prompt)
+  const conversation = open?.type === 'dialogue' && dialogueBody(open.dialogue)
 
   return (
     <section className="room" aria-labelledby="room-title">
@@ -271,9 +291,18 @@ export default function Room({ save, commit, busy, notice, nativeActive, backHan
           <p id="interaction-body">{pl.pause.body}</p>
           <button type="button" className="secondary pause-menu" disabled={busy} onClick={onMenu}>{pl.pause.menu}</button>
         </>}
+        {open?.type === 'dialogue' && conversation && <>
+          <h2 id="interaction-title">{pl.dialogue[open.dialogue.speaker].title}</h2>
+          <div id="interaction-body">
+            <p>{pl.dialogue[open.dialogue.speaker].greeting}</p>
+            {conversation.hint && <p>{conversation.hint}</p>}
+            <p>{conversation.progression}</p>
+          </div>
+        </>}
         {open?.type === 'locked' && <>
-          <h2 id="interaction-title">{pl.lockedDoor.title}</h2>
-          <p id="interaction-body">{pl.lockedDoor.requirement(open.edge.minimumPoints)}</p>
+          <h2 id="interaction-title">{open.edge.kind === 'stairs' ? pl.stairs.title : pl.lockedDoor.title}</h2>
+          <p id="interaction-body">{open.edge.kind === 'stairs' ? pl.stairs.progress(points, open.edge.minimumPoints) :
+            pl.lockedDoor.requirement(open.edge.minimumPoints)}</p>
         </>}
         {open?.type === 'success' && <>
           <h2 id="interaction-title" ref={successHeading} tabIndex={-1}>{pl.questComplete}</h2>

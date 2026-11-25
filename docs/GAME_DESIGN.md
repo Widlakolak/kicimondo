@@ -14,9 +14,9 @@ A second loop runs alongside it: repair or place an attraction -> meet cats -> b
 
 ## Opening
 
-Stage 03 includes bedroom exploration, the landing and three quests. The clothes task can be completed by tracing or using numbered buttons. Each quest grants 1 PS and the first point opens the door.
+The opening includes three bedroom quests. The clothes task can be completed by tracing or using numbered buttons. Each quest grants 1 PS and the first point opens the door to the upstairs landing.
 
-The player chooses a boy or girl avatar and an in-game name (not a real name requirement). Start next to the bed in a bedroom. The first mission is picking up scattered clothes by tracing a path. On success, remove the clothes, award one independence point (PS in Polish) and unlock the bedroom door. Return to exploration rather than chaining another exercise automatically.
+The player chooses a boy or girl avatar and an in-game name (not a real name requirement). Start next to the bed in a bedroom. Picking up scattered clothes removes them from the room and awards one independence point (PS in Polish). Any bedroom activity can earn the first point and open the door. Return to exploration rather than chaining another exercise automatically.
 
 Bursztynek is the bedroom’s resident cat. The player can fill his water bowl with counting and arithmetic and prepare his bed with word-picture matching, in either order. The cat shows a heart when receptive. The first accepted petting interaction and each restored attraction grant lasting trust.
 
@@ -24,10 +24,10 @@ Bursztynek is the bedroom’s resident cat. The player can fill his water bowl w
 
 | Location | Lifetime PS required | Activities |
 | --- | ---: | --- |
-| Bedroom | 0 | Clothes, desk, bed, first cat |
-| Upstairs | 1 | Books, school bag, bathroom, toys |
-| Ground floor | 8 | Table, kitchen, sorting, household tasks |
-| Garden | 16 | Plants, water bowls, shelters, cat playground |
+| Bedroom | 0 | Clothes, water bowl and cat bed |
+| Upstairs | 1 | School bag, supplies, book sizes, handwashing, bathroom items and toys |
+| Ground floor | 8 | Fruit arithmetic, table settings and household sorting |
+| Garden (planned) | 16 | Plants, water bowls, shelters, cat playground |
 | Basement | 32 | Workshop, materials and puzzles |
 | Forest | 64 | Nature, trails and mysteries |
 | Village | 128 | Shops, money, community and animal care |
@@ -36,6 +36,8 @@ Bursztynek is the bedroom’s resident cat. The player can fill his water bowl w
 | Coastal region | 1024 | Later adventures |
 
 Thresholds are provisional and cumulative, not costs. Basement is a branch from the ground floor, not a mandatory route through the garden. Unlocks are permanent, and gates show progress in simple language. A first-time eligible quest awards one PS; repeated practice does not award the same point again. PS represents in-game progression, not an assessment of real-world independence.
+
+Upstairs leads from the landing to the study, bathroom and playroom. Ciocia Hania suggests a room with remaining tasks and explains the stairs. Nine activities are available before the stair gate, so the player can leave one for later. The ground-floor hall connects the stairs, kitchen and living room. Each room has a return route. The house offers 12 PS and the planned garden has no entrance in Stage 05.
 
 Content must provide enough accessible first-time missions to reach the next gate. Before a gate is shipped, validate reachability and give children a choice of activities. Do not ship a gate whose required content is missing. With the proposed thresholds, a release that includes the forest needs at least 64 eligible completions before the forest. Start with the bedroom/upstairs and expand incrementally.
 

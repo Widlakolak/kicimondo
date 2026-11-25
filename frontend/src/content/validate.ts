@@ -1,19 +1,65 @@
 import { clearCatRoute } from '../core/cat.ts'
 import { mathQuestions } from '../core/education.ts'
-import { solidsFor, type LocationMap } from '../core/tiledMap.ts'
+import { canStand, nearbyInteraction, type Point } from '../core/room.ts'
+import { organizedArt, solidsFor, type LocationMap } from '../core/tiledMap.ts'
 import { pl } from '../i18n/pl.ts'
-import { cats, challenges, locationIds, locations, mathOperations, pictureIds, quests, transitions, type LocationId } from './pack.ts'
+import { reachableLocations } from './routes.ts'
+import { cats, challenges, dialogues, locationIds, locations, mathOperations, pictureIds, quests, transitions, type Challenge, type LocationId, type SortChallenge } from './pack.ts'
+
+const unique = (ids: readonly string[]) => new Set(ids).size === ids.length
+
+export function validSort(challenge: SortChallenge): boolean {
+  const ids = challenge.items.map(({ id }) => id)
+  if (ids.length < 2 || ids.length > 6 || !unique(ids) ||
+      !challenge.items.every(({ id, picture }) => Object.hasOwn(pl.sort.items, id) &&
+        (picture === undefined || pictureIds.includes(picture))) ||
+      !unique(ids.map((id) => pl.sort.items[id]))) return false
+  if (challenge.mode === 'sequence') {
+    return challenge.order.length === ids.length && unique(challenge.order) &&
+      challenge.order.every((id) => ids.includes(id))
+  }
+  const { groups, assignments } = challenge
+  return groups.length >= 2 && unique(groups) && groups.every((group) => Object.hasOwn(pl.sort.groups, group) &&
+    ids.some((id) => assignments[id] === group)) && unique(groups.map((group) => pl.sort.groups[group])) &&
+    Object.keys(assignments).length === ids.length &&
+    ids.every((id) => groups.some((group) => assignments[id] === group))
+}
+
+function walkableFrom(map: LocationMap, entry: Point) {
+  const solids = solidsFor(map)
+  const index = ({ x, y }: Point) => y * map.width + x
+  const seen = new Uint8Array(map.width * map.height)
+  const queue: Point[] = [entry]
+  seen[index(entry)] = 1
+  for (let i = 0; i < queue.length; i++) {
+    const { x, y } = queue[i]
+    for (const step of [{ x: x + 1, y }, { x: x - 1, y }, { x, y: y + 1 }, { x, y: y - 1 }]) {
+      if (step.x < 5 || step.x > map.width - 5 || step.y < 3 || step.y > map.height - 3) continue
+      const key = index(step)
+      if (seen[key]) continue
+      if (canStand(step, solids)) queue.push(step)
+      seen[key] = 1
+    }
+  }
+  // Only tiles placed in the queue are reachable; visited walls stay at 1.
+  for (const tile of queue) seen[index(tile)] = 2
+  return (point: Point) => Number.isInteger(point.x) && Number.isInteger(point.y) && seen[index(point)] === 2
+}
 
 export function validateContent(maps: Record<LocationId, LocationMap>) {
   const require = (condition: unknown, message: string) => {
     if (!condition) throw new Error('Invalid content: ' + message)
   }
-  const unique = (ids: readonly string[]) => new Set(ids).size === ids.length
-  for (const [id, challenge] of Object.entries(challenges)) {
+  for (const [id, challenge] of Object.entries<Challenge>(challenges)) {
     require(Object.hasOwn(pl.challenges, challenge.text), 'missing challenge text for ' + id)
+    if (challenge.type === 'SORT_ORDER') {
+      require(validSort(challenge), 'ambiguous sort solution for ' + id)
+      continue
+    }
     if (challenge.type === 'MATH_CHOICE') {
       require(Number.isSafeInteger(challenge.maximum) && challenge.maximum >= 2 && challenge.maximum <= 10 &&
-        Number.isSafeInteger(challenge.seed) && challenge.operations.length > 0 &&
+        Number.isSafeInteger(challenge.seed) && (challenge.counter === undefined ||
+          Object.hasOwn(pl.math.counters, challenge.counter)) && challenge.operations.length > 0 &&
         challenge.operations.every((operation) => mathOperations.includes(operation)), 'invalid maths settings for ' + id)
       require(mathQuestions(challenge).every(({ answer, options }) => options.length === 3 &&
         new Set(options).size === 3 && options.filter((option) => option === answer).length === 1 &&
@@ -64,16 +110,29 @@ export function validateContent(maps: Record<LocationId, LocationMap>) {
   require(unique(affectedObjects), 'object affected by multiple quest effects')
   for (const quest of quests) {
     require(Object.hasOwn(challenges, quest.challenge) && Number.isSafeInteger(quest.reward.points) &&
-      quest.reward.points > 0, 'invalid challenge or reward for ' + quest.id)
+      quest.reward.points === 1, 'invalid challenge or reward for ' + quest.id)
     for (const effect of quest.effects) {
-      require(maps[quest.location].furniture.some(({ id }) => id === effect.object), 'missing object ' + effect.object)
+      const furniture = maps[quest.location].furniture.find(({ id }) => id === effect.object)
+      require(furniture && (effect.type === 'HIDE_OBJECT' ||
+        (effect.type === 'ORGANIZE_OBJECT' && organizedArt.some((art) => art === furniture.art)) ||
+        (effect.type === 'RESTORE_ATTRACTION' && cats.some((cat) => cat.location === quest.location &&
+          cat.attractions.some(({ object }) => object === effect.object)))), 'invalid world effect for ' + effect.object)
     }
   }
 
   for (const id of locationIds) {
     const map = maps[id]
-    require(map.spawns.has(locations[id].entry), 'missing entry spawn for ' + id)
-    const actions = [...quests, ...transitions].filter((action) => action.location === id)
+    const entry = map.spawns.get(locations[id].entry)
+    require(entry && Number.isInteger(entry.x) && Number.isInteger(entry.y), 'invalid entry spawn for ' + id)
+    const reachable = walkableFrom(map, entry!)
+    for (const [spawn, point] of map.spawns) {
+      require(reachable(point), 'unreachable spawn ' + id + '/' + spawn)
+    }
+    for (const anchor of map.anchors) {
+      require(reachable(anchor) && nearbyInteraction(anchor, map.anchors) === anchor.id,
+        'unreachable or overlapping anchor ' + id + '/' + anchor.id)
+    }
+    const actions = [...quests, ...transitions, ...dialogues].filter((action) => action.location === id)
     require(actions.length === map.anchors.length && unique(actions.map((action) => action.interaction)),
       'unexpected interactions for ' + id)
     for (const action of actions) {
@@ -82,25 +141,38 @@ export function validateContent(maps: Record<LocationId, LocationMap>) {
     }
   }
 
-  for (const { location, target, interaction, minimumPoints } of transitions) {
-    require(maps[target.location]?.spawns.has(target.spawn) && Number.isSafeInteger(minimumPoints) &&
-      minimumPoints >= 0, 'invalid transition ' + interaction)
-    require(maps[location].furniture.some(({ id, art }) => id === interaction && art === 'door'),
-      'missing door for ' + interaction)
-    require(transitions.some((entry) => entry.location === target.location && entry.target.location === location),
-      'missing return transition for ' + interaction)
+  for (const { location, interaction, speaker, hints, gate, afterGate } of dialogues) {
+    require(maps[location].furniture.some(({ id, art }) => id === interaction && art === 'guide') &&
+      Object.hasOwn(pl.dialogue, speaker) && Object.hasOwn(pl.dialogue, afterGate) &&
+      hints.length > 0 && unique(hints.map((hint) => hint.location)) && hints.every((hint) =>
+        quests.some((quest) => quest.location === hint.location) && Object.hasOwn(pl.dialogue, hint.text)) &&
+      transitions.some((edge) => edge.location === location && edge.interaction === gate && edge.minimumPoints > 0),
+    'invalid dialogue references for ' + interaction)
   }
 
-  // A gate can count only rewards reachable before taking that transition.
-  const reachable = new Set<LocationId>(['bedroom'])
-  let size = 0
-  while (size !== reachable.size) {
-    size = reachable.size
-    const points = quests.filter((quest) => reachable.has(quest.location))
-      .reduce((total, quest) => total + quest.reward.points, 0)
+  for (const { location, target, interaction, minimumPoints, kind } of transitions) {
+    require(maps[target.location]?.spawns.has(target.spawn) && Number.isSafeInteger(minimumPoints) &&
+      minimumPoints >= 0, 'invalid transition ' + interaction)
+    require(maps[location].furniture.some(({ id, art }) => id === interaction && art === (kind ?? 'door')),
+      'missing transition art for ' + interaction)
+  }
+
+  // A gate can count only rewards reachable without using that gate.
+  const availablePoints = (reachable: ReadonlySet<LocationId>) =>
+    quests.filter((quest) => reachable.has(quest.location)).reduce((total, quest) => total + quest.reward.points, 0)
+  for (const edge of transitions.filter(({ minimumPoints }) => minimumPoints > 0)) {
+    const beforeGate = reachableLocations(availablePoints, transitions.filter((candidate) => candidate !== edge))
+    require(beforeGate.has(edge.location) && availablePoints(beforeGate) >= edge.minimumPoints,
+      'gate blocked by unavailable rewards: ' + edge.interaction)
+  }
+  require(reachableLocations(availablePoints).size === locationIds.length, 'location blocked by unavailable rewards')
+  for (let budget = 0; budget <= quests.length; budget++) {
+    const reachable = reachableLocations(budget)
     for (const edge of transitions) {
-      if (reachable.has(edge.location) && edge.minimumPoints <= points) reachable.add(edge.target.location)
+      if (!reachable.has(edge.location) || budget < edge.minimumPoints) continue
+      require(transitions.some((back) => back.location === edge.target.location &&
+        back.target.location === edge.location && back.minimumPoints <= budget),
+      'missing return transition for ' + edge.interaction)
     }
   }
-  require(reachable.size === locationIds.length, 'location blocked by unavailable rewards')
 }

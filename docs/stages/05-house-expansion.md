@@ -1,6 +1,6 @@
 # Stage 05: House expansion
 
-Status: ready for implementation. Stage 04 is merged; physical MediaPad T5 acceptance and repeatable native upgrades remain pending. The owner approved continuing gameplay development before that review.
+Status: implemented for owner review. Stage 04 is merged; physical MediaPad T5 acceptance and repeatable native upgrades remain pending. The owner approved continuing gameplay development before that review.
 
 ## Goal
 
@@ -24,6 +24,23 @@ Expand the existing bedroom and landing into a small explorable house. The playe
 - Reload and migrate a Stage 03/04 save with 3 PS and existing trust/attractions. Complete new quests, move between floors, reload and verify all progress and checkpoints. Test failed writes and duplicate rewards. Preserve older saves.
 - Run npm ci --engine-strict, lint, typecheck, unit tests, production build and Playwright. Add domain and browser tests for the new content, reachability, sorting, migration and full house progression. Extend offline checks to cover new locations and tasks; verify all required chunks/maps are precached. Retain the Android build and APK verification, report actual device tests separately. No fake test or compatibility claims.
 - Update README, roadmap, game design, architecture, content, stage notes and asset records with actual implementation and results. Keep code/docs concise English, player UI Polish.
+
+## Verification
+
+- Node 24.13.1 and npm 11.11.0 passed the strict clean install, lint, type check and production build. All 52 unit tests and 17 Playwright scenarios passed.
+- The offline tablet scenario used touch and keyboard, exercised both sorting modes and all return routes, checked the stair gate at 7 and 8 PS, reloaded in the living room and completed all 12 activities. Domain and storage tests cover disconnected anchors, older saves, duplicate rewards and aborted writes.
+- Chromium 80.0.3987.0 on Linux opened the study offline, completed book ordering and resumed at that checkpoint after reload. The PWA precaches the production bundle with all eight maps. The Android debug build assembled and passed APK identity, API level, bundle contents and signature checks.
+- MediaPad T5 gameplay, real Android WebView performance and same-key upgrade durability remain pending.
+
+## Manual review
+
+1. Start a fresh browser save. Complete any bedroom activity and enter the landing. Speak to Ciocia Hania twice and verify the points stay unchanged.
+2. Explore the study, bathroom and playroom. Try an incorrect sort, show its hint, place an item, reset and cancel. Compare the furniture before and after completing each task.
+3. At 7 PS, check that the stairs show 7 of 8 PS. Complete one more activity while leaving a pre-gate quest unfinished. Descend at 8 PS, complete the three downstairs tasks, return and finish the skipped quest. The final total should be 12 PS.
+4. Reload at a downstairs room and check the checkpoint, rewards and organized props. On a previous-stage save, check the bedroom progress and Bursztynek's trust and attractions before continuing.
+5. For web offline testing, use HTTPS or trusted localhost, wait for offline readiness, disconnect and reload. Move between both floors and use the exercises in portrait and landscape.
+6. The Stage 05 debug APK uses versionCode 5. For the physical MediaPad T5 review, record the installed Android version and active WebView, then test a fresh install in airplane mode, touch, rotation, hardware Back and restart. Use a consistently signed build to test an in-place upgrade. Independently signed CI builds are suitable for first installation. Physical-device and native upgrade verification are pending.
+
 
 ## Out of scope
 

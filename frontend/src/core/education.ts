@@ -1,4 +1,4 @@
-import type { MatchChallenge, MathChallenge, MathOperation, PictureId } from '../content/pack.ts'
+import type { MatchChallenge, MathChallenge, MathOperation, PictureId, SortChallenge, SortGroup, SortItemId } from '../content/pack.ts'
 
 export type MathQuestion = {
   operation: MathOperation
@@ -33,4 +33,14 @@ export function mathQuestions(challenge: MathChallenge): MathQuestion[] {
 export function matchPair(challenge: MatchChallenge, matched: readonly string[], wordId: string | null, picture: PictureId) {
   const pair = challenge.pairs.find(({ id }) => id === wordId)
   return pair?.picture === picture && !matched.includes(pair.id) ? [...matched, pair.id] : matched
+}
+
+export function placeSortItem(
+  challenge: SortChallenge, placed: readonly SortItemId[], item: SortItemId, group?: SortGroup,
+): readonly SortItemId[] {
+  if (placed.includes(item) || !challenge.items.some(({ id }) => id === item)) return placed
+  const correct = challenge.mode === 'sequence'
+    ? challenge.order[placed.length] === item
+    : group !== undefined && challenge.groups.includes(group) && challenge.assignments[item] === group
+  return correct ? [...placed, item] : placed
 }

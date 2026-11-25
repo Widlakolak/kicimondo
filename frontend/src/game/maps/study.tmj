@@ -1,0 +1,80 @@
+{
+  "type": "map",
+  "version": "1.10",
+  "tiledversion": "1.11.0",
+  "orientation": "orthogonal",
+  "renderorder": "right-down",
+  "infinite": false,
+  "width": 20,
+  "height": 15,
+  "tilewidth": 16,
+  "tileheight": 16,
+  "nextlayerid": 5,
+  "nextobjectid": 21,
+  "tilesets": [],
+  "layers": [
+    {
+      "id": 1,
+      "name": "Furniture",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {"id": 10, "name": "school-bag", "x": 39, "y": 38, "width": 54, "height": 34, "properties": [{"name": "art", "type": "string", "value": "satchel"}, {"name": "solid", "type": "bool", "value": true}]},
+        {"id": 11, "name": "school-supplies", "x": 133, "y": 38, "width": 54, "height": 34, "properties": [{"name": "art", "type": "string", "value": "supplies"}, {"name": "solid", "type": "bool", "value": true}]},
+        {"id": 12, "name": "books", "x": 226, "y": 38, "width": 54, "height": 34, "properties": [{"name": "art", "type": "string", "value": "books"}, {"name": "solid", "type": "bool", "value": true}]},
+        {"id": 13, "name": "window-plant", "x": 252, "y": 148, "width": 21, "height": 28, "properties": [{"name": "art", "type": "string", "value": "plant"}, {"name": "solid", "type": "bool", "value": true}]},
+        {"id": 14, "name": "study-desk", "x": 36, "y": 128, "width": 54, "height": 39, "properties": [{"name": "art", "type": "string", "value": "desk"}, {"name": "solid", "type": "bool", "value": true}]},
+        {"id": 19, "name": "landing-door", "x": 144, "y": 205, "width": 32, "height": 19, "properties": [{"name": "art", "type": "string", "value": "door"}]}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Collisions",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {"id": 6, "name": "north-wall", "x": 0, "y": 0, "width": 320, "height": 32},
+        {"id": 7, "name": "south-wall", "x": 0, "y": 224, "width": 320, "height": 16},
+        {"id": 8, "name": "west-wall", "x": 0, "y": 32, "width": 16, "height": 192},
+        {"id": 9, "name": "east-wall", "x": 304, "y": 32, "width": 16, "height": 192}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Interactions",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {"id": 15, "name": "school-bag", "x": 66, "y": 85, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 16, "name": "school-supplies", "x": 160, "y": 85, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 17, "name": "books", "x": 253, "y": 85, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 20, "name": "landing-door", "x": 160, "y": 194, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 16}]}
+      ]
+    },
+    {
+      "id": 4,
+      "name": "SpawnPoints",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {"id": 18, "name": "from-landing", "x": 160, "y": 173, "width": 0, "height": 0, "point": true}
+      ]
+    }
+  ]
+}

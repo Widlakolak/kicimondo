@@ -4,7 +4,9 @@ Kicimondo is a 2D adventure game for children in the first years of primary scho
 
 ## Status
 
-Meet Bursztynek, the resident cat. Put away the clothes by tracing, fill the water bowl with counting and arithmetic, and prepare the cat bed by matching Polish words to pictures. The cat uses the restored spots and shows when it is ready for petting. The first independence point opens the door to the landing.
+Meet Bursztynek, the resident cat. Put away the clothes by tracing, fill the water bowl with counting and arithmetic, and prepare the cat bed by matching Polish words to pictures. The cat uses the restored spots and shows when it is ready for petting. The first independence point (PS) opens the door to the upstairs landing.
+
+Visit the study, bathroom and playroom upstairs. At 8 PS the stairs open to the hall, kitchen and living room. The house has 12 one-point activities, including matching, arithmetic, ordering and sorting. Ciocia Hania gives short hints on the landing.
 
 The browser stores the profile, quest progress, location and trust in IndexedDB. Earlier saves carry over on the same origin and browser profile.
 
@@ -55,6 +57,7 @@ The browser suite serves the production build. On Linux, use `npx playwright ins
 - [Stage 02](docs/stages/02-first-quest.md)
 - [Stage 03](docs/stages/03-first-cat.md)
 - [Stage 04](docs/stages/04-android-pwa.md)
+- [Stage 05](docs/stages/05-house-expansion.md)
 - [Codex task prompt](docs/CODEX.md)
 
 The game uses Polish text. Code and technical documentation are in English. Names other than Kicimondo and Kicipedia are provisional. No open-source license has been selected.

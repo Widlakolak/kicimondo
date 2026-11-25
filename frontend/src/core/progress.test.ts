@@ -68,3 +68,32 @@ it('restores either attraction first and grants each reward and trust event once
     expect(decodeSave({ ...three, trust: [...three.trust, three.trust[0]] }, maps)).toBeNull()
   }
 })
+
+it('migrates a Stage 03/04 save with all bedroom rewards, trust and its landing checkpoint', () => {
+  let save = initial()
+  for (const quest of quests.filter(({ location }) => location === 'bedroom')) {
+    save = applyCommand(save, { type: 'complete', quest: quest.id })!
+  }
+  save = applyCommand(save, { type: 'pet', cat: 'amber' })!
+  save = applyCommand(save, exit)!
+  const stage04 = { ...save, contentVersion: 2 }
+  const migrated = decodeSave(stage04, maps)!
+  expect({ ...migrated, contentVersion: 2 }).toEqual(expect.objectContaining({
+    ...stage04, trust: expect.arrayContaining(stage04.trust),
+  }))
+  expect(migrated.contentVersion).toBe(3)
+  expect(migrated.checkpoint).toEqual({ location: 'landing', spawn: 'from-bedroom' })
+  expect(pointsOf(migrated)).toBe(3)
+  expect(trustOf(migrated, 'amber')).toBe(3)
+  expect(applyCommand(migrated, { type: 'transition', location: 'landing', interaction: 'ground-stairs' })).toBe(migrated)
+})
+
+it('keeps organized props in the reward transaction and rejects a save with inaccessible quest rewards', () => {
+  const kitchenQuest = quests.find(({ location }) => location === 'kitchen')!
+  const impossible = applyCommand({ ...initial(), checkpoint: { location: 'kitchen', spawn: 'from-hall' } },
+    { type: 'complete', quest: kitchenQuest.id })!
+  expect(impossible.restored).toEqual([{ location: 'kitchen', object: kitchenQuest.interaction }])
+  expect(pointsOf(impossible)).toBe(1)
+  expect(trustOf(impossible, 'amber')).toBe(0)
+  expect(decodeSave(impossible, maps)).toBeNull()
+})
