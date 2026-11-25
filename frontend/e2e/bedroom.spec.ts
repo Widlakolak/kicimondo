@@ -1,11 +1,17 @@
 import { expect, test, type Page } from '@playwright/test'
+import { challenges } from '../src/content/pack'
+import type { Save } from '../src/core/progress'
 
 const start = 'Wejdź do pokoju'
 const roomTitle = 'Twój pokój'
 const nickname = 'Żółwik'
 const clothes = 'Rozrzucone ubrania'
 const profileKey = 'kicimondo.profile'
-const stage = (page: Page) => page.getByRole('img', { name: 'Widok pokoju z góry' }).locator('.stage')
+const stage = (page: Page) => page.locator('.world .stage')
+const board = (page: Page) => page.getByRole('img', { name: 'Ścieżka od startu do mety' })
+const path = challenges['clothes-to-basket'].path
+const continueButton = 'Wróć do gry'
+const rewardTitle = 'Zadanie ukończone!'
 const position = async (page: Page, axis: 'x' | 'y') => Number(await stage(page).getAttribute(`data-${axis}`))
 
 async function enterRoom(page: Page) {
@@ -44,6 +50,48 @@ async function expectStill(page: Page, axis: 'x' | 'y') {
   expect(new Set(samples).size).toBe(1)
 }
 
+async function walkToClothes(page: Page) {
+  await holdKey(page, 'd', () => reach(page, 'x', 183, 1))
+  await holdKey(page, 's', () => reach(page, 'y', 144, 1))
+  await expect(page.getByText('Obok leżą rozrzucone ubrania.')).toBeVisible()
+  await page.keyboard.press('e')
+  await expect(page.getByRole('dialog', { name: clothes })).toBeVisible()
+}
+
+async function saveRecord(page: Page) {
+  return page.evaluate(() => new Promise<Save>((resolve, reject) => {
+    const opening = indexedDB.open('kicimondo')
+    opening.onerror = () => reject(opening.error)
+    opening.onsuccess = () => {
+      const db = opening.result
+      const read = db.transaction('saves').objectStore('saves').get('current')
+      read.onsuccess = () => { db.close(); resolve(read.result) }
+      read.onerror = () => { db.close(); reject(read.error) }
+    }
+  }))
+}
+
+async function traceCoordinates(page: Page) {
+  const box = (await board(page).boundingBox())!
+  return path.map(({ x, y }) => ({ x: box.x + x * box.width, y: box.y + y * box.height }))
+}
+
+async function buttonAlternative(page: Page) {
+  await page.getByRole('button', { name: 'Wybierz przyciski' }).click()
+  await page.getByRole('button', { name: 'Przycisk 3' }).click()
+  await expect(page.getByText('Wybierz najpierw niższy numer.')).toBeVisible()
+  for (let target = 1; target <= 5; target++) {
+    await page.getByRole('button', { name: `Przycisk ${target}` }).press('Enter')
+  }
+  await expect(page.getByRole('dialog', { name: rewardTitle })).toBeVisible()
+}
+
+async function pixelAt(page: Page, x: number, y: number) {
+  return stage(page).locator('canvas').evaluate((canvas, point) =>
+    Array.from((canvas as HTMLCanvasElement).getContext('2d')!.getImageData(point.x, point.y, 1, 1).data),
+  { x, y })
+}
+
 test('chooses and edits an avatar, validates the nickname, and keeps the saved profile on reload', async ({ page }) => {
   await page.goto('/')
   await page.getByLabel('Pseudonim', { exact: true }).fill('   ')
@@ -57,7 +105,7 @@ test('chooses and edits an avatar, validates the nickname, and keeps the saved p
 
   await page.reload()
   await expect(page.getByText(nickname, { exact: true })).toBeVisible()
-  await page.getByRole('button', { name: 'Wróć do pokoju' }).click()
+  await page.getByRole('button', { name: continueButton }).click()
   await expect(stage(page)).toHaveAttribute('data-x', '106')
   await page.getByRole('button', { name: 'Zmień postać' }).click()
   await expect(page.getByRole('radio', { name: 'Dziewczynka' })).toBeChecked()
@@ -66,8 +114,7 @@ test('chooses and edits an avatar, validates the nickname, and keeps the saved p
   await page.getByRole('button', { name: start }).click()
   await expect(stage(page)).toHaveAttribute('data-x', '106')
   await expect(stage(page).locator('canvas')).toHaveCount(1)
-  await expect.poll(() => page.evaluate((key) => JSON.parse(localStorage.getItem(key)!), profileKey))
-    .toEqual({ schemaVersion: 1, avatar: 'boy', nickname })
+  expect((await saveRecord(page)).profile).toEqual({ avatar: 'boy', nickname })
 })
 
 test('keyboard movement stops at furniture and walls and nearby interactions require deliberate input', async ({ page }) => {
@@ -100,7 +147,7 @@ test('keyboard movement stops at furniture and walls and nearby interactions req
   await page.keyboard.press('e')
   const modal = page.getByRole('dialog', { name: clothes })
   await expect(modal).toBeVisible()
-  await expect(modal).toContainText('Zadanie ze sprzątaniem będzie dostępne w kolejnym etapie gry.')
+  await expect(board(page)).toBeVisible()
   await holdKey(page, 'ArrowDown', () => expectStill(page, 'y'))
   await page.keyboard.press('Escape')
   await expect(modal).toBeHidden()
@@ -119,7 +166,7 @@ test('keyboard movement stops at furniture and walls and nearby interactions req
   })
   expect(await position(page, 'y')).toBeGreaterThanOrEqual(35)
   await interact.click()
-  await expect(page.getByRole('dialog', { name: 'Zamknięte drzwi' })).toBeVisible()
+  await expect(page.getByRole('dialog', { name: 'Zamknięte drzwi' })).toContainText('zdobądź 1 PS')
   await page.getByRole('button', { name: 'Zamknij' }).click()
   await expect(interact).toBeFocused()
   expect(errors).toEqual([])
@@ -153,8 +200,23 @@ test.describe('touch layout and movement', () => {
     await expectStill(page, 'y')
     await page.getByRole('button', { name: 'Sprawdź' }).tap()
     await expect(page.getByRole('dialog', { name: clothes })).toBeVisible()
+    await board(page).scrollIntoViewIfNeeded()
+    const trace = async (stop: number, finish: 'touchEnd' | 'touchCancel') => {
+      const coordinates = await traceCoordinates(page)
+      await device.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [coordinates[0]] })
+      for (const point of coordinates.slice(1, stop)) {
+        await device.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [point] })
+      }
+      await device.send('Input.dispatchTouchEvent', { type: finish, touchPoints: [] })
+    }
+    await trace(5, 'touchCancel')
+    await expect(board(page)).toHaveAttribute('data-progress', '0')
+    await expect(page.getByRole('dialog', { name: clothes })).toBeVisible()
+    await trace(path.length, 'touchEnd')
+    await expect(page.getByRole('dialog', { name: rewardTitle })).toBeVisible()
     await page.getByRole('button', { name: 'Zamknij' }).tap()
     await expect(page.getByRole('dialog')).toHaveCount(0)
+    await expect(page.getByText('1 PS', { exact: true })).toBeVisible()
 
     await touch('W prawo', 'touchEnd', async () => {
       await reach(page, 'x', 205, 1)
@@ -172,14 +234,120 @@ test.describe('touch layout and movement', () => {
   })
 })
 
-test('recovers from malformed storage and can play when writing is blocked', async ({ page }) => {
+
+test('migrates the Stage 01 profile without replacing it and treats a malformed legacy profile safely', async ({ page, context }) => {
   await page.addInitScript((key) => {
-    localStorage.setItem(key, '{broken')
-    Storage.prototype.setItem = () => { throw new DOMException('Blocked', 'SecurityError') }
+    localStorage.setItem(key, '{"schemaVersion":1,"avatar":"girl","nickname":"Żółwik"}')
   }, profileKey)
   await page.goto('/')
-  await expect(page.getByRole('status')).toContainText('Nie udało się odczytać zapisanego profilu.')
+  await expect(page.getByText(nickname, { exact: true })).toBeVisible()
+  await expect(page.getByRole('button', { name: continueButton })).toBeVisible()
+  expect((await saveRecord(page)).profile).toEqual({ avatar: 'girl', nickname })
+
+  const malformed = await context.browser()!.newPage()
+  try {
+    await malformed.addInitScript((key) => localStorage.setItem(key, '{broken'), profileKey)
+    await malformed.goto(new URL('/', page.url()).href)
+    await expect(malformed.getByText('Nie udało się odczytać dawnego profilu.', { exact: false })).toBeVisible()
+    await enterRoom(malformed)
+    expect((await saveRecord(malformed)).profile.nickname).toBe(nickname)
+  } finally {
+    await malformed.close()
+  }
+})
+
+test('mouse tracing rejects shortcuts, resumes after lifting and removes the clothes on success', async ({ page }) => {
+  await page.goto('/')
   await enterRoom(page)
-  await expect(page.getByText('Zapis na tym urządzeniu jest niedostępny.', { exact: false })).toBeVisible()
-  expect(await page.evaluate((key) => localStorage.getItem(key), profileKey)).toBe('{broken')
+  const clothesBefore = await pixelAt(page, 181, 150)
+  const doorBefore = await pixelAt(page, 160, 20)
+  await walkToClothes(page)
+  let coordinates = await traceCoordinates(page)
+  const end = coordinates.at(-1)!
+  await page.mouse.click(end.x, end.y)
+  await expect(page.getByText('Zacznij od pola Start.')).toBeVisible()
+  await page.getByRole('button', { name: 'Podpowiedź' }).click()
+  await expect(page.getByText('Idź wzdłuż przerywanej linii.', { exact: false })).toBeVisible()
+  coordinates = await traceCoordinates(page)
+  await page.mouse.move(coordinates[0].x, coordinates[0].y)
+  await page.mouse.down()
+  await page.mouse.move(coordinates.at(-1)!.x, coordinates.at(-1)!.y)
+  await page.mouse.up()
+  await expect(page.getByText('Linia zeszła ze ścieżki.', { exact: false })).toBeVisible()
+  await page.getByRole('button', { name: 'Od początku' }).click()
+  coordinates = await traceCoordinates(page)
+  await page.mouse.move(coordinates[0].x, coordinates[0].y)
+  await page.mouse.down()
+  for (const point of coordinates.slice(1, 5)) await page.mouse.move(point.x, point.y)
+  await page.mouse.up()
+  await expect(page.getByText('Kontynuuj od zielonej kropki.')).toBeVisible()
+  await page.setViewportSize({ width: 960, height: 740 })
+  coordinates = await traceCoordinates(page)
+  const checkpoint = (await board(page).locator('.trace-checkpoint').boundingBox())!
+  await page.mouse.move(checkpoint.x + checkpoint.width / 2, checkpoint.y + checkpoint.height / 2)
+  await page.mouse.down()
+  for (const point of coordinates.slice(5)) await page.mouse.move(point.x, point.y)
+  await page.mouse.up()
+
+  await expect(page.getByRole('dialog', { name: rewardTitle })).toContainText('Zdobywasz 1 PS.')
+  await page.getByRole('button', { name: 'Zamknij' }).click()
+  await expect(page.getByRole('button', { name: 'Sprawdź' })).toBeDisabled()
+  await expect.poll(() => pixelAt(page, 181, 150)).not.toEqual(clothesBefore)
+  await expect.poll(() => pixelAt(page, 160, 20)).not.toEqual(doorBefore)
+  expect((await saveRecord(page)).rewards).toEqual([{ id: 'bedroom-clean-clothes-first', points: 1 }])
+})
+
+test('keyboard alternative awards once, opens the path upstairs, and keeps progress after reload and return', async ({ page }) => {
+  await page.goto('/')
+  await enterRoom(page)
+  await walkToClothes(page)
+  await buttonAlternative(page)
+  await page.getByRole('button', { name: 'Zamknij' }).click()
+  await expect(page.getByText('1 PS', { exact: true })).toBeVisible()
+  await page.keyboard.press('e')
+  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await holdKey(page, 'a', () => reach(page, 'x', 162, -1))
+  await holdKey(page, 'w', () => reach(page, 'y', 52, -1))
+  await expect(page.getByText('Drzwi są otwarte.', { exact: false })).toBeVisible()
+  await page.keyboard.press('e')
+  await expect(page.getByRole('heading', { name: 'Półpiętro' })).toBeVisible()
+  await expect(stage(page)).toHaveAttribute('data-y', '72')
+  await page.reload()
+  await page.getByRole('button', { name: continueButton }).click()
+  await expect(page.getByRole('heading', { name: 'Półpiętro' })).toBeVisible()
+  await expect(stage(page)).toHaveAttribute('data-y', '72')
+  await expect(page.getByText('1 PS', { exact: true })).toBeVisible()
+  await holdKey(page, 'w', () => reach(page, 'y', 52, -1))
+  await expect(page.getByText('Tędy wrócisz do pokoju.')).toBeVisible()
+  await page.getByRole('button', { name: 'Sprawdź' }).click()
+  await expect(page.getByRole('heading', { name: roomTitle })).toBeVisible()
+  await expect(stage(page)).toHaveAttribute('data-y', '69')
+  await holdKey(page, 'd', () => reach(page, 'x', 183, 1))
+  await holdKey(page, 's', () => reach(page, 'y', 144, 1))
+  await expect(page.getByRole('button', { name: 'Sprawdź' })).toBeDisabled()
+  expect(await saveRecord(page)).toMatchObject({
+    checkpoint: { location: 'bedroom', spawn: 'from-landing' },
+    completed: ['bedroom-clean-clothes'],
+    rewards: [{ id: 'bedroom-clean-clothes-first', points: 1 }],
+    hidden: [{ location: 'bedroom', object: 'scattered-clothes' }],
+  })
+})
+
+test('shows a failed-save notice and never persists a partial reward', async ({ page }) => {
+  await page.goto('/')
+  await enterRoom(page)
+  await walkToClothes(page)
+  await page.evaluate(() => {
+    const put = IDBObjectStore.prototype.put
+    IDBObjectStore.prototype.put = function (value, key) {
+      if (key === 'current') throw new DOMException('Disk full', 'QuotaExceededError')
+      return put.call(this, value, key)
+    }
+  })
+  await buttonAlternative(page)
+  await expect(page.getByRole('dialog', { name: rewardTitle })).toContainText('Nie można zapisać gry')
+  expect(await saveRecord(page)).toMatchObject({ completed: [], rewards: [], hidden: [] })
+  await page.reload()
+  await page.getByRole('button', { name: continueButton }).click()
+  await expect(page.getByText('0 PS', { exact: true })).toBeVisible()
 })

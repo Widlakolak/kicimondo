@@ -1,6 +1,6 @@
 # Stage 01: Client and playable room
 
-Status: implemented and locally verified. Owner acceptance pending.
+Status: merged. The owner launched and tested the game locally on Windows and accepted Stage 01.
 
 ## Goal
 
@@ -58,4 +58,4 @@ The cloud network blocked the Playwright browser download. The pull-request work
 - Approach the scattered clothes and press E or **Sprawdź**. Read the placeholder, try moving while the dialog is open, then close it. Approach the door and check that it stays closed.
 - On an Android phone, repeat movement and interaction with the on-screen buttons in portrait and landscape. Release a direction, rotate the device while holding a direction, and check that movement stops. Check text and button sizes in both layouts.
 
-Hands-on desktop play and testing on a physical Android device are pending.
+The owner later confirmed hands-on play on Windows. Physical Android testing has yet to take place. The tool versions and results above record the original Stage 01 run.

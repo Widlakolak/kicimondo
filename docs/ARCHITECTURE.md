@@ -1,6 +1,6 @@
 # Architecture
 
-Status: Stage 01 client implemented. Later systems described here are planned.
+Status: Stage 02 client implemented. Later systems described here are planned.
 
 ## Stack and boundaries
 
@@ -10,7 +10,7 @@ Phaser scenes own map rendering, animations, input and collisions. React renders
 
 The server is a modular monolith. Planned feature packages: content, player, quest/progression, learning, sync and shared infrastructure. Separate application/domain/infrastructure where useful; no boilerplate layers for their own sake. Keep HTTP DTOs separate from persistence entities. Use REST under /api/v1, validation, consistent errors and OpenAPI when endpoints exist.
 
-In Stage 01, the Phaser bedroom scene owns the avatar's position and resolves movement against map rectangles using pure TypeScript rules. React translates keyboard and pointer events into held directions on the typed room input bridge. The scene reports the nearest eligible interaction and hands deliberate requests back to React for the dialog. The room is loaded when the player enters it.
+One Phaser scene loads the current location from the Tiled map registry and resolves movement against map rectangles with pure TypeScript rules. The scene reports eligible interaction anchors through the room bridge. React presents the quest dialog and tracing UI. The quest and transition definitions connect stable anchor IDs to challenge data, rewards, effects and gated destination spawns. Once a quest is committed, the existing scene redraws props and updates its active anchors. A location transition starts the same scene at the destination spawn.
 
 ## Intended layout
 
@@ -34,9 +34,9 @@ Do not create empty modules before they are needed. Keep one canonical content s
 
 ## Persistence and offline
 
-Client authoritative for ordinary single-player gameplay. Initial prototype may store only avatar/settings locally through a versioned repository interface. Stage 02 moves progress to IndexedDB (Dexie is an option); native Android uses an adapter backed by durable local storage, evaluated in the mobile spike. Save state includes schemaVersion, contentVersion, profile ID, avatar, spawn/location, completed quests, reward ledger, world changes, cats and settings as they become relevant. Save after meaningful state transitions, not every movement frame. Restore to a valid spawn if coordinates are no longer valid. Validate malformed data, retain the last good save and offer recovery/reset with confirmation.
+The client is authoritative for single-player state. Stage 02 stores one local profile with a versioned gameplay record in IndexedDB. On first load, it imports a valid Stage 01 localStorage profile when the database is empty and preserves the original profile entry. The record stores the profile, content version, checkpoint, completed quest IDs, reward ledger and hidden objects. Profile edits and location transitions preserve earned progress. Reload uses the saved spawn, with a safe entry spawn fallback if a map changes.
 
-Completing a quest writes quest status, its unique reward record, world changes and unlock effects in one local transaction. Key uniqueness is profile + quest reward ID, not merely event ID. Reload, repeated clicks and retries must not duplicate PS. Derive lifetime PS from the award ledger or verify a cached total against it. Persist and replay logical state, not engine objects.
+Each command reads the current record inside an IndexedDB read-write transaction. Quest completion adds its ID, unique reward and world effects in the same transaction. Lifetime PS comes from the ledger. Door access uses the resulting point total. The previous valid snapshot is retained in the same transaction. A malformed record can be recovered from that snapshot. Unsupported versions and records with no recoverable snapshot are preserved for a compatible reader. If a write fails, the UI warns that later changes last only for the current session.
 
 Bundle core maps, content, graphics and sounds. PWA must cache a coherent version after the initial online load; Android ships a bundled client. A network failure cannot stop a local exercise. Do not force refresh during gameplay. Handle cache/save schema migrations explicitly. Export/import user-controlled backups; imported data is untrusted and validated. Browser storage can be cleared.
 

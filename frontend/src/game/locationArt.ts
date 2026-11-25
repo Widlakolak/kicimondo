@@ -1,8 +1,9 @@
-import type { FurnitureId } from '../core/bedroom'
+import type { FurnitureArt } from '../core/tiledMap'
+import type { LocationId } from '../content/pack'
 import type { Box } from '../core/room'
 import type { Paint } from './avatarArt'
 
-export function paintRoom(paint: Paint) {
+export function paintRoom(paint: Paint, theme: LocationId) {
   paint(0x4d3947, 0, 0, 320, 240)
   paint(0x8a6270, 8, 7, 304, 219)
   paint(0xb2908f, 16, 8, 288, 24)
@@ -18,6 +19,23 @@ export function paintRoom(paint: Paint) {
   paint(0xbd8863, 16, 32, 288, 3)
   paint(0x674954, 8, 224, 304, 7)
   paint(0xaf827e, 16, 228, 288, 2)
+
+  if (theme === 'landing') {
+    // A framed window and a woven runner mark the small landing.
+    paint(0x687b75, 72, 11, 38, 19)
+    paint(0xf4e2c5, 74, 11, 34, 16)
+    paint(0x9ebec2, 77, 12, 28, 12)
+    paint(0xf4e2c5, 89, 12, 3, 12)
+    paint(0x69867c, 125, 118, 70, 74)
+    paint(0x91aa94, 129, 122, 62, 66)
+    paint(0xe8d6a4, 133, 127, 54, 2)
+    paint(0xe8d6a4, 133, 181, 54, 2)
+    for (const y of [141, 153, 165]) {
+      paint(0xbdd0ad, 155, y + 2, 10, 4)
+      paint(0xbdd0ad, 158, y, 4, 8)
+    }
+    return
+  }
 
   // Window frame, glass, and sill.
   paint(0x674954, 37, 8, 51, 22)
@@ -55,12 +73,12 @@ export function paintRoom(paint: Paint) {
   paint(0x71956c, 282, 86, 6, 6)
 }
 
-export function paintFurniture(paint: Paint, id: FurnitureId, box: Box) {
+export function paintFurniture(paint: Paint, art: FurnitureArt, box: Box, open: boolean) {
   const { x, y, width: w, height: h } = box
   const rect: Paint = (color, left, top, width, height) =>
     paint(color, x + left, y + top, width, height)
 
-  switch (id) {
+  switch (art) {
     case 'bed':
       rect(0x674954, 0, 0, w, h)
       rect(0x956e5c, 3, 2, w - 6, h - 5)
@@ -99,14 +117,21 @@ export function paintFurniture(paint: Paint, id: FurnitureId, box: Box) {
       rect(0xf3cc89, w / 2 + 3, h / 2, 3, 3)
       rect(0x885a55, 2, h - 9, w - 4, 5)
       break
-    case 'closed-door':
+    case 'door':
       rect(0x634652, 0, 0, w, h)
+      if (open) {
+        rect(0x493d4e, 4, 2, w - 8, h - 2)
+        rect(0xc79a75, 5, h - 5, w - 10, 5)
+        rect(0x926057, 4, 3, 7, h - 6)
+        rect(0xe5ba7c, 7, h - 11, 2, 2)
+        break
+      }
       rect(0xa66c61, 3, 2, w - 6, h - 2)
       rect(0xc48970, 6, 4, w - 12, h - 8)
       rect(0xf0cc86, w - 10, h - 10, 3, 3)
       rect(0x78505b, 0, h - 2, w, 2)
       break
-    case 'scattered-clothes':
+    case 'clothes':
       rect(0xc98d71, 1, h - 4, w - 2, 4)
       rect(0xa5657c, 5, 2, 11, 12)
       rect(0xa5657c, 2, 4, 17, 5)

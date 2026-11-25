@@ -1,17 +1,17 @@
 import { readFileSync } from 'node:fs'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vite'
-import { readBedroom } from './src/core/bedroom.ts'
+import { validateContent } from './src/content/validate.ts'
+import { loadMaps } from './src/content/loadMaps.ts'
 
 export default defineConfig({
   plugins: [
     react(),
     {
-      name: 'validate-bedroom',
+      name: 'validate-world-content',
       apply: 'build',
       buildStart() {
-        const source = readFileSync(new URL('./src/game/maps/bedroom.tmj', import.meta.url), 'utf8')
-        readBedroom(JSON.parse(source))
+        validateContent(loadMaps((id) => readFileSync(new URL(`./src/game/maps/${id}.tmj`, import.meta.url), 'utf8')))
       },
     },
   ],
