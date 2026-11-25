@@ -4,9 +4,10 @@ export class RoomInput {
   private readonly held = new Map<string, Direction>()
   private requested = false
   private paused = false
+  private backgrounded = false
 
   hold(source: string, direction: Direction) {
-    if (!this.paused) this.held.set(source, direction)
+    if (!this.isPaused()) this.held.set(source, direction)
   }
 
   release(source: string) {
@@ -23,12 +24,21 @@ export class RoomInput {
     this.paused = paused
   }
 
+  setBackgrounded(backgrounded: boolean) {
+    this.clear()
+    this.backgrounded = backgrounded
+  }
+
+  isPaused() {
+    return this.paused || this.backgrounded
+  }
+
   direction() {
     return movement(new Set(this.held.values()))
   }
 
   requestInteraction() {
-    if (!this.paused) this.requested = true
+    if (!this.isPaused()) this.requested = true
   }
 
   takeInteraction() {

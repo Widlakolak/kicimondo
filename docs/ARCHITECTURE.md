@@ -1,6 +1,6 @@
 # Architecture
 
-Status: Stage 02 client implemented. Later systems described here are planned.
+Status: Stage 03 client implemented. Later systems described here are planned.
 
 ## Stack and boundaries
 
@@ -10,7 +10,7 @@ Phaser scenes own map rendering, animations, input and collisions. React renders
 
 The server is a modular monolith. Planned feature packages: content, player, quest/progression, learning, sync and shared infrastructure. Separate application/domain/infrastructure where useful; no boilerplate layers for their own sake. Keep HTTP DTOs separate from persistence entities. Use REST under /api/v1, validation, consistent errors and OpenAPI when endpoints exist.
 
-One Phaser scene loads the current location from the Tiled map registry and resolves movement against map rectangles with pure TypeScript rules. The scene reports eligible interaction anchors through the room bridge. React presents the quest dialog and tracing UI. The quest and transition definitions connect stable anchor IDs to challenge data, rewards, effects and gated destination spawns. Once a quest is committed, the existing scene redraws props and updates its active anchors. A location transition starts the same scene at the destination spawn.
+One Phaser scene loads the current location from the Tiled map registry and resolves movement against map rectangles with pure TypeScript rules. The scene reports eligible interaction anchors through the room bridge. React selects a quest view by its challenge type and presents tracing, maths or matching. The quest and transition definitions connect stable anchor IDs to challenge data, rewards, effects and gated destination spawns. Once a quest is committed, the existing scene redraws props and updates its active anchors. A location transition starts the same scene at the destination spawn. A pure cat state machine advances on active time and follows validated local routes to its greeting spot and restored attractions. Phaser draws the current animation frame and emits an accepted pet interaction only while the cat is receptive. The world clock pauses during overlays and when the page is hidden.
 
 ## Intended layout
 
@@ -34,9 +34,9 @@ Do not create empty modules before they are needed. Keep one canonical content s
 
 ## Persistence and offline
 
-The client is authoritative for single-player state. Stage 02 stores one local profile with a versioned gameplay record in IndexedDB. On first load, it imports a valid Stage 01 localStorage profile when the database is empty and preserves the original profile entry. The record stores the profile, content version, checkpoint, completed quest IDs, reward ledger and hidden objects. Profile edits and location transitions preserve earned progress. Reload uses the saved spawn, with a safe entry spawn fallback if a map changes.
+The client is authoritative for single-player state. The game stores one local profile with a versioned gameplay record in IndexedDB. On first load, it imports a valid Stage 01 localStorage profile when the database is empty and preserves the original profile entry. The version 2 record stores the profile, content version, checkpoint, completed quest IDs, rewards, hidden objects, restored attractions and trust events. Stage 02 records decode to version 2 with empty attraction and trust fields and are rewritten on the next successful change. Profile edits and location transitions preserve earned progress. Reload uses the saved spawn, with a safe entry spawn fallback if a map changes.
 
-Each command reads the current record inside an IndexedDB read-write transaction. Quest completion adds its ID, unique reward and world effects in the same transaction. Lifetime PS comes from the ledger. Door access uses the resulting point total. The previous valid snapshot is retained in the same transaction. A malformed record can be recovered from that snapshot. Unsupported versions and records with no recoverable snapshot are preserved for a compatible reader. If a write fails, the UI warns that later changes last only for the current session.
+Each command reads the current record inside an IndexedDB read-write transaction. Quest completion adds its ID, unique reward, world effects and any associated restoration trust in the same transaction. The first accepted pet interaction adds its own trust event. Trust is derived from unique event IDs and persists independently of PS. Lifetime PS comes from the ledger. Door access uses the resulting point total. The previous valid snapshot is retained in the same transaction. A malformed record can be recovered from that snapshot. Unsupported versions and records with no recoverable snapshot are preserved for a compatible reader. If a write fails, the UI warns that later changes last only for the current session.
 
 Bundle core maps, content, graphics and sounds. PWA must cache a coherent version after the initial online load; Android ships a bundled client. A network failure cannot stop a local exercise. Do not force refresh during gameplay. Handle cache/save schema migrations explicitly. Export/import user-controlled backups; imported data is untrusted and validated. Browser storage can be cleared.
 

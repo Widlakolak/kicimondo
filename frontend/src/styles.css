@@ -160,3 +160,18 @@ dialog::backdrop { background: rgb(41 35 41 / 58%); }
 .sequence button { min-width: 3rem; }
 .sequence button:disabled { opacity: .8; }
 .quest-reward { font-weight: 750; color: var(--green); }
+
+.cat-trust { color: var(--muted); font-size: .9rem; margin: .4rem 0 0; }
+.activity-progress { color: var(--muted); font-size: .9rem; }
+.activity-question { font-size: 1.3rem; font-weight: 750; }
+.activity-choices { display: flex; flex-wrap: wrap; gap: .55rem; margin: .75rem 0; }
+.activity-choices button { min-width: 3rem; }
+.activity-choices button:disabled { opacity: .65; }
+.drops { display: flex; flex-wrap: wrap; gap: .55rem; padding: .35rem .3rem .55rem; }
+.drop { width: 1.15rem; height: 1.15rem; border-radius: 0 65% 65%; transform: rotate(45deg); background: #5294a0; }
+.drop.added { background: #698b75; outline: 2px dashed #657c58; outline-offset: 2px; }
+.drop.crossed { background: #d6ded5; position: relative; }
+.drop.crossed::after { content: ''; position: absolute; top: 45%; left: -15%; width: 130%; height: 2px; background: #725549; }
+.picture-choice { display: grid; place-items: center; position: relative; min-width: 3.7rem; min-height: 3.7rem; }
+.picture-choice svg { display: block; width: 2.6rem; height: 2.6rem; }
+.picture-choice span { position: absolute; right: .2rem; bottom: .1rem; }

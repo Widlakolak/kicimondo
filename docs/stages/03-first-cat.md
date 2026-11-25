@@ -1,6 +1,6 @@
 # Stage 03: First resident cat
 
-Status: planned; start only after Stage 02 is accepted.
+Status: implemented and locally verified. Owner playtest pending.
 
 ## Goal
 
@@ -28,3 +28,30 @@ Visiting cats, habitat combinations, full Kicipedia, crafting, free placement, c
 - Owner playtest: choose character, complete clothes/bowl/bed tasks, interact with cat, leave and reload. Report real device testing and any usability changes. Do not claim educational efficacy from this playtest.
 
 Stop after the family-playtest release; do not start Android packaging or deployment without approval.
+
+## Implementation and verification
+
+Bursztynek follows short, deterministic routes in the bedroom. A heart and the interaction prompt signal when he is receptive. Petting, walking, resting and drinking have distinct frames. The cat takes turns visiting restored attractions during active play. Its clock stops during quests, pause and backgrounding. This release is silent.
+
+The water bowl round presents counting, addition and subtraction with values from 0 to 10. The bed task uses three original pictures and Polish words, with selection by pointer or keyboard. Either quest can be completed first. Each restores its attraction, awards 1 PS and adds one trust event in a single IndexedDB transaction. The first accepted pet adds a separate trust event. Later greetings leave the trust total intact, and inactivity has no effect. Version 1 Stage 02 records are migrated without changing their profile, checkpoint, completed quest, reward or hidden clothes.
+
+Checks ran on Linux with Node.js 24.13.1 and npm 11.11.0.
+
+| Command from `frontend/` | Result |
+| --- | --- |
+| `npm ci --engine-strict` | Passed with the committed lockfile |
+| `npm run lint` | Passed |
+| `npm run typecheck` | Passed |
+| `npm test` | 44 passed across 9 files |
+| `npm run build` | Passed, including challenge, map and cat-route validation. Vite warned about the size of the separately loaded Phaser chunk |
+| `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:browser` | 10 passed on system Chromium 156. Coverage includes both new quests, emulated touch selection, cat consent and pause, migration, reload and the Stage 02 regression suite |
+
+The cloud network denied the Playwright Chromium download. Physical Android testing and Stage 03 owner acceptance are pending.
+
+### Manual review
+
+- Open the same address and browser profile as Stage 02. Verify the avatar, PS, cleared clothes and saved location.
+- In the bedroom, try petting while the heart is visible. Wait for Bursztynek to get busy and check the give-space prompt. Later petting should keep trust unchanged.
+- Open the empty bowl, try a wrong answer and a hint, then finish counting, addition and subtraction. Check the water and watch the cat drink.
+- Match the Polish words to the pictures. Try a wrong pair, then finish by tapping or using Tab and Enter. Watch the cat use the restored bed.
+- Check 3 PS after completing all three quests. Use pause and switch tabs to check that the cat stops. Visit the landing, reload, then return and check that progress, both attractions and trust are intact.

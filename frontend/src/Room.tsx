@@ -1,9 +1,9 @@
 import { useEffect, useEffectEvent, useRef, useState } from 'react'
-import { TraceChallenge } from './challenges/TraceChallenge'
-import { challenges, quests, transitions, type Quest, type Transition } from './content/pack'
-import { meetsGate, pointsOf, type Save, type SaveCommand } from './core/progress'
+import { Challenge } from './challenges/Challenge'
+import { cats, challenges, quests, transitions, type Quest, type Transition } from './content/pack'
+import { meetsGate, pointsOf, trustOf, type Save, type SaveCommand } from './core/progress'
 import type { Direction, InteractionId } from './core/room'
-import { createRoom, type WorldState } from './game/createRoom'
+import { createRoom, type CatCue, type WorldState } from './game/createRoom'
 import { RoomInput } from './game/RoomInput'
 import { pl } from './i18n/pl'
 
@@ -45,6 +45,7 @@ function DirectionButton({ direction, input }: { direction: Direction; input: Ro
 type Overlay =
   | { type: 'quest'; quest: Quest }
   | { type: 'locked'; edge: Transition }
+  | { type: 'pause' }
   | { type: 'success'; quest: Quest }
 
 const interactionText = (id: string): { prompt: string; unlocked?: string } => pl.interactions[id as keyof typeof pl.interactions]
@@ -55,6 +56,7 @@ function worldState(save: Save): WorldState {
   const hidden = save.hidden.filter((effect) => effect.location === location).map(({ object }) => object)
   return {
     hidden,
+    restored: save.restored.filter((effect) => effect.location === location).map(({ object }) => object),
     openDoors: edges.filter((edge) => meetsGate(pointsOf(save), edge.minimumPoints)).map(({ interaction }) => interaction),
     active: [
       ...edges.map(({ interaction }) => interaction),
@@ -75,6 +77,8 @@ export default function Room({ save, commit, busy, notice, onEdit }: {
   const { location, spawn } = checkpoint
   const text = pl.locations[location]
   const points = pointsOf(save)
+  const resident = cats.find((cat) => cat.location === location)
+  const catName = resident ? pl.cat.names[resident.name] : null
   const host = useRef<HTMLDivElement>(null)
   const heading = useRef<HTMLHeadingElement>(null)
   const successHeading = useRef<HTMLHeadingElement>(null)
@@ -83,11 +87,17 @@ export default function Room({ save, commit, busy, notice, onEdit }: {
   const dismissTap = useRef<{ id: number; x: number; y: number } | null>(null)
   const engine = useRef<ReturnType<typeof createRoom> | null>(null)
   const [input] = useState(() => new RoomInput())
-  const [nearby, setNearby] = useState<InteractionId | null>(null)
+  const [target, setTarget] = useState<{ id: InteractionId | null; cue: CatCue | null }>({ id: null, cue: null })
   const [open, setOpen] = useState<Overlay | null>(null)
 
   const initialWorld = useEffectEvent(() => worldState(save))
   const onInteraction = useEffectEvent(async (id: InteractionId) => {
+    if (resident && id === resident.id) {
+      if (!save.trust.some((event) => event.cat === id && event.id === 'first-pet')) {
+        await commit({ type: 'pet', cat: id })
+      }
+      return
+    }
     const quest = quests.find((entry) => entry.location === location && entry.interaction === id &&
       !save.completed.includes(entry.id))
     const edge = transitions.find((entry) => entry.location === location && entry.interaction === id)
@@ -107,11 +117,14 @@ export default function Room({ save, commit, busy, notice, onEdit }: {
     stage.className = 'stage'
     host.current?.append(stage)
     heading.current?.focus()
-    const created = createRoom(stage, profile.avatar, input, { location, spawn }, initialWorld(), setNearby,
+    const created = createRoom(stage, profile.avatar, input, { location, spawn }, initialWorld(), (id, cue) => setTarget({ id, cue }),
       (id) => { void onInteraction(id) })
     engine.current = created
 
     const clear = () => input.clear()
+    const syncVisibility = () => input.setBackgrounded(document.hidden)
+    const hide = () => input.setBackgrounded(true)
+    syncVisibility()
     const keydown = (event: KeyboardEvent) => {
       const direction = keyboardDirections.get(event.code)
       if ((!direction && event.code !== 'KeyE') || event.altKey || event.ctrlKey || event.metaKey ||
@@ -128,8 +141,9 @@ export default function Room({ save, commit, busy, notice, onEdit }: {
     window.addEventListener('keyup', keyup, options)
     window.addEventListener('blur', clear, options)
     window.addEventListener('resize', clear, options)
-    window.addEventListener('pagehide', clear, options)
-    document.addEventListener('visibilitychange', clear, options)
+    window.addEventListener('pagehide', hide, options)
+    window.addEventListener('pageshow', syncVisibility, options)
+    document.addEventListener('visibilitychange', syncVisibility, options)
     return () => {
       listeners.abort()
       input.setPaused(false)
@@ -155,10 +169,11 @@ export default function Room({ save, commit, busy, notice, onEdit }: {
   }
 
   const world = worldState(save)
-  const active = nearby && world.active.includes(nearby) ? nearby : null
+  const active = target.id && world.active.includes(target.id) ? target.id : null
   const interaction = active ? interactionText(active) : null
   const unlocked = active && world.openDoors.includes(active)
-  const prompt = (unlocked ? interaction?.unlocked : null) ?? interaction?.prompt
+  const catPrompt = target.cue && catName ? pl.cat[target.cue](catName) : null
+  const prompt = catPrompt ?? (unlocked ? interaction?.unlocked : null) ?? interaction?.prompt
 
   return (
     <section className="room" aria-labelledby="room-title">
@@ -166,10 +181,16 @@ export default function Room({ save, commit, busy, notice, onEdit }: {
         <div>
           <p className="room-profile">{profile.nickname}</p>
           <h1 id="room-title" ref={heading} tabIndex={-1}>{text.title}</h1>
+          {resident && catName && <p className="cat-trust">{pl.cat.trust(catName, trustOf(save, resident.id))}</p>}
         </div>
         <div className="room-actions">
           <span className="points" title={pl.pointsLabel}>{pl.points(points)}</span>
           <button type="button" className="secondary" disabled={busy} onClick={onEdit}>{pl.edit}</button>
+          <button type="button" className="secondary" disabled={busy} onClick={(event) => {
+            previousFocus.current = event.currentTarget
+            input.setPaused(true)
+            setOpen({ type: 'pause' })
+          }}>{pl.pause.title}</button>
         </div>
       </header>
       <div className="world" ref={host} role="img" aria-label={text.map} />
@@ -183,7 +204,7 @@ export default function Room({ save, commit, busy, notice, onEdit }: {
             <DirectionButton key={direction} direction={direction} input={input} />
           ))}
         </div>
-        <button type="button" className="primary interact" disabled={!active || busy}
+        <button type="button" className="primary interact" disabled={(!active && target.cue !== 'ready') || busy}
           onClick={() => input.requestInteraction()}>{pl.interact}</button>
       </div>
       <p className="room-help">{pl.help}</p>
@@ -204,9 +225,13 @@ export default function Room({ save, commit, busy, notice, onEdit }: {
       >
         {open?.type === 'quest' && <>
           <h2 id="interaction-title">{pl.challenges[challenges[open.quest.challenge].text].title}</h2>
-          <TraceChallenge challenge={challenges[open.quest.challenge]} busy={busy} onComplete={() => {
+          <Challenge definition={challenges[open.quest.challenge]} busy={busy} onComplete={() => {
             void complete(open.quest)
           }} />
+        </>}
+        {open?.type === 'pause' && <>
+          <h2 id="interaction-title">{pl.pause.title}</h2>
+          <p id="interaction-body">{pl.pause.body}</p>
         </>}
         {open?.type === 'locked' && <>
           <h2 id="interaction-title">{pl.lockedDoor.title}</h2>
@@ -238,7 +263,7 @@ export default function Room({ save, commit, busy, notice, onEdit }: {
               dialog.current?.close()
             }
           }}>
-          {busy ? pl.saving : open?.type === 'quest' ? pl.cancel : pl.close}
+          {busy ? pl.saving : open?.type === 'quest' ? pl.cancel : open?.type === 'pause' ? pl.pause.resume : pl.close}
         </button>
       </dialog>
     </section>

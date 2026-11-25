@@ -4,7 +4,9 @@ Kicimondo is a 2D adventure game for children in the first years of primary scho
 
 ## Status
 
-Stage 02 adds the first quest. Trace a path to put away the scattered clothes or use the numbered buttons. Completing the quest earns one independence point, opens the bedroom door and lets you visit the landing and return. The browser saves your avatar, progress and location in IndexedDB. Existing Stage 01 profiles migrate automatically on the same local address and browser profile.
+Meet Bursztynek, the resident cat. Put away the clothes by tracing, fill the water bowl with counting and arithmetic, and prepare the cat bed by matching Polish words to pictures. The cat uses the restored spots and shows when it is ready for petting. The first independence point opens the door to the landing.
+
+The browser stores the profile, quest progress, location and trust in IndexedDB. Earlier saves carry over on the same local address and browser profile.
 
 ## Getting started
 
@@ -49,6 +51,7 @@ The browser suite serves the production build. On Linux, use `npx playwright ins
 - [Architecture decisions](docs/adr/0001-local-first-web-client.md)
 - [Stage 01](docs/stages/01-room-prototype.md)
 - [Stage 02](docs/stages/02-first-quest.md)
+- [Stage 03](docs/stages/03-first-cat.md)
 - [Codex task prompt](docs/CODEX.md)
 
 The game uses Polish text. Code and technical documentation are in English. Names other than Kicimondo and Kicipedia are provisional. No open-source license has been selected.

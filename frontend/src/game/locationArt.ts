@@ -73,7 +73,7 @@ export function paintRoom(paint: Paint, theme: LocationId) {
   paint(0x71956c, 282, 86, 6, 6)
 }
 
-export function paintFurniture(paint: Paint, art: FurnitureArt, box: Box, open: boolean) {
+export function paintFurniture(paint: Paint, art: FurnitureArt, box: Box, ready: boolean) {
   const { x, y, width: w, height: h } = box
   const rect: Paint = (color, left, top, width, height) =>
     paint(color, x + left, y + top, width, height)
@@ -119,7 +119,7 @@ export function paintFurniture(paint: Paint, art: FurnitureArt, box: Box, open: 
       break
     case 'door':
       rect(0x634652, 0, 0, w, h)
-      if (open) {
+      if (ready) {
         rect(0x493d4e, 4, 2, w - 8, h - 2)
         rect(0xc79a75, 5, h - 5, w - 10, 5)
         rect(0x926057, 4, 3, 7, h - 6)
@@ -140,6 +140,27 @@ export function paintFurniture(paint: Paint, art: FurnitureArt, box: Box, open: 
       rect(0x91a9ac, w - 9, 8, 8, 2)
       rect(0x72899a, w - 10, 14, 4, 4)
       rect(0x72899a, w - 4, 14, 4, 4)
+      break
+    case 'bowl':
+      rect(0x986a57, 1, 8, w - 2, 4)
+      rect(0x6b7e8c, 0, 3, w, 5)
+      rect(0x88a1aa, 2, 5, w - 4, 5)
+      rect(0x6b7e8c, 3, 9, w - 6, 2)
+      rect(ready ? 0x87c8d1 : 0x695d61, 3, 3, w - 6, 4)
+      if (ready) rect(0xc9e5de, 6, 4, 7, 1)
+      else rect(0xc4afa0, 6, 5, 4, 1)
+      break
+    case 'cat-bed':
+      rect(0xa5785d, 0, 4, w, h - 4)
+      rect(0xd49b72, 2, 0, w - 4, h - 3)
+      rect(ready ? 0x7a9584 : 0x9b7b6c, 5, 4, w - 10, h - 10)
+      rect(ready ? 0xc3cba3 : 0xb09378, 6, 5, w - 12, 4)
+      rect(0xa5785d, 1, h - 6, w - 2, 5)
+      if (ready) {
+        rect(0xe8d0a6, w - 15, 8, 9, 5)
+        rect(0x9db39a, 8, 12, 13, 3)
+        rect(0x9db39a, 10, 16, 11, 2)
+      }
       break
   }
 }

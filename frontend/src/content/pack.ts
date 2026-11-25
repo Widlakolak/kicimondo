@@ -1,18 +1,39 @@
 import type { Point } from '../core/room.ts'
 import type { pl } from '../i18n/pl.ts'
 
-export type TraceChallenge = {
-  type: 'TRACE_PATH'
+type ChallengeText = {
   skillId: string
   difficulty: 'intro'
   text: keyof typeof pl.challenges
+}
+
+export type TraceChallenge = ChallengeText & {
+  type: 'TRACE_PATH'
   path: readonly Point[]
   tolerance: number
   coverage: number
   targets: readonly number[]
 }
 
-export const contentVersion = 1
+export const mathOperations = ['count', 'add', 'subtract'] as const
+export type MathOperation = (typeof mathOperations)[number]
+export type MathChallenge = ChallengeText & {
+  type: 'MATH_CHOICE'
+  operations: readonly MathOperation[]
+  maximum: number
+  seed: number
+}
+
+export const pictureIds = ['blanket', 'pillow', 'basket'] as const
+export type PictureId = (typeof pictureIds)[number]
+export type MatchChallenge = ChallengeText & {
+  type: 'MATCH_PAIRS'
+  pairs: readonly { id: string; word: keyof typeof pl.match.words; picture: PictureId }[]
+  pictureOrder: readonly PictureId[]
+}
+
+export type Challenge = TraceChallenge | MathChallenge | MatchChallenge
+export const contentVersion = 2
 
 export const challenges = {
   'clothes-to-basket': {
@@ -30,7 +51,28 @@ export const challenges = {
     coverage: 0.9,
     targets: [0, 2, 4, 6, 9],
   },
-} satisfies Record<string, TraceChallenge>
+  'count-water-drops': {
+    type: 'MATH_CHOICE',
+    skillId: 'arithmetic-within-ten',
+    difficulty: 'intro',
+    text: 'waterMath',
+    operations: ['count', 'add', 'subtract'],
+    maximum: 10,
+    seed: 3041,
+  },
+  'prepare-cat-bed': {
+    type: 'MATCH_PAIRS',
+    skillId: 'word-picture-matching',
+    difficulty: 'intro',
+    text: 'bedMatch',
+    pairs: [
+      { id: 'blanket-pair', word: 'blanket', picture: 'blanket' },
+      { id: 'pillow-pair', word: 'pillow', picture: 'pillow' },
+      { id: 'basket-pair', word: 'basket', picture: 'basket' },
+    ],
+    pictureOrder: ['pillow', 'basket', 'blanket'],
+  },
+} satisfies Record<string, Challenge>
 
 export const locations = {
   bedroom: { entry: 'bedside', art: 'bedroom' },
@@ -46,13 +88,37 @@ export function isLocation(value: unknown): value is LocationId {
   return typeof value === 'string' && Object.hasOwn(locations, value)
 }
 
+export type CatDefinition = {
+  id: string
+  location: LocationId
+  name: keyof typeof pl.cat.names
+  greet: Point
+  rest: Point
+  attractions: readonly { object: string; position: Point; activity: 'drinking' | 'resting' }[]
+}
+
+export const cats: readonly CatDefinition[] = [{
+  id: 'amber',
+  location: 'bedroom',
+  name: 'amber',
+  greet: { x: 124, y: 188 },
+  rest: { x: 148, y: 188 },
+  attractions: [
+    { object: 'water-bowl', position: { x: 210, y: 188 }, activity: 'drinking' },
+    { object: 'cat-bed', position: { x: 255, y: 188 }, activity: 'resting' },
+  ],
+}]
+
 export type Quest = {
   id: string
   location: LocationId
   interaction: string
   challenge: keyof typeof challenges
   reward: { id: string; points: number }
-  effects: readonly { type: 'HIDE_OBJECT'; object: string }[]
+  effects: readonly (
+    | { type: 'HIDE_OBJECT'; object: string }
+    | { type: 'RESTORE_ATTRACTION'; object: string }
+  )[]
 }
 
 export const quests: readonly Quest[] = [
@@ -63,6 +129,22 @@ export const quests: readonly Quest[] = [
     challenge: 'clothes-to-basket',
     reward: { id: 'bedroom-clean-clothes-first', points: 1 },
     effects: [{ type: 'HIDE_OBJECT', object: 'scattered-clothes' }],
+  },
+  {
+    id: 'bedroom-fill-water-bowl',
+    location: 'bedroom',
+    interaction: 'water-bowl',
+    challenge: 'count-water-drops',
+    reward: { id: 'bedroom-fill-water-bowl-first', points: 1 },
+    effects: [{ type: 'RESTORE_ATTRACTION', object: 'water-bowl' }],
+  },
+  {
+    id: 'bedroom-prepare-cat-bed',
+    location: 'bedroom',
+    interaction: 'cat-bed',
+    challenge: 'prepare-cat-bed',
+    reward: { id: 'bedroom-prepare-cat-bed-first', points: 1 },
+    effects: [{ type: 'RESTORE_ATTRACTION', object: 'cat-bed' }],
   },
 ]
 
