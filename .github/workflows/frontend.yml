@@ -29,7 +29,19 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:browser
+      - name: Run Playwright
+        id: playwright
+        run: npm run test:browser -- --reporter=dot,html
+        env:
+          PLAYWRIGHT_HTML_OPEN: never
+      - name: Upload Playwright failure diagnostics
+        if: ${{ failure() && steps.playwright.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-failure
+          path: |
+            frontend/playwright-report/
+            frontend/test-results/
 
   android-debug:
     needs: checks

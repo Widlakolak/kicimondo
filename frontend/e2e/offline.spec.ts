@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { buttonAlternative, enterRoom, fillWater, holdKey, matchBed, reach, saveRecord, stage } from './roomHelpers'
+import { buttonAlternative, enterRoom, expectRoomReady, fillWater, holdKey, matchBed, reach, saveRecord, stage } from './roomHelpers'
 
 test('first controlled visit precaches the room and all three quests and cat play work offline', async ({ page, context, baseURL }) => {
   test.setTimeout(65000)
@@ -31,15 +31,25 @@ test('first controlled visit precaches the room and all three quests and cat pla
   await interact.click()
   await expect(page.getByRole('dialog', { name: 'Rozrzucone ubrania' })).toBeVisible()
   await buttonAlternative(page)
-  await page.getByRole('button', { name: 'Zamknij' }).click()
-
-  await holdKey(page, 'd', () => reach(page, 'x', 208, 1))
+  const close = page.getByRole('dialog', { name: 'Zadanie ukończone!' }).getByRole('button', { name: 'Zamknij' })
+  // Send the first keydown before the browser can dispatch the queued dialog close event.
+  await close.evaluate((button: HTMLButtonElement) => {
+    button.click()
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyD', cancelable: true }))
+  })
+  try {
+    await expectRoomReady(page)
+    await reach(page, 'x', 208, 1)
+  } finally {
+    await page.keyboard.up('d')
+  }
   await holdKey(page, 's', () => reach(page, 'y', 191, 1))
   await interact.click()
   await fillWater(page)
   await holdKey(page, 'd', () => reach(page, 'x', 255, 1))
   await interact.click()
   await matchBed(page)
+  await holdKey(page, 'a', () => reach(page, 'x', 240, -1))
   await expect(page.getByText('3 PS', { exact: true })).toBeVisible()
   await expect(page.getByText('Zaufanie · Bursztynek: 3')).toBeVisible()
   const saved = await saveRecord(page)

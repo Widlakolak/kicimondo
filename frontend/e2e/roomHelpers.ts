@@ -70,6 +70,16 @@ export async function buttonAlternative(page: Page) {
   await expect(page.getByRole('dialog', { name: 'Zadanie ukończone!' })).toBeVisible()
 }
 
+export async function expectRoomReady(page: Page) {
+  await expect(page.locator('.room dialog')).toBeHidden()
+  await expect(page.locator('.room dialog h2')).toHaveCount(0)
+}
+
+async function closeQuestSuccess(page: Page) {
+  await page.getByRole('dialog', { name: 'Zadanie ukończone!' }).getByRole('button', { name: 'Zamknij' }).click()
+  await expectRoomReady(page)
+}
+
 export async function matchBed(page: Page, choose = (control: Locator) => control.click()) {
   const dialog = page.getByRole('dialog', { name: 'Legowisko dla kota' })
   await expect(dialog).toBeVisible()
@@ -84,8 +94,7 @@ export async function matchBed(page: Page, choose = (control: Locator) => contro
   await dialog.getByRole('button', { name: 'Koszyk', exact: true }).click()
   await dialog.getByRole('button', { name: 'Obrazek: koszyk' }).click()
   await expect(page.getByRole('dialog', { name: 'Zadanie ukończone!' })).toContainText('Legowisko jest gotowe.')
-  await page.getByRole('button', { name: 'Zamknij' }).click()
-  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await closeQuestSuccess(page)
 }
 
 export async function fillWater(page: Page) {
@@ -105,6 +114,5 @@ export async function fillWater(page: Page) {
     if (index < questions.length - 1) await dialog.getByRole('button', { name: 'Następna zagadka' }).click()
   }
   await expect(page.getByRole('dialog', { name: 'Zadanie ukończone!' })).toContainText('W misce jest świeża woda.')
-  await page.getByRole('button', { name: 'Zamknij' }).click()
-  await expect(page.getByRole('dialog')).toHaveCount(0)
+  await closeQuestSuccess(page)
 }

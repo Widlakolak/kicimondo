@@ -103,9 +103,22 @@ export default function Room({ save, commit, busy, notice, nativeActive, backHan
     input.setPaused(true)
     setOpen({ type: 'pause' })
   }
+  function closeOverlay() {
+    const overlay = dialog.current
+    if (busy || !overlay?.open) return
+    overlay.close()
+    dismissTap.current = null
+    setOpen(null)
+    const focus = previousFocus.current
+    if (focus && focus !== document.body && focus.isConnected && !focus.matches(':disabled')) focus.focus()
+    else heading.current?.focus()
+    // The browser dispatches "close" later. Restore input before another keydown can arrive.
+    input.setPaused(false)
+  }
+
   const goBack = useEffectEvent(() => {
     if (busy) return
-    if (dialog.current?.open) dialog.current.close()
+    if (dialog.current?.open) closeOverlay()
     else openPause(document.activeElement)
   })
 
@@ -242,14 +255,9 @@ export default function Room({ save, commit, busy, notice, nativeActive, backHan
         ref={dialog}
         aria-labelledby="interaction-title"
         aria-describedby="interaction-body"
-        onCancel={(event) => { if (busy) event.preventDefault() }}
-        onClose={() => {
-          input.setPaused(false)
-          dismissTap.current = null
-          setOpen(null)
-          const focus = previousFocus.current
-          if (focus && focus !== document.body && focus.isConnected && !focus.matches(':disabled')) focus.focus()
-          else heading.current?.focus()
+        onCancel={(event) => {
+          event.preventDefault()
+          closeOverlay()
         }}
       >
         {open?.type === 'quest' && <>
@@ -274,7 +282,7 @@ export default function Room({ save, commit, busy, notice, nativeActive, backHan
           {notice && <p className="notice" role="status">{notice}</p>}
         </>}
         <button type="button" className="primary" disabled={busy}
-          onClick={() => dialog.current?.close()}
+          onClick={closeOverlay}
           onPointerDown={(event) => {
             if (event.pointerType === 'touch' && event.isPrimary) {
               dismissTap.current = { id: event.pointerId, x: event.clientX, y: event.clientY }
@@ -290,7 +298,7 @@ export default function Room({ save, commit, busy, notice, nativeActive, backHan
             // A drawing gesture can suppress the next synthesized click on touch browsers.
             if (Math.hypot(tap.x - event.clientX, tap.y - event.clientY) <= 10 &&
                 event.currentTarget.contains(document.elementFromPoint(event.clientX, event.clientY))) {
-              dialog.current?.close()
+              closeOverlay()
             }
           }}>
           {busy ? pl.saving : open?.type === 'quest' ? pl.cancel : open?.type === 'pause' ? pl.pause.resume : pl.close}
