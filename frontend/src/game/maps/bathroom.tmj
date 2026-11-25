@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 5,
-  "nextobjectid": 19,
+  "nextobjectid": 20,
   "tilesets": [],
   "layers": [
     {
@@ -58,7 +58,8 @@
       "objects": [
         {"id": 14, "name": "hygiene", "x": 70, "y": 85, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
         {"id": 15, "name": "bathroom-items", "x": 249, "y": 85, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
-        {"id": 18, "name": "landing-door", "x": 160, "y": 194, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 16}]}
+        {"id": 18, "name": "landing-door", "x": 160, "y": 194, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 16}]},
+        {"id": 19, "name": "count-towels", "x": 273, "y": 185, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]}
       ]
     },
     {

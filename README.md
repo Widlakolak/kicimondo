@@ -6,9 +6,11 @@ Kicimondo is a 2D adventure game for children in the first years of primary scho
 
 Meet Bursztynek, the resident cat. Put away the clothes by tracing, fill the water bowl with counting and arithmetic, and prepare the cat bed by matching Polish words to pictures. The cat uses the restored spots and shows when it is ready for petting. The first independence point (PS) opens the door to the upstairs landing.
 
-Visit the study, bathroom and playroom upstairs. At 8 PS the stairs open to the hall, kitchen and living room. The house has 12 one-point activities, including matching, arithmetic, ordering and sorting. Ciocia Hania gives short hints on the landing.
+Visit the study, bathroom and playroom upstairs. At 8 PS the stairs open to the hall, kitchen and living room. The house has 17 one-point activities, including matching, arithmetic, ordering and sorting. Ciocia Hania gives short hints on the landing.
 
-The browser stores the profile, quest progress, location and trust in IndexedDB. Earlier saves carry over on the same origin and browser profile.
+At 16 PS the hall opens to the garden. Eight activities restore fixed cat attractions and bring the total to 25 PS. Four visiting cats can appear when their preferred attractions are ready. Approach a cat to reveal its Kicipedia entry.
+
+The browser stores the profile, quest progress, location, discoveries and trust in IndexedDB. Earlier saves carry over on the same origin and browser profile.
 
 The production web build is installable on supported browsers and plays offline after “Gra gotowa do działania bez internetu” appears. The Android debug build bundles the game for a first launch in airplane mode. Android and browser saves are separate. MediaPad T5 device acceptance is pending. See the [installation and upgrade guide](docs/DEPLOYMENT.md#android).
 
@@ -58,6 +60,7 @@ The browser suite serves the production build. On Linux, use `npx playwright ins
 - [Stage 03](docs/stages/03-first-cat.md)
 - [Stage 04](docs/stages/04-android-pwa.md)
 - [Stage 05](docs/stages/05-house-expansion.md)
+- [Stage 06](docs/stages/06-garden-kicipedia.md)
 - [Codex task prompt](docs/CODEX.md)
 
 The game uses Polish text. Code and technical documentation are in English. Names other than Kicimondo and Kicipedia are provisional. No open-source license has been selected.

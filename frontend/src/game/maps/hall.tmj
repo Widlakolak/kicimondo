@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 5,
-  "nextobjectid": 22,
+  "nextobjectid": 25,
   "tilesets": [],
   "layers": [
     {
@@ -28,7 +28,8 @@
         {"id": 12, "name": "upstairs", "x": 132, "y": 35, "width": 56, "height": 38, "properties": [{"name": "art", "type": "string", "value": "stairs"}, {"name": "solid", "type": "bool", "value": true}]},
         {"id": 13, "name": "coat-cabinet", "x": 27, "y": 131, "width": 32, "height": 52, "properties": [{"name": "art", "type": "string", "value": "wardrobe"}, {"name": "solid", "type": "bool", "value": true}]},
         {"id": 14, "name": "hall-bench", "x": 245, "y": 135, "width": 46, "height": 33, "properties": [{"name": "art", "type": "string", "value": "bench"}, {"name": "solid", "type": "bool", "value": true}]},
-        {"id": 15, "name": "floor-plant", "x": 270, "y": 96, "width": 20, "height": 26, "properties": [{"name": "art", "type": "string", "value": "plant"}, {"name": "solid", "type": "bool", "value": true}]}
+        {"id": 15, "name": "floor-plant", "x": 270, "y": 96, "width": 20, "height": 26, "properties": [{"name": "art", "type": "string", "value": "plant"}, {"name": "solid", "type": "bool", "value": true}]},
+        {"id": 22, "name": "garden-gate", "x": 136, "y": 207, "width": 48, "height": 17, "properties": [{"name": "art", "type": "string", "value": "gate"}]}
       ]
     },
     {
@@ -59,7 +60,8 @@
       "objects": [
         {"id": 16, "name": "kitchen-door", "x": 64, "y": 43, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
         {"id": 17, "name": "living-door", "x": 256, "y": 43, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
-        {"id": 18, "name": "upstairs", "x": 160, "y": 86, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]}
+        {"id": 18, "name": "upstairs", "x": 160, "y": 86, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 23, "name": "garden-gate", "x": 160, "y": 194, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 18}]}
       ]
     },
     {
@@ -74,7 +76,8 @@
       "objects": [
         {"id": 19, "name": "from-landing", "x": 160, "y": 112, "width": 0, "height": 0, "point": true},
         {"id": 20, "name": "from-kitchen", "x": 64, "y": 72, "width": 0, "height": 0, "point": true},
-        {"id": 21, "name": "from-living", "x": 256, "y": 72, "width": 0, "height": 0, "point": true}
+        {"id": 21, "name": "from-living", "x": 256, "y": 72, "width": 0, "height": 0, "point": true},
+        {"id": 24, "name": "from-garden", "x": 160, "y": 166, "width": 0, "height": 0, "point": true}
       ]
     }
   ]

@@ -3,6 +3,7 @@ import { mathQuestions } from '../core/education.ts'
 import { canStand, nearbyInteraction, type Point } from '../core/room.ts'
 import { organizedArt, solidsFor, type LocationMap } from '../core/tiledMap.ts'
 import { pl } from '../i18n/pl.ts'
+import { attractions } from './catCatalog.ts'
 import { reachableLocations } from './routes.ts'
 import { cats, challenges, dialogues, locationIds, locations, mathOperations, pictureIds, quests, transitions, type Challenge, type LocationId, type SortChallenge } from './pack.ts'
 
@@ -87,23 +88,42 @@ export function validateContent(maps: Record<LocationId, LocationMap>) {
     'invalid alternative targets for ' + id)
   }
 
-  require(unique(quests.map((quest) => quest.id)), 'duplicate quest ID')
-  require(unique(quests.map((quest) => quest.reward.id)), 'duplicate reward ID')
-  require(unique(cats.map(({ id }) => id)), 'duplicate cat ID')
+  const stable = (ids: readonly string[]) => unique(ids) && ids.every((id) => /^[a-z][a-z0-9-]*$/.test(id))
+  require(stable(quests.map((quest) => quest.id)), 'invalid or duplicate quest ID')
+  require(stable(quests.map((quest) => quest.reward.id)), 'invalid or duplicate reward ID')
+  require(stable(cats.map(({ id }) => id)), 'invalid or duplicate cat ID')
+  require(unique(attractions.map(({ location, object }) => location + '/' + object)) &&
+    unique(attractions.map(({ location, position: { x, y } }) => location + '/' + x + '/' + y)),
+  'duplicate attraction object or activity spot')
+  const gardenArt = {
+    water: 'garden-bowl', bedding: 'garden-bed', scratch: 'garden-post', tunnel: 'garden-tunnel',
+    toys: 'garden-toys', platform: 'garden-platform', shelter: 'garden-shelter', flowers: 'garden-flowers',
+  } as const
+  for (const spot of attractions) {
+    const art = spot.location === 'garden' ? gardenArt[spot.tag] : spot.tag === 'water' ? 'bowl' : 'cat-bed'
+    require(Object.hasOwn(pl.attractions, spot.tag) &&
+      maps[spot.location].furniture.some((prop) => prop.id === spot.object && prop.art === art) &&
+      quests.filter((quest) => quest.location === spot.location && quest.effects.some((effect) =>
+        effect.type === 'RESTORE_ATTRACTION' && effect.object === spot.object)).length === 1,
+    'missing restoration quest or art for ' + spot.object)
+  }
+  require(unique(cats.map(({ location, greet: { x, y } }) => location + '/' + x + '/' + y)),
+    'duplicate cat greeting spot')
   for (const cat of cats) {
     const map = maps[cat.location]
     const solids = solidsFor(map)
-    require(Object.hasOwn(pl.cat.names, cat.name) && unique(cat.attractions.map(({ object }) => object)),
-      'invalid resident cat ' + cat.id)
+    const available = attractions.filter(({ location }) => location === cat.location)
+    require(Object.hasOwn(pl.cat.names, cat.id) && Object.hasOwn(pl.kicipedia.profiles, cat.id) &&
+      stable(cat.attractions.map(({ object }) => object)) &&
+      cat.attractions.every((spot) => available.includes(spot)) &&
+      (!cat.requires || (cat.requires.length > 0 && unique(cat.requires) &&
+        cat.requires.every((tag) => cat.attractions.some((spot) => spot.tag === tag)))),
+    'invalid cat preferences or habitat for ' + cat.id)
+    require(!cat.pace || (cat.pace.speed > 0 && cat.pace.speed <= 64 &&
+      cat.pace.idleMs >= 1000 && cat.pace.idleMs <= 6000), 'invalid cat pace for ' + cat.id)
     for (const target of [cat.rest, ...cat.attractions.map(({ position }) => position)]) {
       require([cat.greet, target].every(({ x, y }) => x >= 5 && x <= map.width - 5 && y >= 3 && y <= map.height - 3) &&
         clearCatRoute(cat.greet, target, solids), 'blocked cat route for ' + cat.id)
-    }
-    for (const { object, activity } of cat.attractions) {
-      require(map.furniture.some(({ id, art }) => id === object && art === (activity === 'drinking' ? 'bowl' : 'cat-bed')) &&
-        quests.filter((quest) => quest.location === cat.location && quest.effects.some((effect) =>
-          effect.type === 'RESTORE_ATTRACTION' && effect.object === object)).length === 1,
-      'missing restoration quest or art for ' + object)
     }
   }
   const affectedObjects = quests.flatMap(({ location, effects }) => effects.map(({ object }) => location + '/' + object))
@@ -115,8 +135,8 @@ export function validateContent(maps: Record<LocationId, LocationMap>) {
       const furniture = maps[quest.location].furniture.find(({ id }) => id === effect.object)
       require(furniture && (effect.type === 'HIDE_OBJECT' ||
         (effect.type === 'ORGANIZE_OBJECT' && organizedArt.some((art) => art === furniture.art)) ||
-        (effect.type === 'RESTORE_ATTRACTION' && cats.some((cat) => cat.location === quest.location &&
-          cat.attractions.some(({ object }) => object === effect.object)))), 'invalid world effect for ' + effect.object)
+        (effect.type === 'RESTORE_ATTRACTION' && attractions.some(({ location, object }) =>
+          location === quest.location && object === effect.object))), 'invalid world effect for ' + effect.object)
     }
   }
 
@@ -131,6 +151,13 @@ export function validateContent(maps: Record<LocationId, LocationMap>) {
     for (const anchor of map.anchors) {
       require(reachable(anchor) && nearbyInteraction(anchor, map.anchors) === anchor.id,
         'unreachable or overlapping anchor ' + id + '/' + anchor.id)
+    }
+    for (const cat of cats.filter(({ location }) => location === id)) {
+      require(reachable(cat.greet) && reachable(cat.rest) &&
+        cat.attractions.every(({ position }) => reachable(position)), 'inaccessible cat encounter for ' + cat.id)
+    }
+    for (const spot of attractions.filter(({ location }) => location === id)) {
+      require(reachable(spot.position), 'inaccessible activity spot ' + spot.object)
     }
     const actions = [...quests, ...transitions, ...dialogues].filter((action) => action.location === id)
     require(actions.length === map.anchors.length && unique(actions.map((action) => action.interaction)),
@@ -166,6 +193,10 @@ export function validateContent(maps: Record<LocationId, LocationMap>) {
       'gate blocked by unavailable rewards: ' + edge.interaction)
   }
   require(reachableLocations(availablePoints).size === locationIds.length, 'location blocked by unavailable rewards')
+  const gardenGate = transitions.find(({ target }) => target.location === 'garden')
+  require(gardenGate?.minimumPoints === 16 && quests.length === 25 &&
+    availablePoints(reachableLocations(availablePoints, transitions.filter((edge) => edge !== gardenGate))) === 17,
+  'expected 17 indoor rewards and 25 total rewards')
   for (let budget = 0; budget <= quests.length; budget++) {
     const reachable = reachableLocations(budget)
     for (const edge of transitions) {

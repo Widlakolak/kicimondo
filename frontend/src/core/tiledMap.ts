@@ -19,11 +19,12 @@ type RoomMap = {
 }
 
 export const organizedArt = [
-  'satchel', 'supplies', 'books', 'sink', 'bath-shelf', 'toy-box', 'fruit', 'table', 'household-shelf',
+  'desk', 'basket', 'counter', 'satchel', 'supplies', 'books', 'sink', 'bath-shelf', 'toy-box', 'fruit', 'table', 'household-shelf',
 ] as const
 export const furnitureArt = [
-  'bed', 'desk', 'wardrobe', 'door', 'clothes', 'bowl', 'cat-bed',
-  'stairs', 'guide', 'plant', 'bench', 'tub', 'basket', 'sofa', 'counter', ...organizedArt,
+  'bed', 'wardrobe', 'door', 'clothes', 'bowl', 'cat-bed', 'gate',
+  'stairs', 'guide', 'plant', 'bench', 'tub', 'sofa', ...organizedArt,
+  'garden-bowl', 'garden-bed', 'garden-post', 'garden-tunnel', 'garden-toys', 'garden-platform', 'garden-shelter', 'garden-flowers',
 ] as const
 export type FurnitureArt = (typeof furnitureArt)[number]
 export type LocationMap = {

@@ -1,4 +1,6 @@
 import { useEffect, useEffectEvent, useRef, useState, type RefObject } from 'react'
+import { Kicipedia } from './Kicipedia'
+import type { CatId } from './content/catCatalog'
 import { Challenge } from './challenges/Challenge'
 import { cats, challenges, dialogues, quests, transitions, type Dialogue, type Quest, type Transition } from './content/pack'
 import { meetsGate, pointsOf, trustOf, type Save, type SaveCommand } from './core/progress'
@@ -47,6 +49,7 @@ type Overlay =
   | { type: 'locked'; edge: Transition }
   | { type: 'dialogue'; dialogue: Dialogue }
   | { type: 'pause' }
+  | { type: 'kicipedia'; selected: CatId | null; fromPause: boolean }
   | { type: 'success'; quest: Quest }
 
 const interactionText = (id: string): { prompt: string; unlocked?: string } => pl.interactions[id as keyof typeof pl.interactions]
@@ -57,6 +60,7 @@ function worldState(save: Save): WorldState {
   const hidden = save.hidden.filter((effect) => effect.location === location).map(({ object }) => object)
   return {
     hidden,
+    discovered: save.discovered,
     restored: save.restored.filter((effect) => effect.location === location).map(({ object }) => object),
     openDoors: edges.filter((edge) => meetsGate(pointsOf(save), edge.minimumPoints)).map(({ interaction }) => interaction),
     active: [
@@ -82,11 +86,11 @@ export default function Room({ save, commit, busy, notice, nativeActive, backHan
   const { location, spawn } = checkpoint
   const text = pl.locations[location]
   const points = pointsOf(save)
-  const resident = cats.find((cat) => cat.location === location)
-  const catName = resident ? pl.cat.names[resident.name] : null
+  const resident = cats.find((cat) => cat.location === location && !cat.requires)
+  const catName = resident ? pl.cat.names[resident.id] : null
   const host = useRef<HTMLDivElement>(null)
   const heading = useRef<HTMLHeadingElement>(null)
-  const successHeading = useRef<HTMLHeadingElement>(null)
+  const modalHeading = useRef<HTMLHeadingElement>(null)
   const dialog = useRef<HTMLDialogElement>(null)
   const previousFocus = useRef<HTMLElement | null>(null)
   const dismissTap = useRef<{ id: number; x: number; y: number } | null>(null)
@@ -105,11 +109,28 @@ export default function Room({ save, commit, busy, notice, nativeActive, backHan
     input.setPaused(true)
     setOpen({ type: 'pause' })
   }
+  function openKicipedia(focus?: HTMLElement) {
+    const fromPause = open?.type === 'pause'
+    if (!fromPause && focus) previousFocus.current = focus
+    input.setPaused(true)
+    setOpen({ type: 'kicipedia', selected: null, fromPause })
+  }
+
   function closeOverlay() {
     const overlay = dialog.current
     if (busy || !overlay?.open) return
-    overlay.close()
     dismissTap.current = null
+    if (open?.type === 'kicipedia') {
+      if (open.selected) {
+        setOpen({ ...open, selected: null })
+        return
+      }
+      if (open.fromPause) {
+        setOpen({ type: 'pause' })
+        return
+      }
+    }
+    overlay.close()
     setOpen(null)
     const focus = previousFocus.current
     if (focus && focus !== document.body && focus.isConnected && !focus.matches(':disabled')) focus.focus()
@@ -142,7 +163,7 @@ export default function Room({ save, commit, busy, notice, nativeActive, backHan
 
   const initialWorld = useEffectEvent(() => worldState(save))
   const onInteraction = useEffectEvent(async (id: InteractionId) => {
-    if (resident && id === resident.id) {
+    if (cats.some((cat) => cat.location === location && cat.id === id)) {
       if (!save.trust.some((event) => event.cat === id && event.id === 'first-pet')) {
         await commit({ type: 'pet', cat: id })
       }
@@ -165,13 +186,17 @@ export default function Room({ save, commit, busy, notice, nativeActive, backHan
     }
   })
 
+  const onObserve = useEffectEvent((id: CatId) => {
+    if (!save.discovered.includes(id)) void commit({ type: 'discover', cat: id })
+  })
+
   useEffect(() => {
     const stage = document.createElement('div')
     stage.className = 'stage'
     host.current?.append(stage)
     heading.current?.focus()
     const created = createRoom(stage, profile.avatar, input, { location, spawn }, initialWorld(), (id, cue) => setTarget({ id, cue }),
-      (id) => { void onInteraction(id) })
+      (id) => { void onInteraction(id) }, (id) => onObserve(id))
     engine.current = created
 
     const clear = () => input.clear()
@@ -221,7 +246,7 @@ export default function Room({ save, commit, busy, notice, nativeActive, backHan
 
   useEffect(() => {
     if (open && dialog.current && !dialog.current.open) dialog.current.showModal()
-    if (open?.type === 'success') successHeading.current?.focus()
+    if (open) modalHeading.current?.focus()
   }, [open])
 
   async function complete(quest: Quest) {
@@ -234,11 +259,14 @@ export default function Room({ save, commit, busy, notice, nativeActive, backHan
   const active = target.id && world.active.includes(target.id) ? target.id : null
   const interaction = active ? interactionText(active) : null
   const unlocked = active && world.openDoors.includes(active)
-  const catPrompt = target.cue && catName ? pl.cat[target.cue](catName) : null
-  const stairs = active && !unlocked
-    ? transitions.find((edge) => edge.location === location && edge.interaction === active && edge.kind === 'stairs')
+  const nearbyCat = target.cue ? cats.find(({ id }) => id === target.id) : null
+  const catPrompt = target.cue && nearbyCat ? pl.cat[target.cue](pl.cat.names[nearbyCat.id], nearbyCat.female) : null
+  const lockedEdge = active && !unlocked
+    ? transitions.find((edge) => edge.location === location && edge.interaction === active && edge.kind)
     : null
-  const prompt = (stairs && pl.stairs.progress(points, stairs.minimumPoints)) || (catPrompt ?? (unlocked ? interaction?.unlocked : null) ?? interaction?.prompt)
+  const lockText = (edge: Transition) => edge.kind === 'gate' ? pl.gardenGate : pl.stairs
+  const prompt = (lockedEdge && lockText(lockedEdge).progress(points, lockedEdge.minimumPoints)) ||
+    (catPrompt ?? (unlocked ? interaction?.unlocked : null) ?? interaction?.prompt)
   const conversation = open?.type === 'dialogue' && dialogueBody(open.dialogue)
 
   return (
@@ -251,6 +279,8 @@ export default function Room({ save, commit, busy, notice, nativeActive, backHan
         </div>
         <div className="room-actions">
           <span className="points" title={pl.pointsLabel}>{pl.points(points)}</span>
+          <button type="button" className="secondary" disabled={busy}
+            onClick={(event) => openKicipedia(event.currentTarget)}>{pl.kicipedia.title}</button>
           <button type="button" className="secondary" disabled={busy} onClick={onEdit}>{pl.edit}</button>
           <button type="button" className="secondary" disabled={busy} onClick={(event) => openPause(event.currentTarget)}>{pl.pause.title}</button>
         </div>
@@ -271,7 +301,7 @@ export default function Room({ save, commit, busy, notice, nativeActive, backHan
       </div>
       <p className="room-help">{pl.help}</p>
       <dialog
-        className={open?.type === 'quest' ? 'quest-dialog' : undefined}
+        className={open?.type === 'quest' || open?.type === 'kicipedia' ? 'quest-dialog' : undefined}
         ref={dialog}
         aria-labelledby="interaction-title"
         aria-describedby="interaction-body"
@@ -287,9 +317,15 @@ export default function Room({ save, commit, busy, notice, nativeActive, backHan
           }} />
         </>}
         {open?.type === 'pause' && <>
-          <h2 id="interaction-title">{pl.pause.title}</h2>
+          <h2 id="interaction-title" ref={modalHeading} tabIndex={-1}>{pl.pause.title}</h2>
           <p id="interaction-body">{pl.pause.body}</p>
           <button type="button" className="secondary pause-menu" disabled={busy} onClick={onMenu}>{pl.pause.menu}</button>
+          <button type="button" className="secondary pause-menu" disabled={busy}
+            onClick={() => openKicipedia()}>{pl.kicipedia.title}</button>
+        </>}
+        {open?.type === 'kicipedia' && <>
+          <h2 id="interaction-title" ref={modalHeading} tabIndex={-1}>{pl.kicipedia.title}</h2>
+          <Kicipedia save={save} selected={open.selected} select={(id) => setOpen({ ...open, selected: id })} />
         </>}
         {open?.type === 'dialogue' && conversation && <>
           <h2 id="interaction-title">{pl.dialogue[open.dialogue.speaker].title}</h2>
@@ -300,12 +336,12 @@ export default function Room({ save, commit, busy, notice, nativeActive, backHan
           </div>
         </>}
         {open?.type === 'locked' && <>
-          <h2 id="interaction-title">{open.edge.kind === 'stairs' ? pl.stairs.title : pl.lockedDoor.title}</h2>
-          <p id="interaction-body">{open.edge.kind === 'stairs' ? pl.stairs.progress(points, open.edge.minimumPoints) :
+          <h2 id="interaction-title">{open.edge.kind ? lockText(open.edge).title : pl.lockedDoor.title}</h2>
+          <p id="interaction-body">{open.edge.kind ? lockText(open.edge).progress(points, open.edge.minimumPoints) :
             pl.lockedDoor.requirement(open.edge.minimumPoints)}</p>
         </>}
         {open?.type === 'success' && <>
-          <h2 id="interaction-title" ref={successHeading} tabIndex={-1}>{pl.questComplete}</h2>
+          <h2 id="interaction-title" ref={modalHeading} tabIndex={-1}>{pl.questComplete}</h2>
           <p id="interaction-body">{pl.challenges[challenges[open.quest.challenge].text].success}</p>
           <p className="quest-reward">{pl.earned(open.quest.reward.points)}</p>
           {notice && <p className="notice" role="status">{notice}</p>}
@@ -330,7 +366,8 @@ export default function Room({ save, commit, busy, notice, nativeActive, backHan
               closeOverlay()
             }
           }}>
-          {busy ? pl.saving : open?.type === 'quest' ? pl.cancel : open?.type === 'pause' ? pl.pause.resume : pl.close}
+          {busy ? pl.saving : open?.type === 'quest' ? pl.cancel : open?.type === 'pause' ? pl.pause.resume :
+            open?.type === 'kicipedia' && open.selected ? pl.kicipedia.back : pl.close}
         </button>
       </dialog>
     </section>

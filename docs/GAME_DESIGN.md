@@ -27,7 +27,7 @@ Bursztynek is the bedroom’s resident cat. The player can fill his water bowl w
 | Bedroom | 0 | Clothes, water bowl and cat bed |
 | Upstairs | 1 | School bag, supplies, book sizes, handwashing, bathroom items and toys |
 | Ground floor | 8 | Fruit arithmetic, table settings and household sorting |
-| Garden (planned) | 16 | Plants, water bowls, shelters, cat playground |
+| Garden | 16 | Eight activities restore water, bedding, play, shelter and flowers |
 | Basement | 32 | Workshop, materials and puzzles |
 | Forest | 64 | Nature, trails and mysteries |
 | Village | 128 | Shops, money, community and animal care |
@@ -37,13 +37,13 @@ Bursztynek is the bedroom’s resident cat. The player can fill his water bowl w
 
 Thresholds are provisional and cumulative, not costs. Basement is a branch from the ground floor, not a mandatory route through the garden. Unlocks are permanent, and gates show progress in simple language. A first-time eligible quest awards one PS; repeated practice does not award the same point again. PS represents in-game progression, not an assessment of real-world independence.
 
-Upstairs leads from the landing to the study, bathroom and playroom. Ciocia Hania suggests a room with remaining tasks and explains the stairs. Nine activities are available before the stair gate, so the player can leave one for later. The ground-floor hall connects the stairs, kitchen and living room. Each room has a return route. The house offers 12 PS and the planned garden has no entrance in Stage 05.
+Upstairs leads from the landing to the study, bathroom and playroom. Ciocia Hania suggests a room with remaining tasks and explains the stairs. Nine activities are available before the stair gate, so the player can leave one for later. The ground-floor hall connects the stairs, kitchen and living room. Each room has a return route. The house offers 17 PS. At 16 PS the hall gate opens to the garden, so one indoor activity can wait. There are eight more PS outdoors. The same gate leads back to the hall.
 
 Content must provide enough accessible first-time missions to reach the next gate. Before a gate is shipped, validate reachability and give children a choice of activities. Do not ship a gate whose required content is missing. With the proposed thresholds, a release that includes the forest needs at least 64 eligible completions before the forest. Start with the bedroom/upstairs and expand incrementally.
 
 ## Cats and habitats
 
-Use fictional free-roaming cats, not wild animal species. Cats have stable IDs, appearance, personality, favourite activities and trust. The initial cat is a household pet; visiting cats appear later in outdoor areas.
+Use fictional free-roaming cats, not wild animal species. Cats have stable IDs, appearance, personality, favourite activities and trust. Bursztynek stays in the bedroom. The garden has four visiting cats with distinct habitat requirements.
 
 | Attraction | Example challenge | Effect |
 | --- | --- | --- |
@@ -54,11 +54,11 @@ Use fictional free-roaming cats, not wild animal species. Cats have stable IDs, 
 | Tunnel and ball | Match words | Adds play opportunities |
 | Cat shelter | Multi-step puzzle | Adds a sheltered habitat |
 
-An eligible habitat is defined by attraction tags, counts, proximity and location. Adding suitable attractions increases the number and variety of eligible visitors, bounded by capacity. Multiple identical objects need not increase variety. Arrival is predictable within a short active-play window, with an understandable hint. No real-time waiting or forced daily check-ins. For the garden prototype use fixed placement slots and deterministic visitor selection. Free grid placement, recipes and A* navigation can come later.
+An eligible habitat is defined by attraction tags, counts, proximity and location. Adding suitable attractions increases the number and variety of eligible visitors, bounded by capacity. Multiple identical objects need not increase variety. Arrival is predictable within a short active-play window, with an understandable hint. No real-time waiting or forced daily check-ins. The garden uses fixed slots. Puszek needs water and sheltered bedding, Łatka needs a scratching post and tunnel, Cień needs shelter and water, and Migotka needs a platform and toys. Up to three visitors appear at once. When all four qualify, waiting visitors take turns after eight active seconds. The rotation waits while a modal is open and keeps each petting cat until the interaction ends. Free grid placement, recipes and A* navigation can come later.
 
 Cats choose activities (idle, walk, drink, play, rest), can approach or move away, and occupy at most one activity spot at a time. Trust increases through appropriate, distinct interactions and habitat improvements; no point farming by repeatedly clicking the cat. Trust levels: unfamiliar, curious, comfortable, friendly, close friend, optional companion. Do not reduce trust when the player is away. A cat can decline petting at any level. Cats do not become ill or leave permanently because of inactivity.
 
-Kicipedia stores discovered cats, their appearance, first encounter, preferences, trust and a short fact. It is a collection, not a ranking. Allow optional nicknames later.
+Kicipedia shows silhouettes and habitat hints for unknown cats. Walking near a cat while it is present unlocks its portrait, personality, favourites, trust and a short fictional description. Discoveries persist. A visitor gains trust once when its habitat is ready and once for its first accepted greeting. Neither event earns PS. Allow optional nicknames later.
 
 ## Rewards and building
 

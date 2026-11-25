@@ -10,48 +10,73 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 5,
-  "nextobjectid": 19,
+  "nextobjectid": 20,
   "tilesets": [],
   "layers": [
     {
-      "id": 1, "name": "Furniture", "type": "objectgroup", "draworder": "topdown", "opacity": 1, "visible": true, "x": 0, "y": 0,
+      "id": 1,
+      "name": "Furniture",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
       "objects": [
-        { "id": 1, "name": "bed", "x": 32, "y": 32, "width": 52, "height": 64, "properties": [{ "name": "solid", "type": "bool", "value": true }, { "name": "art", "type": "string", "value": "bed" }]},
-        { "id": 2, "name": "desk", "x": 224, "y": 32, "width": 64, "height": 43, "properties": [{ "name": "solid", "type": "bool", "value": true }, { "name": "art", "type": "string", "value": "desk" }]},
-        { "id": 3, "name": "wardrobe", "x": 32, "y": 112, "width": 36, "height": 48, "properties": [{ "name": "solid", "type": "bool", "value": true }, { "name": "art", "type": "string", "value": "wardrobe" }]},
-        { "id": 4, "name": "closed-door", "x": 144, "y": 8, "width": 32, "height": 24, "properties": [{ "name": "art", "type": "string", "value": "door" }]},
-        { "id": 5, "name": "scattered-clothes", "x": 174, "y": 144, "width": 25, "height": 18, "properties": [{ "name": "art", "type": "string", "value": "clothes" }]},
-        { "id": 15, "name": "water-bowl", "x": 199, "y": 192, "width": 22, "height": 12, "properties": [{ "name": "art", "type": "string", "value": "bowl" }] },
-        { "id": 16, "name": "cat-bed", "x": 240, "y": 177, "width": 41, "height": 25, "properties": [{ "name": "art", "type": "string", "value": "cat-bed" }] }
+        {"id": 1, "name": "bed", "x": 32, "y": 32, "width": 52, "height": 64, "properties": [{"name": "solid", "type": "bool", "value": true}, {"name": "art", "type": "string", "value": "bed"}]},
+        {"id": 2, "name": "desk", "x": 224, "y": 32, "width": 64, "height": 43, "properties": [{"name": "solid", "type": "bool", "value": true}, {"name": "art", "type": "string", "value": "desk"}]},
+        {"id": 3, "name": "wardrobe", "x": 32, "y": 112, "width": 36, "height": 48, "properties": [{"name": "solid", "type": "bool", "value": true}, {"name": "art", "type": "string", "value": "wardrobe"}]},
+        {"id": 4, "name": "closed-door", "x": 144, "y": 8, "width": 32, "height": 24, "properties": [{"name": "art", "type": "string", "value": "door"}]},
+        {"id": 5, "name": "scattered-clothes", "x": 174, "y": 144, "width": 25, "height": 18, "properties": [{"name": "art", "type": "string", "value": "clothes"}]},
+        {"id": 15, "name": "water-bowl", "x": 199, "y": 192, "width": 22, "height": 12, "properties": [{"name": "art", "type": "string", "value": "bowl"}]},
+        {"id": 16, "name": "cat-bed", "x": 240, "y": 177, "width": 41, "height": 25, "properties": [{"name": "art", "type": "string", "value": "cat-bed"}]}
       ]
     },
     {
-      "id": 2, "name": "Collisions", "type": "objectgroup", "draworder": "topdown", "opacity": 1, "visible": true, "x": 0, "y": 0,
+      "id": 2,
+      "name": "Collisions",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
       "objects": [
-        { "id": 6, "name": "north-wall", "x": 0, "y": 0, "width": 320, "height": 32 },
-        { "id": 7, "name": "south-wall", "x": 0, "y": 224, "width": 320, "height": 16 },
-        { "id": 8, "name": "west-wall", "x": 0, "y": 32, "width": 16, "height": 192 },
-        { "id": 9, "name": "east-wall", "x": 304, "y": 32, "width": 16, "height": 192 }
+        {"id": 6, "name": "north-wall", "x": 0, "y": 0, "width": 320, "height": 32},
+        {"id": 7, "name": "south-wall", "x": 0, "y": 224, "width": 320, "height": 16},
+        {"id": 8, "name": "west-wall", "x": 0, "y": 32, "width": 16, "height": 192},
+        {"id": 9, "name": "east-wall", "x": 304, "y": 32, "width": 16, "height": 192}
       ]
     },
     {
-      "id": 3, "name": "Interactions", "type": "objectgroup", "draworder": "topdown", "opacity": 1, "visible": true, "x": 0, "y": 0,
+      "id": 3,
+      "name": "Interactions",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
       "objects": [
-        { "id": 11, "name": "closed-door", "x": 160, "y": 43, "point": true, "width": 0, "height": 0,
-          "properties": [{ "name": "radius", "type": "int", "value": 19 }] },
-        { "id": 12, "name": "scattered-clothes", "x": 186, "y": 154, "point": true, "width": 0, "height": 0,
-          "properties": [{ "name": "radius", "type": "int", "value": 23 }] },
-        { "id": 17, "name": "water-bowl", "x": 210, "y": 199, "point": true, "width": 0, "height": 0,
-          "properties": [{ "name": "radius", "type": "int", "value": 21 }] },
-        { "id": 18, "name": "cat-bed", "x": 258, "y": 190, "point": true, "width": 0, "height": 0,
-          "properties": [{ "name": "radius", "type": "int", "value": 22 }] }
+        {"id": 11, "name": "closed-door", "x": 160, "y": 43, "point": true, "width": 0, "height": 0, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 12, "name": "scattered-clothes", "x": 186, "y": 154, "point": true, "width": 0, "height": 0, "properties": [{"name": "radius", "type": "int", "value": 23}]},
+        {"id": 17, "name": "water-bowl", "x": 210, "y": 199, "point": true, "width": 0, "height": 0, "properties": [{"name": "radius", "type": "int", "value": 21}]},
+        {"id": 18, "name": "cat-bed", "x": 258, "y": 190, "point": true, "width": 0, "height": 0, "properties": [{"name": "radius", "type": "int", "value": 22}]},
+        {"id": 19, "name": "desk-reading", "x": 255, "y": 93, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]}
       ]
     },
     {
-      "id": 4, "name": "SpawnPoints", "type": "objectgroup", "draworder": "topdown", "opacity": 1, "visible": true, "x": 0, "y": 0,
+      "id": 4,
+      "name": "SpawnPoints",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
       "objects": [
-        { "id": 13, "name": "bedside", "x": 106, "y": 78, "point": true, "width": 0, "height": 0 },
-        { "id": 14, "name": "from-landing", "x": 160, "y": 69, "width": 0, "height": 0, "point": true }
+        {"id": 13, "name": "bedside", "x": 106, "y": 78, "point": true, "width": 0, "height": 0},
+        {"id": 14, "name": "from-landing", "x": 160, "y": 69, "width": 0, "height": 0, "point": true}
       ]
     }
   ]

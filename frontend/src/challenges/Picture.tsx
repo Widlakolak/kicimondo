@@ -1,6 +1,25 @@
 import type { PictureId } from '../content/pack'
 
+const pencil = (width: number): readonly (readonly [string, string])[] => [
+  ['#aa7454', `M2 9h${width}l3 3-3 3H2z`], ['#e6ba73', `M4 10h${width - 2}v3H4z`],
+]
+const board = (width: number): readonly (readonly [string, string])[] => [
+  ['#825e4d', `M2 8h${width}v8H2z`], ['#d8a172', `M3 9h${width - 2}v5H3z`], ['#b98063', 'M5 11h5v1H5z'],
+]
+const ball = (border: string, fill: string): readonly (readonly [string, string])[] => [
+  [border, 'M8 3h8v2h4v3h2v8h-2v3h-4v2H8v-2H4v-3H2V8h2V5h4z'], [fill, 'M8 6h8v2h3v7h-3v3H8v-3H5V8h3z'],
+]
+
 const housePictures: Record<Exclude<PictureId, 'blanket' | 'pillow' | 'basket'>, readonly (readonly [string, string])[]> = {
+  lamp: [['#7b5e72', 'M11 7h2v12h5v2H6v-2h5z'], ['#d49665', 'M8 4h8l4 9H4z'], ['#f6dc9b', 'M7 10h10v2H7z']],
+  book: [['#84759e', 'M3 5h8l1 2 1-2h8v15h-8l-1 1-1-1H3z'], ['#f6e8c5', 'M5 7h5l2 2 2-2h5v10h-5l-2 2-2-2H5z']],
+  paper: [['#887377', 'M5 3h10l4 4v14H5z'], ['#fff1d5', 'M6 4h8v4h4v12H6z'], ['#9d8688', 'M8 11h8v1H8zm0 4h8v1H8z']],
+  roof: [['#b86b68', 'M12 3 23 13l-3 3-8-7-8 7-3-3z'], ['#754c5d', 'M5 15h14v3H5z'], ['#eaa38b', 'M9 8h6v2H9z']],
+  apple: [['#a44b54', 'M5 8h5l2 1 2-1h5v3h2v6h-2v3h-5l-2-1-2 1H5v-3H3v-6h2z'], ['#5c8461', 'M11 4h2v5h-2zm2-1h5v3h-5z']],
+  pear: [['#8d9a63', 'M9 5h6v5h2v3h3v5h-3v3H7v-3H4v-5h3v-3h2z'], ['#785a4d', 'M11 3h2v4h-2z']],
+  'short-pencil': pencil(9), 'mid-pencil': pencil(13), 'long-pencil': pencil(17),
+  'short-board': board(10), 'mid-board': board(15), 'long-board': board(20),
+  'blue-ball': ball('#4f718d', '#8bb8c8'), 'red-ball': ball('#a75265', '#db8e8a'),
   pencil: [['#d39b48', 'M4 17 16 5l4 4L8 21H4z'], ['#5d484a', 'M4 17l4 4H4z'], ['#b06673', 'm16 5 2-2 4 4-2 2z']],
   eraser: [['#a55f73', 'M3 12 12 4l9 8-9 8H9z'], ['#e0a0a9', 'm3 12 6 6 5-5-6-5z'], ['#f0d7ac', 'm12 17 5-5 3 1-8 7z']],
   notebook: [['#5a807a', 'M5 3h15v18H5z'], ['#f3e4c3', 'M8 6h10v7H8z'], ['#775964', 'M3 5h4v2H3zm0 5h4v2H3zm0 5h4v2H3z']],

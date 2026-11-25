@@ -1,3 +1,4 @@
+import { gardenPl } from './gardenPl.ts'
 import { housePl } from './housePl.ts'
 
 export const pl = {
@@ -14,6 +15,7 @@ export const pl = {
   cancel: 'Anuluj',
   locations: {
     ...housePl.locations,
+    garden: gardenPl.location,
     bedroom: { title: 'Twój pokój', map: 'Widok pokoju z góry' },
     landing: { title: 'Półpiętro', map: 'Widok półpiętra z góry' },
   },
@@ -40,14 +42,15 @@ export const pl = {
     unavailable: 'Nie można zapisać gry na tym urządzeniu. Zmiany w tej sesji znikną po odświeżeniu.',
   },
   cat: {
-    names: { amber: 'Bursztynek' },
+    names: { amber: 'Bursztynek', ...gardenPl.names },
     trust: (name: string, value: number) => `Zaufanie · ${name}: ${value}`,
-    ready: (name: string) => `${name} jest gotowy na głaskanie. Wybierz „Sprawdź”.`,
-    space: (name: string) => `${name} jest zajęty. Daj mu teraz przestrzeń.`,
+    ready: (name: string, female = false) => `${name} jest ${female ? 'gotowa' : 'gotowy'} na głaskanie. Wybierz „Sprawdź”.`,
+    space: (name: string, female = false) => `${name} jest ${female ? 'zajęta' : 'zajęty'}. Daj mu teraz przestrzeń.`,
     petting: (name: string) => `Głaszczesz kota: ${name}.`,
   },
   interactions: {
     ...housePl.interactions,
+    ...gardenPl.interactions,
     'water-bowl': { prompt: 'Obok stoi pusta miska na wodę.' },
     'cat-bed': { prompt: 'Obok jest legowisko do przygotowania.' },
     'scattered-clothes': {
@@ -62,7 +65,17 @@ export const pl = {
     },
   },
   dialogue: housePl.dialogue,
-  sort: housePl.sort,
+  sort: {
+    ...housePl.sort,
+    items: { ...housePl.sort.items, ...gardenPl.items },
+    groups: { ...housePl.sort.groups, ...gardenPl.groups },
+  },
+  kicipedia: gardenPl.collection,
+  attractions: gardenPl.attractions,
+  gardenGate: {
+    title: 'Brama do ogrodu',
+    progress: (points: number, goal: number) => `Masz ${points} PS. Potrzebujesz ${goal} PS, żeby wejść do ogrodu.`,
+  },
   stairs: {
     title: 'Schody na parter',
     progress: (points: number, goal: number) => `Masz ${points} PS. Potrzebujesz ${goal} PS, żeby zejść na parter.`,
@@ -73,6 +86,7 @@ export const pl = {
   },
   challenges: {
     ...housePl.challenges,
+    ...gardenPl.challenges,
     clothesTrace: {
       title: 'Rozrzucone ubrania',
       instructions: 'Przesuń palcem lub myszką od startu do mety, żeby przenieść ubrania do kosza.',
@@ -96,6 +110,9 @@ export const pl = {
     progress: (current: number, total: number) => `Zagadka ${current} z ${total}`,
     count: 'Ile widzisz kropli?',
     counters: {
+      towel: { count: 'Ile widzisz ręczników?', item: 'Ręcznik', crossed: 'Przekreślony ręcznik' },
+      board: { count: 'Ile widzisz deseczek?', item: 'Deseczka', crossed: 'Przekreślona deseczka' },
+      flower: { count: 'Ile widzisz kwiatów?', item: 'Kwiat', crossed: 'Przekreślony kwiat' },
       pencil: { count: 'Ile widzisz ołówków?', item: 'Ołówek', crossed: 'Przekreślony ołówek' },
       apple: { count: 'Ile widzisz jabłek?', item: 'Jabłko', crossed: 'Przekreślone jabłko' },
     },
@@ -109,8 +126,8 @@ export const pl = {
     crossedDrop: 'Przekreślona kropla',
   },
   match: {
-    words: { ...housePl.words, blanket: 'Koc', pillow: 'Poduszka', basket: 'Koszyk' },
-    pictures: { ...housePl.pictures, blanket: 'Obrazek: koc', pillow: 'Obrazek: poduszka', basket: 'Obrazek: koszyk' },
+    words: { ...housePl.words, ...gardenPl.words, blanket: 'Koc', pillow: 'Poduszka', basket: 'Koszyk' },
+    pictures: { ...housePl.pictures, ...gardenPl.pictures, blanket: 'Obrazek: koc', pillow: 'Obrazek: poduszka', basket: 'Obrazek: koszyk' },
     wordGroup: 'Słowa',
     pictureGroup: 'Obrazki',
     chooseWord: 'Najpierw wybierz słowo.',

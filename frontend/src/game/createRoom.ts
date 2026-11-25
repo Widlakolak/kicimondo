@@ -1,9 +1,12 @@
 import Phaser from 'phaser'
 import type { Checkpoint } from '../content/pack'
-import { cats, locations } from '../content/pack'
+import type { CatId } from '../content/catCatalog'
+import { locations } from '../content/pack'
 import { maps } from '../content/world'
 import { solidsFor } from '../core/tiledMap'
-import { canPet, petCat, startCat, stepCat } from '../core/cat'
+import { canPet } from '../core/cat'
+import { CatPopulation, type CatEntity } from '../core/catPopulation'
+import { canObserve } from '../core/discovery'
 import { catFrame, paintCat } from './catArt'
 import type { Avatar } from '../core/profile'
 import { moveInRoom, nearbyInteraction, type Direction, type InteractionId } from '../core/room'
@@ -15,6 +18,7 @@ export type WorldState = {
   openDoors: readonly string[]
   restored: readonly string[]
   active: readonly string[]
+  discovered: readonly CatId[]
 }
 
 export type CatCue = 'ready' | 'space' | 'petting'
@@ -33,12 +37,15 @@ export function createRoom(
   initialWorld: WorldState,
   onNearby: (id: InteractionId | null, cue: CatCue | null) => void,
   onInteract: (id: InteractionId) => void,
+  onObserve: (id: CatId) => void,
 ) {
   const map = maps[checkpoint.location]
   const spawn = map.spawns.get(checkpoint.spawn) ?? map.spawns.get(locations[checkpoint.location].entry)
   if (!spawn) throw new Error('No spawn for location')
   let world = initialWorld
-  const resident = cats.find(({ location }) => location === checkpoint.location)
+  const population = new CatPopulation(checkpoint.location)
+  const observed = new Set(initialWorld.discovered)
+  const same = (a: readonly string[], b: readonly string[]) => a.length === b.length && a.every((id, i) => id === b[i])
 
   class LocationScene extends Phaser.Scene {
     private backdrop!: Phaser.GameObjects.Graphics
@@ -46,9 +53,8 @@ export function createRoom(
     private solids = solidsFor(map)
     private anchors = map.anchors
     private player!: Phaser.GameObjects.Graphics
-    private catSprite?: Phaser.GameObjects.Graphics
-    private cat = resident ? startCat(resident) : null
-    private lastCatFrame = ''
+    private readonly catSprites = new Map<CatId, { graphic: Phaser.GameObjects.Graphics; frame: string }>()
+    private drawnRoster: readonly CatId[] | null = null
     private catCue: CatCue | null = null
     private marker!: Phaser.GameObjects.Graphics
     private position = { ...spawn! }
@@ -61,9 +67,9 @@ export function createRoom(
       this.backdrop = this.add.graphics()
       this.drawWorld()
       this.marker = this.add.graphics()
-      if (this.cat) this.catSprite = this.add.graphics()
       this.player = this.add.graphics()
       this.renderPlayer(false, 0)
+      this.renderCats()
     }
 
     private drawWorld() {
@@ -75,10 +81,12 @@ export function createRoom(
       }
       this.solids = solidsFor(map, world.hidden)
       this.anchors = map.anchors.filter(({ id }) => world.active.includes(id))
+      population.setRestored(world.restored)
     }
 
     update(_time: number, delta: number) {
       if (this.drawnWorld !== world) this.drawWorld()
+      if (input.isPaused() || document.hidden) return
       const direction = input.direction()
       const seconds = Math.min(delta, 40) / 1000
       const next = moveInRoom(this.position, {
@@ -92,24 +100,22 @@ export function createRoom(
 
       this.renderPlayer(walking, delta)
       const anchor = nearbyInteraction(next, this.anchors)
-      const catNear = resident && this.cat &&
-        Math.hypot(next.x - this.cat.position.x, next.y - this.cat.position.y) <= 25
-      const nearby = anchor ?? (catNear ? resident.id : null)
+      // Record observations before a simultaneous interaction can change the room.
+      this.observeCats(next)
       const requested = input.takeInteraction()
       if (requested && anchor) {
         input.setPaused(true)
         onInteract(anchor)
+      } else if (requested) {
+        const cat = population.nearest(next)
+        if (cat && population.pet(cat.definition.id)) onInteract(cat.definition.id)
       }
-      if (resident && this.cat) {
-        if (requested && !anchor && catNear && canPet(this.cat)) {
-          this.cat = petCat(this.cat)
-          onInteract(resident.id)
-        }
-        this.cat = stepCat(this.cat, resident, delta, world.restored, this.solids, input.isPaused() || document.hidden)
-        this.renderCat()
-      }
-      const cue: CatCue | null = nearby === resident?.id && this.cat
-        ? canPet(this.cat) ? 'ready' : this.cat.activity === 'petting' ? 'petting' : 'space'
+      population.step(delta, this.solids, input.isPaused())
+      this.renderCats()
+      const cat = anchor ? null : population.nearest(next)
+      const nearby = anchor ?? cat?.definition.id ?? null
+      const cue: CatCue | null = cat
+        ? canPet(cat.state) ? 'ready' : cat.state.activity === 'petting' ? 'petting' : 'space'
         : null
       if (this.nearby !== nearby || this.catCue !== cue) {
         this.nearby = nearby
@@ -125,25 +131,50 @@ export function createRoom(
       }
     }
 
-    private renderCat() {
-      const cat = this.cat
-      if (!cat || !this.catSprite) return
-      const x = Math.round(cat.position.x)
-      const y = Math.round(cat.position.y)
-      this.catSprite.setPosition(x, y)
-      const frame = catFrame(cat)
-      const frameKey = cat.activity + ':' + cat.facing + ':' + frame
-      if (frameKey !== this.lastCatFrame) {
-        this.lastCatFrame = frameKey
-        paintCat(painter(this.catSprite.clear()), cat, frame)
+    private observeCats(position: { x: number; y: number }) {
+      for (const { definition, state } of population.members) {
+        const { id } = definition
+        if (observed.has(id) || !canObserve(position, state.position, this.solids)) continue
+        observed.add(id)
+        onObserve(id)
       }
-      // Depth sorting leaves the cat and avatar free to share walkable space.
-      this.catSprite.setDepth(y)
-      this.player.setDepth(Math.round(this.position.y))
-      if (parent.dataset.catActivity !== cat.activity) parent.dataset.catActivity = cat.activity
+    }
+
+    private renderCats() {
+      const roster = population.visitorIds
+      if (roster !== this.drawnRoster) {
+        for (const [id, sprite] of this.catSprites) {
+          if (population.has(id)) continue
+          sprite.graphic.destroy()
+          this.catSprites.delete(id)
+        }
+        if (checkpoint.location === 'garden') parent.dataset.visitors = roster.join(' ')
+        this.drawnRoster = roster
+      }
+      for (const entity of population.members) this.renderCat(entity)
+    }
+
+    private renderCat({ definition, state }: CatEntity) {
+      let sprite = this.catSprites.get(definition.id)
+      if (!sprite) {
+        sprite = { graphic: this.add.graphics(), frame: '' }
+        this.catSprites.set(definition.id, sprite)
+      }
+      const x = Math.round(state.position.x)
+      const y = Math.round(state.position.y)
+      if (sprite.graphic.x !== x || sprite.graphic.y !== y) sprite.graphic.setPosition(x, y)
+      const frame = catFrame(state)
+      const frameKey = state.activity + ':' + state.facing + ':' + frame
+      if (frameKey !== sprite.frame) {
+        sprite.frame = frameKey
+        paintCat(painter(sprite.graphic.clear()), state, frame, definition.appearance)
+      }
+      if (sprite.graphic.depth !== y) sprite.graphic.setDepth(y)
+      if (definition.id !== 'amber') return
+      if (parent.dataset.catActivity !== state.activity) parent.dataset.catActivity = state.activity
       if (parent.dataset.catX !== String(x)) parent.dataset.catX = String(x)
       if (parent.dataset.catY !== String(y)) parent.dataset.catY = String(y)
-      const elapsed = String(Math.floor(cat.elapsed))
+      const elapsed = String(Math.floor(state.elapsed))
       if (parent.dataset.catElapsed !== elapsed) parent.dataset.catElapsed = elapsed
     }
 
@@ -160,6 +191,7 @@ export function createRoom(
       const x = Math.round(this.position.x)
       const y = Math.round(this.position.y)
       this.player.setPosition(x - 8, y - 21)
+      if (this.player.depth !== y) this.player.setDepth(y)
       // Expose the rendered feet position for browser checks without reading pixels.
       if (parent.dataset.x !== String(x)) parent.dataset.x = String(x)
       if (parent.dataset.y !== String(y)) parent.dataset.y = String(y)
@@ -178,7 +210,11 @@ export function createRoom(
     scene: LocationScene,
   })
   return {
-    setWorld(next: WorldState) { world = next },
+    setWorld(next: WorldState) {
+      for (const id of next.discovered) observed.add(id)
+      if (!same(world.hidden, next.hidden) || !same(world.restored, next.restored) ||
+          !same(world.openDoors, next.openDoors) || !same(world.active, next.active)) world = next
+    },
     setBackgrounded(backgrounded: boolean) {
       if (backgrounded) game.pause()
       else game.resume()

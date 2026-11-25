@@ -1,21 +1,27 @@
 import { movement, type Direction } from '../core/room'
 
+const still = { x: 0, y: 0 }
+
 export class RoomInput {
   private readonly held = new Map<string, Direction>()
   private requested = false
+  private vector = still
   private paused = false
   private backgrounded = false
 
   hold(source: string, direction: Direction) {
-    if (!this.isPaused()) this.held.set(source, direction)
+    if (this.isPaused() || this.held.get(source) === direction) return
+    this.held.set(source, direction)
+    this.updateDirection()
   }
 
   release(source: string) {
-    this.held.delete(source)
+    if (this.held.delete(source)) this.updateDirection()
   }
 
   clear() {
     this.held.clear()
+    this.vector = still
     this.requested = false
   }
 
@@ -33,8 +39,12 @@ export class RoomInput {
     return this.paused || this.backgrounded
   }
 
+  private updateDirection() {
+    this.vector = movement(new Set(this.held.values()))
+  }
+
   direction() {
-    return movement(new Set(this.held.values()))
+    return this.vector
   }
 
   requestInteraction() {

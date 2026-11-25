@@ -34,7 +34,7 @@ it('unlocks at the exact threshold and restores safe arrival spawns in both dire
 
 it('rejects inconsistent saves and repairs a stale spawn without removing earned progress', () => {
   const save = applyCommand(initial(), complete)!
-  expect(decodeSave({ ...save, schemaVersion: 3 }, maps)).toBeNull()
+  expect(decodeSave({ ...save, schemaVersion: 4 }, maps)).toBeNull()
   expect(decodeSave({ ...save, rewards: [quest.reward, quest.reward] }, maps)).toBeNull()
   expect(decodeSave({ ...save, hidden: [] }, maps)).toBeNull()
   expect(decodeSave({ ...save, checkpoint: { location: 'bedroom', spawn: 'gone' } }, maps)).toEqual(save)
@@ -71,17 +71,18 @@ it('restores either attraction first and grants each reward and trust event once
 
 it('migrates a Stage 03/04 save with all bedroom rewards, trust and its landing checkpoint', () => {
   let save = initial()
-  for (const quest of quests.filter(({ location }) => location === 'bedroom')) {
+  for (const quest of quests.filter(({ location, introduced }) => location === 'bedroom' && !introduced)) {
     save = applyCommand(save, { type: 'complete', quest: quest.id })!
   }
   save = applyCommand(save, { type: 'pet', cat: 'amber' })!
   save = applyCommand(save, exit)!
-  const stage04 = { ...save, contentVersion: 2 }
+  const stage04 = { ...save, schemaVersion: 2, contentVersion: 2 }
   const migrated = decodeSave(stage04, maps)!
-  expect({ ...migrated, contentVersion: 2 }).toEqual(expect.objectContaining({
+  expect({ ...migrated, schemaVersion: 2, contentVersion: 2 }).toEqual(expect.objectContaining({
     ...stage04, trust: expect.arrayContaining(stage04.trust),
   }))
-  expect(migrated.contentVersion).toBe(3)
+  expect(migrated.contentVersion).toBe(4)
+  expect(migrated.discovered).toEqual(['amber'])
   expect(migrated.checkpoint).toEqual({ location: 'landing', spawn: 'from-bedroom' })
   expect(pointsOf(migrated)).toBe(3)
   expect(trustOf(migrated, 'amber')).toBe(3)
