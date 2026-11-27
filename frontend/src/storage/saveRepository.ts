@@ -1,13 +1,26 @@
 import { maps } from '../content/world'
-import { applyCommand, decodeSave, isIncompatibleSave, newSave, type Save, type SaveCommand } from '../core/progress'
+import { applyCommand, decodeSave, isIncompatibleSave, newSave, pointsOf, type Save, type SaveCommand } from '../core/progress'
 import { readProfile } from './profileStore'
 
 export const databaseName = 'kicimondo'
 const storeName = 'saves'
 export const currentKey = 'current'
 export const backupKey = 'previous'
+const generationKey = 'generation'
+const databaseVersion = 2
 
-type LoadResult = { save: Save | null; status: 'ready' | 'recovered' | 'invalid' | 'legacy-invalid' | 'unavailable' }
+export class StaleSaveError extends Error {
+  constructor() { super('This game was restarted in another tab') }
+}
+
+export type SaveReceipt = {
+  save: Save | null
+  applied: boolean
+  previousPoints: number
+  durable: boolean
+}
+
+type LoadResult = { save: Save | null; generation: number; status: 'ready' | 'recovered' | 'invalid' | 'legacy-invalid' | 'unavailable' }
 
 export function createSaveRepository(
   indexed: () => IDBFactory = () => window.indexedDB,
@@ -15,11 +28,11 @@ export function createSaveRepository(
 ) {
   function open() {
     return new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexed().open(databaseName, 1)
+      const request = indexed().open(databaseName, databaseVersion)
       let blocked = false
-      request.onupgradeneeded = () => {
-        if (!blocked) request.result.createObjectStore(storeName)
-        else request.transaction?.abort()
+      request.onupgradeneeded = (event) => {
+        if (blocked) request.transaction?.abort()
+        else if (event.oldVersion === 0) request.result.createObjectStore(storeName)
       }
       request.onblocked = () => {
         blocked = true
@@ -28,13 +41,16 @@ export function createSaveRepository(
       request.onerror = () => reject(request.error)
       request.onsuccess = () => {
         if (blocked) request.result.close()
-        else resolve(request.result)
+        else {
+          request.result.onversionchange = () => request.result.close()
+          resolve(request.result)
+        }
       }
     })
   }
 
   // Read and update inside a single transaction so other tabs cannot overwrite a reward with stale state.
-  async function update<T>(operation: (store: IDBObjectStore, value: unknown, backup: unknown) => T): Promise<T> {
+  async function update<T>(operation: (store: IDBObjectStore, value: unknown, backup: unknown, generation: number) => T): Promise<T> {
     const db = await open()
     try {
       return await new Promise<T>((resolve, reject) => {
@@ -44,9 +60,14 @@ export function createSaveRepository(
         const backup = store.get(backupKey)
         let result: T
         let failure: unknown
-        backup.onsuccess = () => {
+        const stamp = store.get(generationKey)
+        stamp.onsuccess = () => {
           try {
-            result = operation(store, current.result, backup.result)
+            const generation: unknown = stamp.result ?? 0
+            if (typeof generation !== 'number' || !Number.isSafeInteger(generation) || generation < 0) {
+              throw new Error('Unreadable save generation')
+            }
+            result = operation(store, current.result, backup.result, generation)
           } catch (error) {
             failure = error
             transaction.abort()
@@ -65,23 +86,27 @@ export function createSaveRepository(
       const old = readProfile(legacy)
       const migrated = old.profile ? newSave(old.profile) : null
       try {
-        return await update<LoadResult>((store, raw, backup) => {
+        return await update<LoadResult>((store, raw, backup, generation) => {
           const save = decodeSave(raw, maps)
-          if (save) return { save, status: 'ready' }
+          if (save) return { save, generation, status: 'ready' }
           const previous = decodeSave(backup, maps)
-          if (isIncompatibleSave(raw)) return { save: previous ?? migrated, status: 'invalid' }
-          if (previous) return { save: previous, status: 'recovered' }
-          if (raw !== undefined || backup !== undefined) return { save: migrated, status: 'invalid' }
-          if (migrated) store.put(migrated, currentKey)
-          return { save: migrated, status: old.status === 'invalid' ? 'legacy-invalid' : 'ready' }
+          const legacySave = generation ? null : migrated
+          if (isIncompatibleSave(raw)) return { save: previous ?? legacySave, generation, status: 'invalid' }
+          if (previous) return { save: previous, generation, status: 'recovered' }
+          if (raw !== undefined || backup !== undefined || generation) {
+            return { save: legacySave, generation, status: 'invalid' }
+          }
+          if (legacySave) store.put(legacySave, currentKey)
+          return { save: legacySave, generation, status: old.status === 'invalid' ? 'legacy-invalid' : 'ready' }
         })
       } catch {
-        return { save: migrated, status: 'unavailable' }
+        return { save: migrated, generation: 0, status: 'unavailable' }
       }
     },
 
-    async commit(command: SaveCommand): Promise<Save | null> {
-      return update((store, raw, backup) => {
+    async commit(command: SaveCommand, expectedGeneration = 0): Promise<SaveReceipt> {
+      return update((store, raw, backup, generation) => {
+        if (expectedGeneration !== generation) throw new StaleSaveError()
         const current = decodeSave(raw, maps)
         const previous = current ?? decodeSave(backup, maps)
         if (isIncompatibleSave(raw) || (!previous && (raw !== undefined || backup !== undefined))) {
@@ -92,7 +117,22 @@ export function createSaveRepository(
           if (previous) store.put(previous, backupKey)
           store.put(next, currentKey)
         }
-        return next
+        return { save: next, applied: next !== previous, previousPoints: previous ? pointsOf(previous) : 0, durable: true }
+      })
+    },
+
+    async reset(expectedGeneration: number): Promise<LoadResult> {
+      return update((store, raw, backup, generation) => {
+        if (expectedGeneration !== generation) throw new StaleSaveError()
+        const previous = decodeSave(raw, maps) ?? decodeSave(backup, maps)
+        if (!previous || isIncompatibleSave(raw) || generation >= Number.MAX_SAFE_INTEGER) {
+          throw new Error('Unreadable save')
+        }
+        const save = newSave(previous.profile)
+        store.put(save, currentKey)
+        store.put(save, backupKey)
+        store.put(generation + 1, generationKey)
+        return { save, generation: generation + 1, status: 'ready' }
       })
     },
   }

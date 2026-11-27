@@ -7,8 +7,8 @@ import { buttonAlternative, expectRoomReady, holdKey, pixelAt, reach, saveRecord
 
 test.use({ viewport: { width: 960, height: 600 }, isMobile: true, hasTouch: true })
 
-const reward = 'Zadanie ukończone!'
-const points = async (page: Page, value: number) => expect(page.getByText(`${value} PS`, { exact: true })).toBeVisible()
+const reward = 'Brawo!'
+const points = async (page: Page, value: number) => expect(page.locator('.points strong').filter({ hasText: new RegExp('^' + value + '$') })).toBeVisible()
 
 async function writeSave(page: Page, value: unknown) {
   await page.getByLabel('Pseudonim', { exact: true }).waitFor()
@@ -99,7 +99,7 @@ test('plays the garden offline, encounters all visitors and comes home with 25 P
   await walk(page, null, 119)
   await walk(page, 160, 194)
   await interact(page)
-  await expect(page.getByRole('dialog', { name: 'Brama do ogrodu' })).toContainText('Masz 15 PS. Potrzebujesz 16 PS')
+  await expect(page.getByRole('dialog', { name: 'Brama do ogrodu' })).toContainText('Brakuje 1 gwiazdki.')
   await close(page, 'Brama do ogrodu')
   await walk(page, null, 109)
   await walk(page, 256, 52)
@@ -206,6 +206,8 @@ test('plays the garden offline, encounters all visitors and comes home with 25 P
   await interact(page)
   await match(page, challenges['read-desk-words'])
   await points(page, 25)
+  await expect(page.getByText('Brawo! Odkrywaj dalej!', { exact: true })).toBeVisible()
+  await expect(stage(page)).not.toHaveAttribute('data-exit', /.+/)
   const finished = await saveRecord(page)
   expect(new Set(finished.rewards.map(({ id }) => id)).size).toBe(25)
   expect(finished.restored.filter(({ location }) => location === 'garden')).toHaveLength(8)

@@ -17,13 +17,19 @@ export function samplePath(path: readonly Point[]): Point[] {
 }
 
 export function drawingPoint(client: Point, bounds: Box): Point {
-  return { x: (client.x - bounds.x) / bounds.width, y: (client.y - bounds.y) / bounds.height }
+  const side = Math.min(bounds.width, bounds.height)
+  return {
+    x: (client.x - bounds.x - (bounds.width - side) / 2) / side,
+    y: (client.y - bounds.y - (bounds.height - side) / 2) / side,
+  }
 }
 
 function distanceToSegment(point: Point, start: Point, end: Point): number {
   const dx = end.x - start.x
   const dy = end.y - start.y
-  const fraction = Math.max(0, Math.min(1, ((point.x - start.x) * dx + (point.y - start.y) * dy) / (dx * dx + dy * dy)))
+  const lengthSquared = dx * dx + dy * dy
+  const fraction = lengthSquared ? Math.max(0, Math.min(1,
+    ((point.x - start.x) * dx + (point.y - start.y) * dy) / lengthSquared)) : 0
   return distance(point, { x: start.x + fraction * dx, y: start.y + fraction * dy })
 }
 
@@ -32,8 +38,9 @@ type Feedback = 'start' | 'offPath' | 'resume' | null
 export class TraceAttempt {
   readonly samples: readonly Point[]
   private index = 0
-  private active: { pointer: number; checkpoint: number; last: Point | null } | null = null
+  private active: { pointer: number; last: Point } | null = null
   private feedback: Feedback = null
+  private completed = false
 
   constructor(private readonly challenge: TraceChallenge) {
     this.samples = samplePath(challenge.path)
@@ -44,64 +51,62 @@ export class TraceAttempt {
   }
 
   begin(pointer: number, point: Point): boolean {
-    if (this.active) return false
+    if (this.active || this.completed) return false
     if (distance(point, this.samples[this.index]) > this.challenge.tolerance) {
       this.feedback = this.index ? 'resume' : 'start'
       return false
     }
-    this.active = { pointer, checkpoint: this.index, last: point }
+    this.active = { pointer, last: point }
     this.feedback = null
     return true
   }
 
-  move(pointer: number, point: Point) {
-    const active = this.active
-    if (active?.pointer !== pointer || !active.last) return
+  owns(pointer: number) { return this.active?.pointer === pointer }
 
-    // Interpolate sparse browser events so a straight swipe across the curve still leaves the corridor.
+  move(pointer: number, point: Point): boolean {
+    const active = this.active
+    if (active?.pointer !== pointer || this.completed) return false
+    const bounded = (value: number) => Math.max(-0.15, Math.min(1.15, value))
+    point = { x: bounded(point.x), y: bounded(point.y) }
+    if (distance(active.last, point) <= sampleSpacing / 4) return false
+
+    // Sample the observed segment. An excursion leaves a gap but keeps earlier progress.
     const { tolerance, path } = this.challenge
-    if (point.x < 0 || point.x > 1 || point.y < 0 || point.y > 1) {
-      active.last = null
-      this.feedback = 'offPath'
-      return
-    }
+    const last = this.samples.length - 1
+    let leftGuide = false
     for (const sample of segmentSamples(active.last, point)) {
-      if (!path.some((end, index) => index > 0 && distanceToSegment(sample, path[index - 1], end) <= tolerance)) {
-        active.last = null
-        this.feedback = 'offPath'
-        return
-      }
-      while (this.index < this.samples.length - 1 && distance(sample, this.samples[this.index + 1]) <= tolerance) {
-        this.index++
+      const inGuide = path.some((end, index) => index > 0 && distanceToSegment(sample, path[index - 1], end) <= tolerance)
+      if (!inGuide) { leftGuide = true; continue }
+      while (this.index < last && distance(sample, this.samples[this.index + 1]) <= tolerance) this.index++
+      if (this.index / last >= this.challenge.coverage && distance(sample, this.samples[last]) <= tolerance) {
+        this.completed = true
+        this.active = null
+        return true
       }
     }
+    this.feedback = leftGuide ? 'offPath' : null
     active.last = point
+    return false
   }
 
   finish(pointer: number, point: Point): boolean {
-    if (this.active?.pointer !== pointer) return false
-    this.move(pointer, point)
-    const valid = this.active.last !== null
-    this.active = null
-    const last = this.samples.length - 1
-    const completed = valid && this.index / last >= this.challenge.coverage &&
-      distance(point, this.samples[last]) <= this.challenge.tolerance
-    if (!completed && valid) this.feedback = 'resume'
+    if (!this.owns(pointer)) return false
+    const completed = this.move(pointer, point)
+    if (!completed) this.cancel(pointer)
     return completed
   }
 
   cancel(pointer?: number) {
-    const active = this.active
-    if (!active || (pointer !== undefined && active.pointer !== pointer)) return
-    this.index = active.checkpoint
+    if (!this.active || (pointer !== undefined && this.active.pointer !== pointer)) return
     this.active = null
-    this.feedback = this.index ? 'resume' : 'start'
+    if (this.feedback !== 'offPath') this.feedback = this.index ? 'resume' : 'start'
   }
 
   reset() {
     this.index = 0
     this.active = null
     this.feedback = null
+    this.completed = false
   }
 }
 

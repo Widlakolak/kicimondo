@@ -31,7 +31,7 @@ test('first controlled visit precaches the room and all three quests and cat pla
   await interact.click()
   await expect(page.getByRole('dialog', { name: 'Rozrzucone ubrania' })).toBeVisible()
   await buttonAlternative(page)
-  const close = page.getByRole('dialog', { name: 'Zadanie ukończone!' }).getByRole('button', { name: 'Zamknij' })
+  const close = page.getByRole('dialog', { name: 'Brawo!' }).getByRole('button', { name: 'Zamknij' })
   // Send the first keydown before the browser can dispatch the queued dialog close event.
   await close.evaluate((button: HTMLButtonElement) => {
     button.click()
@@ -50,7 +50,7 @@ test('first controlled visit precaches the room and all three quests and cat pla
   await interact.click()
   await matchBed(page)
   await holdKey(page, 'a', () => reach(page, 'x', 240, -1))
-  await expect(page.getByText('3 PS', { exact: true })).toBeVisible()
+  await expect(page.locator('.points strong').filter({ hasText: /^3$/ })).toBeVisible()
   await expect(page.getByText('Zaufanie · Bursztynek: 3')).toBeVisible()
   const saved = await saveRecord(page)
   expect(saved.completed).toHaveLength(3)

@@ -262,7 +262,7 @@ try {
     if (index < 2) await water.getByRole('button', { name: 'Następna zagadka' }).click()
   }
   await page.getByRole('button', { name: 'Zamknij', exact: true }).click()
-  await expect(page.getByText('1 PS', { exact: true })).toBeVisible()
+  await expect(page.locator('.points strong').filter({ hasText: /^1$/ })).toBeVisible()
   await context.setOffline(false)
   await page.close()
   const reopened = await context.newPage()
@@ -278,7 +278,7 @@ try {
   await reopened.getByText('Dla dorosłych · zadania dodatkowe').click()
   await expect(reopened.getByText('Aktywny pakiet zadań, wersja 1.')).toBeVisible()
   await reopened.getByRole('button', { name: 'Wróć do gry' }).click()
-  await expect(reopened.getByText('1 PS', { exact: true })).toBeVisible()
+  await expect(reopened.locator('.points strong').filter({ hasText: /^1$/ })).toBeVisible()
   await context.setOffline(false)
   await checkBackup(postgres)
 

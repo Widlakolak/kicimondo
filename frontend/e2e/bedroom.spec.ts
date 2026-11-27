@@ -7,7 +7,7 @@ const profileKey = 'kicimondo.profile'
 const board = (page: Page) => page.getByRole('img', { name: 'Ścieżka od startu do mety' })
 const path = challenges['clothes-to-basket'].path
 const continueButton = 'Wróć do gry'
-const rewardTitle = 'Zadanie ukończone!'
+const rewardTitle = 'Brawo!'
 const position = async (page: Page, axis: 'x' | 'y') => Number(await stage(page).getAttribute(`data-${axis}`))
 
 async function expectStill(page: Page, axis: 'x' | 'y') {
@@ -42,6 +42,7 @@ test('chooses and edits an avatar, validates the nickname, and keeps the saved p
   await expect(page.getByText(nickname, { exact: true })).toBeVisible()
   await page.getByRole('button', { name: continueButton }).click()
   await expect(stage(page)).toHaveAttribute('data-x', '106')
+  await page.getByRole('button', { name: 'Pauza', exact: true }).click()
   await page.getByRole('button', { name: 'Zmień postać' }).click()
   await expect(page.getByRole('radio', { name: 'Dziewczynka' })).toBeChecked()
   await expect(page.getByLabel('Pseudonim', { exact: true })).toHaveValue(nickname)
@@ -101,14 +102,14 @@ test('keyboard movement stops at furniture and walls and nearby interactions req
   })
   expect(await position(page, 'y')).toBeGreaterThanOrEqual(35)
   await interact.click()
-  await expect(page.getByRole('dialog', { name: 'Zamknięte drzwi' })).toContainText('zdobądź 1 PS')
+  await expect(page.getByRole('dialog', { name: 'Zamknięte drzwi' })).toContainText('Brakuje 1 gwiazdki.')
   await page.getByRole('button', { name: 'Zamknij' }).click()
   await expect(interact).toBeFocused()
   expect(errors).toEqual([])
 })
 
 test.describe('touch layout and movement', () => {
-  test.use({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 740 } })
+  test.use({ hasTouch: true, isMobile: true, viewport: { width: 740, height: 390 } })
 
   test('touch hold, cancel, release, and interaction work in the room', async ({ page, context }) => {
     await page.goto('/')
@@ -145,13 +146,14 @@ test.describe('touch layout and movement', () => {
       await device.send('Input.dispatchTouchEvent', { type: finish, touchPoints: [] })
     }
     await trace(5, 'touchCancel')
-    await expect(board(page)).toHaveAttribute('data-progress', '0')
+    await expect(board(page)).toHaveAttribute('data-progress', /^[1-9]\d*$/)
     await expect(page.getByRole('dialog', { name: clothes })).toBeVisible()
+    await page.getByRole('button', { name: 'Od początku' }).tap()
     await trace(path.length, 'touchEnd')
     await expect(page.getByRole('dialog', { name: rewardTitle })).toBeVisible()
     await page.getByRole('button', { name: 'Zamknij' }).tap()
     await expect(page.getByRole('dialog')).toHaveCount(0)
-    await expect(page.getByText('1 PS', { exact: true })).toBeVisible()
+    await expect(page.locator('.points strong').filter({ hasText: /^1$/ })).toBeVisible()
 
     await touch('W prawo', 'touchEnd', async () => {
       await reach(page, 'x', 205, 1)
@@ -162,9 +164,13 @@ test.describe('touch layout and movement', () => {
     for (const viewport of [{ width: 320, height: 640 }, { width: 740, height: 390 }]) {
       await page.setViewportSize(viewport)
       await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth)).toBe(viewport.width)
-      const canvas = (await stage(page).locator('canvas').boundingBox())!
-      expect(canvas.width / canvas.height).toBeCloseTo(4 / 3, 2)
-      await expect(page.getByRole('button', { name: 'W lewo' })).toBeVisible()
+      if (viewport.width < viewport.height) {
+        await expect(page.getByText('Obróć ekran')).toBeVisible()
+        await expect(page.getByRole('button', { name: 'W lewo' })).toBeHidden()
+      } else {
+        await expect(page.getByRole('button', { name: 'W lewo' })).toBeVisible()
+        await expect(page.getByText('Obróć ekran')).toHaveCount(0)
+      }
     }
   })
 })
@@ -207,8 +213,10 @@ test('mouse tracing rejects shortcuts, resumes after lifting and removes the clo
   await page.mouse.move(coordinates[0].x, coordinates[0].y)
   await page.mouse.down()
   await page.mouse.move(coordinates.at(-1)!.x, coordinates.at(-1)!.y)
-  await page.mouse.up()
   await expect(page.getByText('Linia zeszła ze ścieżki.', { exact: false })).toBeVisible()
+  await page.mouse.up()
+  await expect(page.getByRole('dialog', { name: clothes })).toBeVisible()
+  expect((await saveRecord(page)).rewards).toEqual([])
   await page.getByRole('button', { name: 'Od początku' }).click()
   coordinates = await traceCoordinates(page)
   await page.mouse.move(coordinates[0].x, coordinates[0].y)
@@ -224,7 +232,7 @@ test('mouse tracing rejects shortcuts, resumes after lifting and removes the clo
   for (const point of coordinates.slice(5)) await page.mouse.move(point.x, point.y)
   await page.mouse.up()
 
-  await expect(page.getByRole('dialog', { name: rewardTitle })).toContainText('Zdobywasz 1 PS.')
+  await expect(page.getByRole('dialog', { name: rewardTitle })).toContainText('+1')
   await page.getByRole('button', { name: 'Zamknij' }).click()
   await expect(page.getByRole('button', { name: 'Sprawdź' })).toBeDisabled()
   await expect.poll(() => pixelAt(page, 181, 150)).not.toEqual(clothesBefore)
@@ -238,7 +246,7 @@ test('keyboard alternative awards once, opens the path upstairs, and keeps progr
   await walkToClothes(page)
   await buttonAlternative(page)
   await page.getByRole('button', { name: 'Zamknij' }).click()
-  await expect(page.getByText('1 PS', { exact: true })).toBeVisible()
+  await expect(page.locator('.points strong').filter({ hasText: /^1$/ })).toBeVisible()
   await page.keyboard.press('e')
   await expect(page.getByRole('dialog')).toHaveCount(0)
   await holdKey(page, 'a', () => reach(page, 'x', 162, -1))
@@ -251,7 +259,7 @@ test('keyboard alternative awards once, opens the path upstairs, and keeps progr
   await page.getByRole('button', { name: continueButton }).click()
   await expect(page.getByRole('heading', { name: 'Półpiętro' })).toBeVisible()
   await expect(stage(page)).toHaveAttribute('data-y', '72')
-  await expect(page.getByText('1 PS', { exact: true })).toBeVisible()
+  await expect(page.locator('.points strong').filter({ hasText: /^1$/ })).toBeVisible()
   await holdKey(page, 'w', () => reach(page, 'y', 52, -1))
   await expect(page.getByText('Tędy wrócisz do pokoju.')).toBeVisible()
   await page.getByRole('button', { name: 'Sprawdź' }).click()
@@ -284,5 +292,5 @@ test('shows a failed-save notice and never persists a partial reward', async ({ 
   expect(await saveRecord(page)).toMatchObject({ completed: [], rewards: [], hidden: [] })
   await page.reload()
   await page.getByRole('button', { name: continueButton }).click()
-  await expect(page.getByText('0 PS', { exact: true })).toBeVisible()
+  await expect(page.locator('.points strong').filter({ hasText: /^0$/ })).toBeVisible()
 })

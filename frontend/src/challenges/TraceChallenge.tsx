@@ -1,4 +1,4 @@
-import { useEffect, useState, type PointerEvent } from 'react'
+import { useCallback, useEffect, useRef, useState, type PointerEvent } from 'react'
 import type { TraceChallenge as TraceDefinition } from '../content/pack'
 import type { Point } from '../core/room'
 import { advanceSequence, drawingPoint, TraceAttempt } from '../core/trace'
@@ -14,6 +14,23 @@ export function TraceChallenge({ challenge, busy, onComplete }: {
 }) {
   const [attempt] = useState(() => new TraceAttempt(challenge))
   const [view, setView] = useState(() => attempt.view())
+  const ink = useRef<SVGPathElement>(null)
+  const stroke = useRef<string[]>([])
+  const previousSample = useRef<Point | null>(null)
+  const awarded = useRef(false)
+  const shown = useRef(view)
+  const publishProgress = useCallback(() => {
+    const next = attempt.view()
+    if (next.index === shown.current.index && next.feedback === shown.current.feedback) return
+    shown.current = next
+    setView(next)
+  }, [attempt])
+
+  function award() {
+    if (awarded.current) return
+    awarded.current = true
+    onComplete()
+  }
   const [alternative, setAlternative] = useState(false)
   const [sequence, setSequence] = useState(0)
   const [orderError, setOrderError] = useState(false)
@@ -31,7 +48,7 @@ export function TraceChallenge({ challenge, busy, onComplete }: {
   useEffect(() => {
     const cancel = () => {
       attempt.cancel()
-      setView(attempt.view())
+      publishProgress()
     }
     const visibility = () => { if (document.hidden) cancel() }
     document.addEventListener('visibilitychange', visibility)
@@ -42,22 +59,50 @@ export function TraceChallenge({ challenge, busy, onComplete }: {
       window.removeEventListener('blur', cancel)
       window.removeEventListener('resize', cancel)
     }
-  }, [attempt])
+  }, [attempt, publishProgress])
 
   function point(event: PointerEvent<SVGSVGElement>) {
-    return drawingPoint({ x: event.clientX, y: event.clientY }, event.currentTarget.getBoundingClientRect())
+    const svg = event.currentTarget
+    const matrix = svg.getScreenCTM()
+    if (matrix) {
+      const client = svg.createSVGPoint()
+      client.x = event.clientX
+      client.y = event.clientY
+      const mapped = client.matrixTransform(matrix.inverse())
+      return { x: mapped.x / 100, y: mapped.y / 100 }
+    }
+    return drawingPoint({ x: event.clientX, y: event.clientY }, svg.getBoundingClientRect())
+  }
+
+  function brush(point: Point, start = false) {
+    const last = previousSample.current
+    if (!start && last && Math.hypot(point.x - last.x, point.y - last.y) < 0.016) return
+    const commands = stroke.current
+    const x = Math.round(Math.max(-0.15, Math.min(1.15, point.x)) * 1000) / 10
+    const y = Math.round(Math.max(-0.15, Math.min(1.15, point.y)) * 1000) / 10
+    commands.push(`${start ? 'M' : 'L'}${x} ${y}`)
+    if (commands.length > 600) {
+      commands.splice(0, 100)
+      commands[0] = 'M' + commands[0].slice(1)
+    }
+    ink.current?.setAttribute('d', commands.join(' '))
+    previousSample.current = point
   }
 
   function reset() {
+    if (awarded.current) return
+    stroke.current = []
+    previousSample.current = null
+    ink.current?.removeAttribute('d')
     attempt.reset()
-    setView(attempt.view())
+    publishProgress()
     setSequence(0)
     setOrderError(false)
     setHint(false)
   }
 
   return (
-    <div className="challenge">
+    <div className={alternative ? 'challenge' : 'challenge trace-challenge'}>
       <p id="interaction-body">{alternative ? labels.sequence : text.instructions}</p>
       {alternative ? (
         <div className="sequence" role="group" aria-label={labels.targets}>
@@ -68,7 +113,7 @@ export function TraceChallenge({ challenge, busy, onComplete }: {
                 const next = advanceSequence(sequence, index)
                 setOrderError(next === sequence)
                 setSequence(next)
-                if (next === challenge.targets.length) onComplete()
+                if (next === challenge.targets.length) award()
               }}>{index + 1}</button>
           ))}
         </div>
@@ -78,29 +123,36 @@ export function TraceChallenge({ challenge, busy, onComplete }: {
             data-progress={view.index}
             onPointerDown={(event) => {
               if (busy || event.button !== 0 || !event.isPrimary) return
-              if (attempt.begin(event.pointerId, point(event))) event.currentTarget.setPointerCapture(event.pointerId)
-              setView(attempt.view())
+              const sample = point(event)
+              if (attempt.begin(event.pointerId, sample)) {
+                event.currentTarget.setPointerCapture(event.pointerId)
+                brush(sample, true)
+              }
+              publishProgress()
             }}
             onPointerMove={(event) => {
-              if (!event.currentTarget.hasPointerCapture(event.pointerId)) return
-              attempt.move(event.pointerId, point(event))
-              setView(attempt.view())
+              if (!attempt.owns(event.pointerId) || !event.currentTarget.hasPointerCapture(event.pointerId)) return
+              const sample = point(event)
+              brush(sample)
+              if (attempt.move(event.pointerId, sample)) award()
+              publishProgress()
             }}
             onPointerUp={(event) => {
-              if (attempt.finish(event.pointerId, point(event))) onComplete()
-              setView(attempt.view())
+              if (attempt.finish(event.pointerId, point(event))) award()
+              publishProgress()
             }}
             onPointerCancel={(event) => {
               attempt.cancel(event.pointerId)
-              setView(attempt.view())
+              publishProgress()
             }}
             onLostPointerCapture={(event) => {
               attempt.cancel(event.pointerId)
-              setView(attempt.view())
+              publishProgress()
             }}>
-            <polyline className="trace-corridor" points={polyline(challenge.path)} strokeWidth={challenge.tolerance * 200} />
+            <polyline className="trace-corridor" points={polyline(challenge.path)} strokeWidth={challenge.tolerance * 210} />
             <polyline className="trace-guide" points={polyline(challenge.path)} />
             {view.index > 0 && <polyline className="trace-progress" points={polyline(attempt.samples.slice(0, view.index + 1))} />}
+            <path ref={ink} className="trace-ink" />
             <circle className="trace-start" cx={start.x * 100} cy={start.y * 100} r="4" />
             <circle className="trace-end" cx={end.x * 100} cy={end.y * 100} r="4" />
             <text x={start.x * 100} y={start.y * 100 + 9}>{labels.startLabel}</text>

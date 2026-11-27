@@ -1,6 +1,8 @@
 import { gardenPl } from './gardenPl.ts'
 import { housePl } from './housePl.ts'
 
+const starRequirement = (n: number) => n === 1 ? 'Brakuje 1 gwiazdki.' : `Brakuje ${n} gwiazdek.`
+
 export const pl = {
   contentPacks: {
     title: 'Dla dorosłych · zadania dodatkowe',
@@ -10,6 +12,20 @@ export const pl = {
     reset: 'Wróć do zadań dołączonych do gry',
     checking: 'Zapisywanie wyboru zadań…',
     failed: 'Nie udało się zmienić zadań. Dotychczasowe zadania są nadal dostępne.',
+  },
+  adult: {
+    title: 'Dla dorosłych',
+    reset: 'Zacznij od nowa',
+    first: 'Rozpocząć nową grę?',
+    next: 'Dalej',
+    loss: 'Znikną wszystkie gwiazdki, ukończone zadania, odkryte koty, ich zaufanie i zapisana lokalizacja. Postać, pseudonim i pobrane zadania zostaną.',
+    confirm: 'Usuń postęp i zacznij od nowa',
+    resetError: 'Nie udało się zapisać nowej gry. Dotychczasowy zapis pozostaje na urządzeniu.',
+    stale: 'Gra została rozpoczęta od nowa w innej karcie. Wczytano aktualny zapis.',
+    install: 'Zainstaluj grę',
+    installManual: 'Otwórz menu przeglądarki i wybierz „Dodaj do ekranu głównego” lub „Zainstaluj aplikację”.',
+    apk: 'Pobierz APK (Android)',
+    apkHelp: 'Otwórz najnowszy udany przebieg gałęzi main. GitHub może wymagać logowania. Rozpakuj ZIP i potwierdź instalację w Androidzie. Zapisy przeglądarki i aplikacji są osobne.',
   },
   title: 'Kicimondo',
   welcome: 'Witaj w Kicimondo!',
@@ -28,8 +44,16 @@ export const pl = {
     bedroom: { title: 'Twój pokój', map: 'Widok pokoju z góry' },
     landing: { title: 'Półpiętro', map: 'Widok półpiętra z góry' },
   },
-  points: (points: number) => `${points} PS`,
-  pointsLabel: 'Punkty samodzielności',
+  pointsLabel: 'Gwiazdki samodzielności',
+  play: {
+    rotate: 'Obróć ekran', fullscreen: 'Pełny ekran', expand: 'Powiększ grę', collapse: 'Zmniejsz grę',
+    exitFullscreen: 'Wyjdź z pełnego ekranu', showControls: 'Pokaż strzałki', hideControls: 'Ukryj strzałki',
+    tasks: 'Zadania tutaj', next: 'Idź do kolejnego pokoju', finished: 'Brawo! Odkrywaj dalej!',
+    floor: 'Dotknij podłogi', star: 'Znajdź gwiazdkę', task: 'Zrób zadanie', explore: 'Odkrywaj dalej!',
+    skip: 'Pomiń podpowiedź', explain: 'Zrób zadanie. Zdobądź gwiazdkę. Odkrywaj świat.',
+    missing: starRequirement,
+    unlocked: { landing: 'Nowy pokój otwarty!', hall: 'Parter otwarty!', garden: 'Ogród otwarty! Poznaj nowe kotki!' },
+  },
   offline: {
     ready: 'Gra gotowa do działania bez internetu.',
     update: 'Jest nowa wersja gry. Zamknij wszystkie okna Kicimondo i otwórz grę ponownie.',
@@ -83,22 +107,21 @@ export const pl = {
   attractions: gardenPl.attractions,
   gardenGate: {
     title: 'Brama do ogrodu',
-    progress: (points: number, goal: number) => `Masz ${points} PS. Potrzebujesz ${goal} PS, żeby wejść do ogrodu.`,
+    progress: (points: number, goal: number) => starRequirement(goal - points),
   },
   stairs: {
     title: 'Schody na parter',
-    progress: (points: number, goal: number) => `Masz ${points} PS. Potrzebujesz ${goal} PS, żeby zejść na parter.`,
+    progress: (points: number, goal: number) => starRequirement(goal - points),
   },
   lockedDoor: {
     title: 'Zamknięte drzwi',
-    requirement: (minimum: number) => `Aby otworzyć drzwi, zdobądź ${minimum} PS (punkt samodzielności). Rozejrzyj się za zadaniem.`,
   },
   challenges: {
     ...housePl.challenges,
     ...gardenPl.challenges,
     clothesTrace: {
       title: 'Rozrzucone ubrania',
-      instructions: 'Przesuń palcem lub myszką od startu do mety, żeby przenieść ubrania do kosza.',
+      instructions: 'Przeciągnij ubrania do kosza.',
       hint: 'Idź wzdłuż przerywanej linii. Możesz się zatrzymać i wrócić do zielonej kropki.',
       success: 'Ubrania są już w koszu.',
     },
@@ -150,7 +173,7 @@ export const pl = {
     endLabel: 'Meta',
     start: 'Zacznij od pola Start.',
     resume: 'Kontynuuj od zielonej kropki.',
-    offPath: 'Linia zeszła ze ścieżki. Wróć do zielonej kropki lub spróbuj od początku.',
+    offPath: 'Linia zeszła ze ścieżki. Wróć do zielonej kropki.',
     hint: 'Podpowiedź',
     retry: 'Od początku',
     alternative: 'Wybierz przyciski',
@@ -162,6 +185,5 @@ export const pl = {
     orderError: 'Wybierz najpierw niższy numer.',
     nextTarget: (number: number) => `Teraz wybierz ${number}.`,
   },
-  questComplete: 'Zadanie ukończone!',
-  earned: (points: number) => `Zdobywasz ${points} PS.`,
+  questComplete: 'Brawo!',
 }

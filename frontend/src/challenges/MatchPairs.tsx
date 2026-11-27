@@ -16,6 +16,7 @@ export function MatchPairs({ challenge, busy, onComplete }: {
   const [hint, setHint] = useState(false)
   const text = pl.challenges[challenge.text]
   const words = pl.match
+  const clue = hint && challenge.pairs.find((pair) => pair.id === selected)
 
   return (
     <div className="challenge">
@@ -48,7 +49,10 @@ export function MatchPairs({ challenge, busy, onComplete }: {
         })}
       </div>
       <p className="challenge-feedback" role="status">{feedback && words[feedback]}</p>
-      {hint && <p className="challenge-feedback">{text.hint}</p>}
+      {hint && <p className="challenge-feedback picture-hint">
+        {clue && <span role="img" aria-label={words.pictures[clue.picture]}><Picture id={clue.picture} /></span>}
+        {text.hint}
+      </p>}
       <div className="challenge-actions">
         <button className="secondary" type="button" aria-pressed={hint} disabled={busy}
           onClick={() => setHint(!hint)}>{pl.trace.hint}</button>

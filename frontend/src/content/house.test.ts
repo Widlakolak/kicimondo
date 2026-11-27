@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest'
 import { loadMaps } from './loadMaps'
 import { locationIds, quests, transitions } from './pack'
-import { reachableLocations } from './routes'
+import { nextQuestExit, reachableLocations } from './routes'
 import { validateContent, validSort } from './validate'
 import { houseChallenges } from './houseChallenges'
 import { maps } from './world'
@@ -21,6 +21,29 @@ it('rejects solid furniture on an arrival spawn when reading a Tiled map', () =>
     if (id !== 'hall') return raw
     return raw.replace('"from-kitchen", "x": 64, "y": 72', '"from-kitchen", "x": 140, "y": 50')
   })).toThrow('Could not load map for hall')
+})
+
+it('loads a finite map with dimensions independent of its artwork and rejects an excessive grid', () => {
+  const sources = import.meta.glob<string>('../game/maps/*.tmj', { eager: true, query: '?raw', import: 'default' })
+  function resizedBedroom(width: number, height: number) {
+    return loadMaps((id) => {
+      const raw = sources[`../game/maps/${id}.tmj`]
+      if (id !== 'bedroom') return raw
+      return raw.replace('"width": 20,', `"width": ${width},`).replace('"height": 15,', `"height": ${height},`)
+    }).bedroom
+  }
+  expect(resizedBedroom(24, 17)).toMatchObject({ width: 384, height: 272 })
+  expect(() => resizedBedroom(100, 100)).toThrow('Could not load map for bedroom')
+})
+
+it('guides toward the nearest reachable room with quests through open transitions', () => {
+  expect(nextQuestExit('bedroom', new Set(['study']), 0)).toBeNull()
+  expect(nextQuestExit('bedroom', new Set(['study']), 1)).toBe('closed-door')
+  expect(nextQuestExit('landing', new Set(['bedroom', 'study']), 1, 'bedroom')).toBe('study-door')
+  expect(nextQuestExit('landing', new Set(['bedroom']), 1, 'bedroom')).toBe('bedroom-door')
+  expect(nextQuestExit('hall', new Set(['garden']), 15)).toBeNull()
+  expect(nextQuestExit('hall', new Set(['garden']), 16)).toBe('garden-gate')
+  expect(nextQuestExit('garden', new Set(), 25)).toBeNull()
 })
 
 it('provides nine pre-gate rewards, three optional floor rewards, and routes home', () => {

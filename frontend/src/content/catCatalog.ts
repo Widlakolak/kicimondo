@@ -22,6 +22,7 @@ export type CatDefinition = {
   location: LocationId
   greet: Point
   rest: Point
+  roam?: readonly Point[]
   appearance: CatAppearance
   attractions: readonly Attraction[]
   requires?: readonly HabitatTag[]
@@ -62,6 +63,7 @@ function visitor(id: CatId, x: number, appearance: CatAppearance, requires: read
 export const cats: readonly CatDefinition[] = [
   {
     id: 'amber', location: 'bedroom', greet: { x: 124, y: 188 }, rest: { x: 148, y: 188 },
+    roam: [{ x: 92, y: 190 }, { x: 164, y: 114 }, { x: 268, y: 130 }, { x: 216, y: 214 }],
     appearance: { coat: 0xd78a4f, markings: 0xa75c39, muzzle: 0xf3c993, shape: 'tabby' },
     attractions: bedroomSpots,
   },

@@ -3,7 +3,7 @@ import { IDBFactory } from 'fake-indexeddb'
 import { expect, it, vi } from 'vitest'
 import { quests } from '../content/pack'
 import { pointsOf } from '../core/progress'
-import { currentKey, databaseName, createSaveRepository } from './saveRepository'
+import { currentKey, backupKey, databaseName, createSaveRepository, StaleSaveError } from './saveRepository'
 
 const profile = { avatar: 'girl', nickname: 'Żółwik' } as const
 const command = { type: 'complete', quest: quests[0].id } as const
@@ -16,14 +16,14 @@ function setup(legacy: string | null = null) {
   }
 }
 
-function writeRaw(indexed: IDBFactory, value: unknown) {
+function writeRaw(indexed: IDBFactory, value: unknown, key = currentKey) {
   return new Promise<void>((resolve, reject) => {
     const request = indexed.open(databaseName)
     request.onerror = () => reject(request.error)
     request.onsuccess = () => {
       const db = request.result
       const transaction = db.transaction('saves', 'readwrite')
-      transaction.objectStore('saves').put(value, currentKey)
+      transaction.objectStore('saves').put(value, key)
       transaction.oncomplete = () => { db.close(); resolve() }
       transaction.onabort = () => { db.close(); reject(transaction.error) }
     }
@@ -81,17 +81,17 @@ it('protects an unreadable save without a backup and handles blocked IndexedDB',
   await expect(repository.commit({ type: 'profile', profile })).rejects.toThrow('Unreadable save')
   expect((await repository.load()).status).toBe('invalid')
   const blocked = createSaveRepository(() => { throw new Error('Blocked') }, () => ({ getItem: () => null }))
-  expect(await blocked.load()).toEqual({ status: 'unavailable', save: null })
+  expect(await blocked.load()).toEqual({ status: 'unavailable', save: null, generation: 0 })
 })
 
-async function withFailedCurrentWrite(indexed: IDBFactory, assertFailure: () => Promise<unknown>) {
+async function withFailedCurrentWrite(indexed: IDBFactory, assertFailure: () => Promise<unknown>, failedKey = currentKey) {
   const opening = indexed.open(databaseName)
   const db = await new Promise<IDBDatabase>((resolve) => { opening.onsuccess = () => resolve(opening.result) })
   const store = db.transaction('saves').objectStore('saves')
   const proto = Object.getPrototypeOf(store) as IDBObjectStore
   const put = proto.put
   const fail = vi.spyOn(proto, 'put').mockImplementation(function (this: IDBObjectStore, value, key) {
-    if (key === currentKey) throw new DOMException('Full', 'QuotaExceededError')
+    if (key === failedKey) throw new DOMException('Full', 'QuotaExceededError')
     return put.call(this, value, key)
   })
   try {
@@ -115,6 +115,53 @@ it('rolls back the entire completion when the current record write throws', asyn
   expect(loaded.trust).toEqual([])
 })
 
+it('upgrades the Stage 08 database, atomically resets both snapshots and rejects stale commands', async () => {
+  const { indexed, repository } = setup(JSON.stringify({ schemaVersion: 1, ...profile, nickname: 'Stary' }))
+  const previous = fromHouse()
+  await new Promise<void>((resolve, reject) => {
+    const request = indexed.open(databaseName, 1)
+    request.onupgradeneeded = () => request.result.createObjectStore('saves').put(previous, currentKey)
+    request.onsuccess = () => { request.result.close(); resolve() }
+    request.onerror = () => reject(request.error)
+  })
+  const oldTab = createSaveRepository(() => indexed)
+  expect(await oldTab.load()).toMatchObject({
+    save: { ...previous, trust: expect.arrayContaining(previous.trust) }, generation: 0,
+  })
+  await expect(new Promise((resolve, reject) => {
+    const request = indexed.open(databaseName, 1)
+    request.onsuccess = () => { request.result.close(); resolve(null) }
+    request.onerror = () => reject(request.error)
+  })).rejects.toHaveProperty('name', 'VersionError')
+  const reset = await repository.reset(0)
+  expect(reset).toMatchObject({ generation: 1, save: {
+    profile: previous.profile, checkpoint: { location: 'bedroom', spawn: 'bedside' },
+    completed: [], rewards: [], restored: [], hidden: [], trust: [], discovered: [],
+  } })
+  await expect(oldTab.commit(command, 0)).rejects.toBeInstanceOf(StaleSaveError)
+  await expect(oldTab.reset(0)).rejects.toBeInstanceOf(StaleSaveError)
+  await writeRaw(indexed, 'corrupt')
+  expect(await repository.load()).toEqual({ ...reset, status: 'recovered' })
+  const earned = await oldTab.commit(command, 1)
+  expect(earned).toMatchObject({ applied: true, durable: true, previousPoints: 0 })
+  expect(pointsOf(earned.save!)).toBe(1)
+  expect(await repository.commit(command, 1)).toMatchObject({ applied: false, previousPoints: 1 })
+  await writeRaw(indexed, 'corrupt')
+  await writeRaw(indexed, 'corrupt', backupKey)
+  expect(await repository.load()).toEqual({ generation: 1, status: 'invalid', save: null })
+})
+
+it('keeps both old snapshots when a reset cannot write its generation and protects newer saves', async () => {
+  const { indexed, repository } = setup()
+  await repository.commit({ type: 'profile', profile })
+  const { save: previous } = await repository.commit(command)
+  await withFailedCurrentWrite(indexed, () => expect(repository.reset(0)).rejects.toThrow('Full'), 'generation')
+  expect(await repository.load()).toEqual({ generation: 0, status: 'ready', save: previous })
+  await writeRaw(indexed, { schemaVersion: 99 })
+  await expect(repository.reset(0)).rejects.toThrow('Unreadable save')
+  expect((await repository.load()).status).toBe('invalid')
+})
+
 it('migrates a Stage 02 record in place on the next write and preserves its landing checkpoint', async () => {
   const { indexed, repository } = setup()
   await repository.load()
@@ -126,7 +173,7 @@ it('migrates a Stage 02 record in place on the next write and preserves its land
   }
   await writeRaw(indexed, stage02)
   expect(await repository.load()).toEqual({
-    status: 'ready',
+    status: 'ready', generation: 0,
     save: { ...stage02, schemaVersion: 3, contentVersion: 4, restored: [], trust: [], discovered: [] },
   })
   await repository.commit({ type: 'transition', location: 'landing', interaction: 'bedroom-door' })
@@ -151,10 +198,10 @@ it('migrates an earlier landing save and rolls back a new organized prop and rew
     await repository.commit({ type: 'complete', quest: quest.id })
   }
   await repository.commit({ type: 'pet', cat: 'amber' })
-  const landing = await repository.commit({ type: 'transition', location: 'bedroom', interaction: 'closed-door' })
+  const { save: landing } = await repository.commit({ type: 'transition', location: 'bedroom', interaction: 'closed-door' })
   await writeRaw(indexed, { ...landing, schemaVersion: 2, contentVersion: 2 })
-  expect(await repository.load()).toEqual({ status: 'ready', save: landing })
-  const study = await repository.commit({ type: 'transition', location: 'landing', interaction: 'study-door' })
+  expect(await repository.load()).toEqual({ status: 'ready', save: landing, generation: 0 })
+  const { save: study } = await repository.commit({ type: 'transition', location: 'landing', interaction: 'study-door' })
   const pack = { type: 'complete', quest: 'study-pack-school-bag' } as const
   await withFailedCurrentWrite(indexed, () => expect(repository.commit(pack)).rejects.toThrow('Full'))
   expect((await repository.load()).save).toEqual(study)

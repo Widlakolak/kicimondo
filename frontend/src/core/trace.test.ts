@@ -31,6 +31,21 @@ describe('ordered tracing', () => {
     expect(attempt.view().index / (attempt.samples.length - 1)).toBeLessThan(challenge.coverage)
   })
 
+  it.each([challenge, challenges['clear-tunnel']])('resumes the same stroke and completes once before release ($text)', (definition) => {
+    const attempt = new TraceAttempt(definition)
+    const points = definition.path
+    const middle = Math.floor(points.length / 2)
+    expect(attempt.begin(1, points[0])).toBe(true)
+    for (const point of points.slice(1, middle + 1)) attempt.move(1, point)
+    const accepted = attempt.view().index
+    attempt.move(1, { x: points[middle].x, y: 0.02 })
+    expect(attempt.view().index).toBeGreaterThanOrEqual(accepted)
+    attempt.move(1, points[middle])
+    expect(points.slice(middle + 1).filter((point) => attempt.move(1, point))).toHaveLength(1)
+    expect(attempt.finish(1, points.at(-1)!)).toBe(false)
+    expect(attempt.begin(2, points[0])).toBe(false)
+  })
+
   it('retains ordered progress between valid strokes and allows forward progress after backtracking', () => {
     const attempt = new TraceAttempt(challenge)
     attempt.begin(1, path[0])
@@ -45,16 +60,17 @@ describe('ordered tracing', () => {
     expect(attempt.finish(2, path.at(-1)!)).toBe(true)
   })
 
-  it('rolls back a cancelled pointer and rejects its late release', () => {
+  it('retains accepted progress after cancellation and rejects its late release', () => {
     const attempt = new TraceAttempt(challenge)
     attempt.begin(4, path[0])
     expect(attempt.begin(5, path[0])).toBe(false)
-    for (const point of path.slice(1)) attempt.move(4, point)
+    for (const point of path.slice(1, 5)) attempt.move(4, point)
     expect(attempt.view().index).toBeGreaterThan(0)
     attempt.cancel(5)
     expect(attempt.view().index).toBeGreaterThan(0)
+    const accepted = attempt.view().index
     attempt.cancel(4)
-    expect(attempt.view().index).toBe(0)
+    expect(attempt.view().index).toBe(accepted)
     expect(attempt.finish(4, path.at(-1)!)).toBe(false)
   })
 
