@@ -49,8 +49,9 @@ export function readMap(map: RoomMap): LocationMap {
   }
   const width = map.width * map.tilewidth
   const height = map.height * map.tileheight
-  check(map.orientation === 'orthogonal' && !map.infinite && width === 320 && height === 240 &&
-    map.tilewidth === 16 && map.tileheight === 16, 'expected a 320 × 240 orthogonal map with 16 px tiles')
+  check(map.orientation === 'orthogonal' && !map.infinite && Number.isInteger(map.width) && Number.isInteger(map.height) &&
+    map.width > 0 && map.height > 0 && map.width * map.height <= 4096 &&
+    map.tilewidth === 16 && map.tileheight === 16, 'expected a bounded orthogonal map with 16 px tiles')
 
   const objectIds = new Set<number>()
   const objects = (name: string) => {

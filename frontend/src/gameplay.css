@@ -1,0 +1,195 @@
+.shell.gameplay {
+  position: fixed;
+  inset: 0;
+  width: auto;
+  max-width: none;
+  padding: 0;
+  overflow: hidden;
+  background: #302a35;
+}
+
+.gameplay > .brand, .gameplay > .offline-status { display: none; }
+.gameplay > .notice { position: absolute; bottom: .5rem; left: .5rem; margin: 0; z-index: 2; }
+
+.gameplay .room {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: clamp(.4rem, 1.3vw, 1rem);
+  height: 100%;
+  padding: .45rem;
+  padding: max(.45rem, env(safe-area-inset-top)) max(.45rem, env(safe-area-inset-right))
+    max(.45rem, env(safe-area-inset-bottom)) max(.45rem, env(safe-area-inset-left));
+  border: 0;
+  border-radius: 0;
+  background: #302a35;
+  color: #fff7e8;
+  box-shadow: none;
+}
+
+.gameplay .world {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #4d3947;
+  border: 3px solid #f5e8d1;
+  border-radius: .6rem;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.gameplay .stage, .gameplay .stage canvas { width: 100%; height: 100%; }
+.gameplay .stage canvas { display: block; image-rendering: pixelated; }
+.game-dock {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: .25rem;
+  min-width: 0;
+  min-height: 0;
+}
+
+.room-heading { display: flex; justify-content: space-between; align-items: center; gap: .25rem; }
+.gameplay .room-header h1 { min-width: 0; overflow-wrap: anywhere; font-size: clamp(1.08rem, 2.1vw, 1.9rem); }
+.room-header h1:focus { outline: none; }
+.room-actions {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 48px;
+  justify-content: start;
+  gap: .3rem;
+  margin-top: .25rem;
+}
+.room-actions button { min-height: 48px; padding: .25rem; }
+.room-actions svg { display: block; width: 1.32rem; height: 1.32rem; margin: auto; }
+/* Room hints use the space left above the movement controls. */
+.room-status { min-height: 0; overflow: auto; overflow-wrap: anywhere; }
+.gameplay .cat-trust { color: #ead4bf; margin: 0 0 .2rem; font-size: .82rem; }
+.gameplay .points {
+  flex: none;
+  background: #504052;
+  color: #ffd767;
+  border: 0;
+  padding: .22rem .55rem;
+  line-height: 1.15;
+  font-size: 1.55rem;
+  border-radius: .55rem;
+  white-space: nowrap;
+}
+.gameplay .points strong { color: #fff9eb; }
+.gameplay .interaction-status { padding: 0; margin: .2rem 0; min-height: 0; color: #fff3dc; font-size: .88rem; }
+
+.gameplay .controls {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-self: center;
+  gap: .22rem;
+}
+.gameplay .dpad {
+  --control-size: clamp(48px, 14vh, 64px);
+  grid-template-columns: repeat(3, var(--control-size));
+  grid-template-rows: repeat(2, var(--control-size));
+  gap: .18rem;
+}
+.gameplay .direction { min-width: 48px; min-height: 48px; padding: 0; font-size: 1.65rem; }
+.gameplay .interact { min-height: 48px; min-width: 10rem; padding-block: .2rem; }
+
+.gameplay .expanded { display: block; padding: 0; }
+.gameplay .expanded .world { border: 0; border-radius: 0; }
+.expanded .game-dock { display: block; position: absolute; inset: 0; pointer-events: none; }
+.expanded .room-status { overflow: visible; }
+.gameplay .expanded .room-header {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0 .35rem;
+  position: absolute;
+  top: .35rem;
+  right: .35rem;
+  top: max(.35rem, env(safe-area-inset-top));
+  right: max(.35rem, env(safe-area-inset-right));
+  padding: .2rem .35rem;
+  border-radius: .55rem;
+  background: #302a35ec;
+}
+.expanded .room-header button { pointer-events: auto; }
+.expanded .room-actions { grid-column: 2; grid-row: 1 / 3; margin-top: 0; }
+.expanded .room-header h1, .expanded .cat-trust { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.expanded .controls {
+  position: absolute; bottom: .35rem; right: .35rem;
+  bottom: max(.35rem, env(safe-area-inset-bottom)); right: max(.35rem, env(safe-area-inset-right));
+  padding: .25rem; background: #302a35df; border-radius: .6rem;
+}
+.expanded .controls button { pointer-events: auto; }
+.expanded .interaction-status {
+  position: absolute; bottom: .25rem; left: .4rem; max-width: 46%;
+  bottom: max(.25rem, env(safe-area-inset-bottom)); left: max(.4rem, env(safe-area-inset-left));
+  padding: .3rem .5rem; background: #302a35ec; border-radius: .5rem;
+}
+
+.portrait .world, .portrait .game-dock { visibility: hidden; }
+.rotate, .rotate-dialog { display: grid; justify-items: center; align-content: center; gap: .75rem; font-size: 1.45rem; }
+.rotate { position: absolute; inset: 0; background: #302a35; }
+.rotate-dialog { padding: 1rem; }
+.portrait dialog [id="interaction-title"], .portrait dialog [id="interaction-body"] { position: absolute; clip-path: inset(50%); }
+.portrait dialog > :not(.rotate-dialog):not(:last-child) { display: none; }
+.task-count { margin: .2rem 0 0; font-size: .88rem; }
+.task-count b { color: #ffdf87; font-size: 1.2rem; }
+.expanded .task-count { grid-column: 1; grid-row: 2; font-size: .75rem; }
+
+.welcome h1, .gameplay h1, .gameplay h2 { font-family: system-ui, sans-serif; }
+.gameplay dialog {
+  max-width: calc(100% - 1rem);
+  max-height: calc(100% - 1rem);
+  padding: .7rem 1rem;
+  border: 2px solid #c69462;
+  border-radius: .85rem;
+  box-shadow: 0 .35rem 0 #382b38;
+  overscroll-behavior: contain;
+}
+.gameplay dialog h2 { font-size: clamp(1.28rem, 3vw, 1.8rem); }
+.gameplay dialog p, .gameplay .challenge > [id="interaction-body"] { font-size: clamp(1.125rem, 2.5vw, 1.32rem); line-height: 1.2; }
+.gameplay dialog p { margin: .3rem 0; }
+.gameplay dialog button { min-height: 48px; min-width: 48px; }
+.dialog-footer { display: inline-block; position: sticky; bottom: 0; background: var(--paper); }
+.gameplay .activity-choices button { font-size: 1.55rem; }
+.gameplay .activity-question { font-size: 1.55rem; font-weight: 750; }
+.gameplay .picture-choice svg { width: 3rem; height: 3rem; }
+.gameplay .challenge { margin: .35rem 0; }
+.gameplay .trace-board { width: min(100%, 21rem, 48vh); margin: .2rem auto; }
+.trace-ink { fill: none; stroke: #3f8176; stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round; opacity: .82; }
+.gameplay .trace-progress { stroke-width: 7.5; stroke: #efc977; }
+.gameplay .trace-corridor { stroke: #e4d7be; }
+.gameplay .trace-guide { stroke-width: .85; }
+.gameplay .trace-checkpoint { fill: #315d45; }
+.onboarding { display: flex; align-items: center; gap: .35rem; color: #ffe3a3; font-size: .9rem; }
+.onboarding span { font-size: 1.3rem; }
+.onboarding button { flex: none; margin-left: auto; min-height: 48px; min-width: 48px; padding: .15rem; pointer-events: auto; }
+.onboarding button:focus-visible { outline-offset: -4px; }
+.expanded .onboarding {
+  position: absolute; top: .35rem; left: .35rem;
+  top: max(.35rem, env(safe-area-inset-top)); left: max(.35rem, env(safe-area-inset-left));
+  max-width: 40%;
+  border-radius: .55rem; background: #302a35ec; padding: .25rem;
+}
+.tutorial-task { color: #365e49; font-weight: 750; }
+.gameplay dialog .quest-reward { font-size: 1.85rem; color: #6a3f15; font-weight: 800; }
+.quest-reward span { color: #995719; display: inline-block; font-size: 2.4rem; animation: star-arrive .4s ease-out both; }
+.unlocked { font-weight: 750; color: #365e49; }
+@keyframes star-arrive {
+  from { transform: translateY(.35rem) scale(.6); opacity: .25; }
+  65% { transform: scale(1.14); }
+  to { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) { .quest-reward span { animation: none; } }
+
+@media (orientation: landscape) and (max-height: 440px) and (min-width: 560px) {
+  .gameplay .trace-challenge { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: .25rem .55rem; }
+  .trace-challenge > #interaction-body { grid-column: 1 / -1; }
+  .gameplay .trace-challenge .trace-board { grid-column: 1; grid-row: 2 / 4; width: min(100%, 50vh); margin: 0 auto; }
+  .trace-challenge .challenge-feedback, .trace-challenge .challenge-actions { grid-column: 2; }
+  .trace-challenge .challenge-actions { align-content: start; }
+  .gameplay .collection-dialog { width: min(42rem, calc(100% - 1rem)); }
+  .cat-collection { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .35rem; }
+  .gameplay .cat-collection p { font-size: .91rem; }
+}

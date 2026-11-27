@@ -6,6 +6,8 @@ Kicimondo has a static web build, an Android debug artifact and an optional cont
 
 Run `npm run build` and `npm run preview` in `frontend`. Full PWA testing requires HTTPS or trusted localhost. An HTTP LAN address is useful for layout testing. To test offline from a clean origin, wait for the Polish readiness message, then disable connectivity before entering the room and reload. A first web visit requires connectivity. To apply a staged update, finish the current exercise, return to the menu and follow the prompt to close all game windows and reopen. IndexedDB remains on the same origin.
 
+On a supported browser, open **Dla dorosłych → Zainstaluj grę**. The menu can use the browser's install prompt or show how to add the game to the home screen. Once installed, launch from the device's home screen. Landscape is the preferred game orientation. The browser can show **Obróć ekran** when orientation locking is unavailable.
+
 Deploy the entire `frontend/dist` directory as one release. Serve `index.html` and `sw.js` with revalidation and keep fingerprinted assets immutable. Retain the previous fingerprinted files long enough for clients in the middle of a first load. The build logs the precache membership and byte sizes.
 
 ## QNAP family web release
@@ -249,6 +251,8 @@ Frontend and Backend workflows run their existing tests and produce the universa
 
 The standalone APK has application ID `io.github.widlakolak.kicimondo`. Capacitor 8.6.2 uses Android API 24 as its minimum and API 36 for compile and target. The toolchain uses JDK 21, Gradle 8.14.3, Android Gradle Plugin 8.13.0, Android platform 36 and Build Tools 35.0.0 for AGP and 36.0.0 for artifact inspection. The repository pins Node 24.13.1 and npm 11.11.0 for CI. The APK contains local game assets, no PWA worker, no remote server URL and no native ABI-specific libraries. Android can install the same file on ARM64 and ARMv7 devices. Capacitor’s standard manifest includes the normal INTERNET permission for its WebView. The APK runs from bundled files. A build configured for educational updates makes requests only from the adult menu.
 
+Stage 08.1 uses versionCode 8 and versionName 0.8.1. The Android activity uses sensor landscape and can follow either horizontal direction. **Pobierz APK (Android)** in the web adult menu links to successful main Frontend workflow runs. The owner can test a PR build from that PR's own workflow run.
+
 ### Get the APK
 
 1. Open the repository’s **Actions** tab and select the **Frontend** workflow run for the commit or PR to test.
@@ -306,6 +310,8 @@ For a device whose progress you want to preserve, build the first APK locally wi
 
 Android compares the signing certificate and requires a version code that is at least as high as the installed one. A fresh GitHub Actions runner may create a different debug key on each run. Compare certificate SHA-256 digests when in doubt. An APK signed with a local key cannot replace an APK signed with a different CI key. Persistent CI signing would require the owner to provision a dedicated debug key and repository secrets in a separate action. Uninstalling Kicimondo or clearing its app data can delete progress. Browser saves live separately.
 
+A direct website download would require owner approval for publication and a stable production signing key. Keep the private key outside the repository, sign from the approved release checkout and verify the certificate and checksum before publishing a versioned APK over HTTPS. Update the adult download link only to an approved durable release URL.
+
 ### MediaPad T5 and older WebView troubleshooting
 
 Check the installed Android version under **Settings → System → About tablet**. If USB debugging is available, enable it in Developer options and authorize your own computer on the tablet. Read the effective SDK, CPU ABI and active WebView before testing. The active provider can be Chrome, Android System WebView or a Huawei provider, depending on the firmware. An installed browser’s version does not identify the active WebView by itself.
@@ -328,4 +334,4 @@ For an installation failure, keep the exact `adb install` error, SDK level and c
 
 The APK targets Chromium 80 or newer for the game frontend. Capacitor’s default standard WebView check is Chromium 60 and its Huawei WebView default is provider version 10. The game also checks engine capabilities, including Pointer Events, dialog, Canvas and the JavaScript APIs used by gameplay. Huawei provider package numbers can differ from Chromium engine numbers. Chromium 80.0.3987.0 was tested in desktop Linux. The minimum fully verified Android WebView version remains pending. A Chromium 60-era provider may install the APK on Android 8 and still show the Polish compatibility message. If the provider is too old, check official EMUI/system updates and any provider choices the device already offers in Developer options. Avoid WebView APKs from third-party download sites.
 
-For acceptance, test landscape and portrait on the T5, including the on-screen keyboard and game controls. Complete all three activities and a cat interaction in airplane mode, visit the landing, and check hardware Back from a partially completed challenge. Background the game, return, then force-stop and reopen. Restart the tablet and install a newer build signed by the same key. Verify the nickname, checkpoint, 3 PS, world changes and cat trust after each restart and upgrade.
+For acceptance, test both horizontal orientations on the T5, including the on-screen keyboard, touch movement and fullscreen controls. In a browser, check the portrait rotation cue and resume. Complete three bedroom activities and a cat interaction in airplane mode, visit the landing, and check hardware Back from a partially completed challenge. Background the game, return, then force-stop and reopen. Restart the tablet and install a newer build signed by the same key. Verify the nickname, checkpoint, stars, world changes and cat trust after each restart and upgrade.

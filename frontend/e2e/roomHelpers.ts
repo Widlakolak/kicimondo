@@ -2,11 +2,24 @@ import { expect, type Locator, type Page } from '@playwright/test'
 import { challenges } from '../src/content/pack'
 import { mathQuestions } from '../src/core/education'
 import type { Save } from '../src/core/progress'
+import type { Point } from '../src/core/room'
 
 export const start = 'Wejdź do pokoju'
 export const roomTitle = 'Twój pokój'
 export const nickname = 'Żółwik'
 export const stage = (page: Page) => page.locator('.world .stage')
+
+export async function worldClient(page: Page, point: Point) {
+  return stage(page).locator('canvas').evaluate((node, point) => {
+    const canvas = node as HTMLCanvasElement
+    const { cameraX, cameraY } = canvas.parentElement!.dataset
+    const rect = canvas.getBoundingClientRect()
+    return {
+      x: rect.x + (point.x - Number(cameraX)) * rect.width / canvas.width,
+      y: rect.y + (point.y - Number(cameraY)) * rect.height / canvas.height,
+    }
+  }, point)
+}
 
 export async function enterRoom(page: Page) {
   await page.getByLabel('Pseudonim', { exact: true }).fill(nickname)
@@ -48,7 +61,9 @@ export async function saveRecord(page: Page) {
 
 export async function pixelAt(page: Page, x: number, y: number) {
   return stage(page).locator('canvas').evaluate((canvas, point) =>
-    Array.from((canvas as HTMLCanvasElement).getContext('2d')!.getImageData(point.x, point.y, 1, 1).data),
+    Array.from((canvas as HTMLCanvasElement).getContext('2d')!.getImageData(
+      point.x - Number((canvas.parentElement as HTMLElement).dataset.cameraX),
+      point.y - Number((canvas.parentElement as HTMLElement).dataset.cameraY), 1, 1).data),
   { x, y })
 }
 
@@ -67,7 +82,7 @@ export async function buttonAlternative(page: Page) {
   for (let target = 1; target <= 5; target++) {
     await page.getByRole('button', { name: `Przycisk ${target}` }).press('Enter')
   }
-  await expect(page.getByRole('dialog', { name: 'Zadanie ukończone!' })).toBeVisible()
+  await expect(page.getByRole('dialog', { name: 'Brawo!' })).toBeVisible()
 }
 
 export async function expectRoomReady(page: Page) {
@@ -76,7 +91,7 @@ export async function expectRoomReady(page: Page) {
 }
 
 async function closeQuestSuccess(page: Page) {
-  await page.getByRole('dialog', { name: 'Zadanie ukończone!' }).getByRole('button', { name: 'Zamknij' }).click()
+  await page.getByRole('dialog', { name: 'Brawo!' }).getByRole('button', { name: 'Zamknij' }).click()
   await expectRoomReady(page)
 }
 
@@ -93,7 +108,7 @@ export async function matchBed(page: Page, choose = (control: Locator) => contro
   await dialog.getByRole('button', { name: 'Obrazek: poduszka' }).press('Enter')
   await dialog.getByRole('button', { name: 'Koszyk', exact: true }).click()
   await dialog.getByRole('button', { name: 'Obrazek: koszyk' }).click()
-  await expect(page.getByRole('dialog', { name: 'Zadanie ukończone!' })).toContainText('Legowisko jest gotowe.')
+  await expect(page.getByRole('dialog', { name: 'Brawo!' })).toContainText('Legowisko jest gotowe.')
   await closeQuestSuccess(page)
 }
 
@@ -113,6 +128,6 @@ export async function fillWater(page: Page) {
     await group.getByRole('button', { name: String(question.answer), exact: true }).click()
     if (index < questions.length - 1) await dialog.getByRole('button', { name: 'Następna zagadka' }).click()
   }
-  await expect(page.getByRole('dialog', { name: 'Zadanie ukończone!' })).toContainText('W misce jest świeża woda.')
+  await expect(page.getByRole('dialog', { name: 'Brawo!' })).toContainText('W misce jest świeża woda.')
   await closeQuestSuccess(page)
 }

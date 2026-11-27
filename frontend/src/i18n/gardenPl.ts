@@ -26,7 +26,7 @@ export const gardenPl = {
     gardenWater: { title: 'Woda w ogrodzie', instructions: 'Policz krople, żeby uzupełnić miskę.', hint: 'Pokaż kropelki i policz te, które zostały.', success: 'W ogrodowej misce jest świeża woda.' },
     gardenBed: { title: 'Osłonięte legowisko', instructions: 'Wybierz słowo, a potem obrazek rzeczy do legowiska.', hint: 'Koc grzeje, poduszka jest miękka, a koszyk ma uchwyt.', success: 'Pod daszkiem jest miękkie legowisko.' },
     gardenPost: { title: 'Drapak w ogrodzie', instructions: 'Policz deseczki potrzebne do drapaka.', hint: 'Policz deseczki po kolei. Pomiń przekreślone.', success: 'Drapak jest gotowy.' },
-    gardenTunnel: { title: 'Droga przez tunel', instructions: 'Poprowadź palec lub mysz po ścieżce od startu do mety.', hint: 'Idź po przerywanej linii. Możesz wrócić do zielonej kropki.', success: 'Przejście przez tunel jest gotowe.' },
+    gardenTunnel: { title: 'Droga przez tunel', instructions: 'Odsłoń drogę do mety.', hint: 'Idź po przerywanej linii. Możesz wrócić do zielonej kropki.', success: 'Przejście przez tunel jest gotowe.' },
     gardenToys: { title: 'Zabawki w ogrodzie', instructions: 'Wybierz zabawkę, a potem jej grupę.', hint: 'Piłki można toczyć, a autko i pociąg to pojazdy.', success: 'Piłki i pojazdy są w osobnych przegródkach.' },
     gardenPlatform: { title: 'Deski na platformę', instructions: 'Wybieraj deski od najkrótszej do najdłuższej.', hint: 'Porównaj długość desek od lewej do prawej.', success: 'Na drzewie jest gotowa platforma.' },
     gardenShelter: { title: 'Przytulny domek', instructions: 'Połącz słowa z obrazkami części i wyposażenia domku.', hint: 'Dach osłania od góry. Do środka pasuje ręcznik i poduszka.', success: 'Domek ma dach i miękkie wyposażenie.' },

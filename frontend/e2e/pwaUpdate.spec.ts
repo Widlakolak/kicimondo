@@ -75,7 +75,7 @@ test('a fresh build waits for every open window and preserves the previous save'
       return updated
     }).toBe(true)
     await reopened.getByRole('button', { name: 'Wróć do gry' }).click()
-    await expect(reopened.getByText('1 PS', { exact: true })).toBeVisible()
+    await expect(reopened.locator('.points strong').filter({ hasText: /^1$/ })).toBeVisible()
     expect(await saveRecord(reopened)).toEqual(saved)
   } finally {
     const closed = new Promise<void>((done) => server.close(() => done()))

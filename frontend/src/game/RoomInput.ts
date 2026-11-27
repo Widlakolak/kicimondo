@@ -8,9 +8,11 @@ export class RoomInput {
   private vector = still
   private paused = false
   private backgrounded = false
+  revision = 0
 
   hold(source: string, direction: Direction) {
     if (this.isPaused() || this.held.get(source) === direction) return
+    this.revision++
     this.held.set(source, direction)
     this.updateDirection()
   }
@@ -20,6 +22,7 @@ export class RoomInput {
   }
 
   clear() {
+    this.revision++
     this.held.clear()
     this.vector = still
     this.requested = false

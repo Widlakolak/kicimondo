@@ -2,9 +2,11 @@ import { lazy, Suspense, useEffect, useEffectEvent, useRef, useState, type FormE
 import { avatars, validateNickname, type Avatar, type Profile } from './core/profile'
 import { paintAvatar } from './game/avatarArt'
 import { pl } from './i18n/pl'
-import { applyCommand, type Save, type SaveCommand } from './core/progress'
-import { createSaveRepository } from './storage/saveRepository'
+import { applyCommand, pointsOf, type Save, type SaveCommand } from './core/progress'
+import { createSaveRepository, StaleSaveError, type SaveReceipt } from './storage/saveRepository'
 import { minimizeAndroid, watchAndroid } from './platform/android'
+import { InstallOptions, useInstallOptions } from './platform/InstallOptions'
+import { lockLandscape } from './platform/landscape'
 import { OfflineStatus } from './platform/OfflineStatus'
 import { configuredContentEndpoint, downloadPack } from './content/remote/download'
 import type { VerifiedPack } from './content/remote/pack'
@@ -64,20 +66,22 @@ function ProfileForm({ initial, busy, onSave, onCancel }: {
           ))}
         </div>
       </fieldset>
-      <div className="field">
-        <label htmlFor="nickname">{pl.nickname}</label>
-        <input id="nickname" ref={field} value={nickname} autoComplete="off" spellCheck={false}
-          aria-invalid={Boolean(error)} aria-describedby={error ? 'nickname-feedback nickname-hint' : 'nickname-hint'}
-          onChange={(event) => {
-            setNickname(event.target.value)
-            setError(null)
-          }} />
-        <p id="nickname-hint" className="hint">{pl.nicknameHint}</p>
-        {error && <p id="nickname-feedback" className="error" role="alert">{pl.nicknameError[error]}</p>}
-      </div>
-      <div className="profile-actions">
-        <button className="primary" type="submit" disabled={busy}>{busy ? pl.saving : pl.start} <span aria-hidden="true">→</span></button>
-        {onCancel && <button className="secondary" type="button" disabled={busy} onClick={onCancel}>{pl.cancel}</button>}
+      <div>
+        <div className="field">
+          <label htmlFor="nickname">{pl.nickname}</label>
+          <input id="nickname" ref={field} value={nickname} autoComplete="off" spellCheck={false}
+            aria-invalid={Boolean(error)} aria-describedby={error ? 'nickname-feedback nickname-hint' : 'nickname-hint'}
+            onChange={(event) => {
+              setNickname(event.target.value)
+              setError(null)
+            }} />
+          <p id="nickname-hint" className="hint">{pl.nicknameHint}</p>
+          {error && <p id="nickname-feedback" className="error" role="alert">{pl.nicknameError[error]}</p>}
+        </div>
+        <div className="profile-actions">
+          <button className="primary" type="submit" disabled={busy}>{busy ? pl.saving : pl.start} <span aria-hidden="true">→</span></button>
+          {onCancel && <button className="secondary" type="button" disabled={busy} onClick={onCancel}>{pl.cancel}</button>}
+        </div>
       </div>
     </form>
   )
@@ -87,9 +91,10 @@ const repository = createSaveRepository()
 const packs = createPackStore()
 type Screen = 'loading' | 'welcome' | 'edit' | 'room'
 type Notice = keyof typeof pl.save | null
+export type Guidance = 'floor' | 'star' | 'task' | 'explore' | null
 
 export function App() {
-  const [record, setRecord] = useState<{ save: Save | null; status: Notice }>({ save: null, status: null })
+  const [record, setRecord] = useState<{ save: Save | null; status: Notice; generation: number }>({ save: null, status: null, generation: 0 })
   const current = useRef(record)
   const saveQueue = useRef<Promise<unknown>>(Promise.resolve())
   const { save, status } = record
@@ -99,11 +104,18 @@ export function App() {
   const [busy, setBusy] = useState(false)
   const busyRef = useRef(false)
   const [nativeActive, setNativeActive] = useState(true)
+  const [guidance, setGuidance] = useState<Guidance>(null)
+  const installOptions = useInstallOptions()
+  const [controls, setControls] = useState(true)
+  const [resetStep, setResetStep] = useState<0 | 1 | 2>(0)
+  const [adultNotice, setAdultNotice] = useState('')
+  const confirmation = useRef<HTMLDialogElement>(null)
   const roomBack = useRef<(() => void) | null>(null)
 
   const goBack = useEffectEvent(() => {
     if (busyRef.current || screen === 'loading') return
-    if (screen === 'room') roomBack.current?.()
+    if (resetStep) setResetStep(0)
+    else if (screen === 'room') roomBack.current?.()
     else if (screen === 'edit' && save) setScreen('welcome')
     else minimizeAndroid()
   })
@@ -112,9 +124,9 @@ export function App() {
 
   useEffect(() => {
     let active = true
-    void Promise.all([repository.load(), packs.load()]).then(([{ save, status }, cachedPack]) => {
+    void Promise.all([repository.load(), packs.load()]).then(([{ save, status, generation }, cachedPack]) => {
       if (!active) return
-      current.current = { save, status: status === 'ready' ? null : status }
+      current.current = { save, generation, status: status === 'ready' ? null : status }
       setRecord(current.current)
       setSelectedPack(cachedPack)
       setScreen(save ? 'welcome' : 'edit')
@@ -122,25 +134,85 @@ export function App() {
     return () => { active = false }
   }, [])
 
-  function persist(command: SaveCommand): Promise<Save | null> {
+  async function refreshStaleSave() {
+    const { save, generation, status } = await repository.load()
+    current.current = { save, generation, status: status === 'ready' ? null : status }
+    setRecord(current.current)
+    setResetStep(0)
+    setGuidance(null)
+    setAdultNotice(pl.adult.stale)
+    setScreen(save ? 'welcome' : 'edit')
+  }
+
+  function persist(command: SaveCommand): Promise<SaveReceipt | null> {
+    const expected = current.current.generation
     const operation = saveQueue.current.then(async () => {
       const before = current.current
-      let after: typeof before
-      if (before.status === 'invalid' || before.status === 'unavailable') {
-        after = { ...before, save: applyCommand(before.save, command) }
+      if (before.generation !== expected) return null
+      const temporary = () => {
+        const next = applyCommand(before.save, command)
+        return { save: next, applied: next !== before.save,
+          previousPoints: before.save ? pointsOf(before.save) : 0, durable: false }
+      }
+      let receipt: SaveReceipt
+      let status: Notice = before.status
+      if (status === 'invalid' || status === 'unavailable') {
+        receipt = temporary()
       } else {
         try {
-          after = { save: await repository.commit(command), status: null }
-        } catch {
-          after = { save: applyCommand(before.save, command), status: 'unavailable' }
+          receipt = await repository.commit(command, expected)
+          status = null
+        } catch (error) {
+          if (error instanceof StaleSaveError) {
+            await refreshStaleSave()
+            return null
+          }
+          receipt = temporary()
+          status = 'unavailable'
         }
       }
-      current.current = after
-      setRecord(after)
-      return after.save
+      current.current = { save: receipt.save, generation: expected, status }
+      setRecord(current.current)
+      return receipt
     })
     saveQueue.current = operation.catch(() => undefined)
     return operation
+  }
+
+  useEffect(() => {
+    const dialog = confirmation.current
+    if (!dialog) return
+    if (resetStep) {
+      if (!dialog.open) dialog.showModal()
+      dialog.querySelector('button')?.focus()
+    } else if (dialog.open) dialog.close()
+  }, [resetStep])
+
+  async function resetGame() {
+    if (busyRef.current || resetStep !== 2) return
+    const expected = current.current.generation
+    busyRef.current = true
+    setBusy(true)
+    setAdultNotice('')
+    try {
+      await saveQueue.current
+      const result = await repository.reset(expected)
+      current.current = { save: result.save, generation: result.generation, status: null }
+      setRecord(current.current)
+      setResetStep(0)
+      setGuidance('floor')
+      lockLandscape()
+      setScreen('room')
+    } catch (error) {
+      if (error instanceof StaleSaveError) await refreshStaleSave()
+      else {
+        setResetStep(0)
+        setAdultNotice(pl.adult.resetError)
+      }
+    } finally {
+      busyRef.current = false
+      setBusy(false)
+    }
   }
 
   async function commit(command: SaveCommand) {
@@ -182,12 +254,14 @@ export function App() {
   return (
     <main className={screen === 'room' ? 'shell gameplay' : 'shell'}>
       <div className="brand"><span className="brand-mark" aria-hidden="true">✿</span>{pl.title}</div>
+      {adultNotice && screen !== 'room' && <p className="notice" role="status">{adultNotice}</p>}
       {notice && <p className="notice" role="status">{notice}</p>}
       {screen === 'loading' ? <p role="status">{pl.loadingSave}</p> :
         screen === 'room' && save ? (
           <Suspense fallback={<p role="status">{pl.loadingRoom}</p>}>
-            <Room key={save.checkpoint.location + '/' + save.checkpoint.spawn} save={save}
-              commit={commit} busy={busy} notice={notice} educationalPack={selectedPack?.pack ?? null} nativeActive={nativeActive} backHandlerRef={roomBack}
+            <Room save={save}
+              commit={commit} busy={busy} notice={notice} educationalPack={selectedPack?.pack ?? null} guidance={guidance} setGuidance={setGuidance}
+              controls={controls} setControls={setControls} nativeActive={nativeActive} backHandlerRef={roomBack}
               onEdit={() => setScreen('edit')} onMenu={() => setScreen('welcome')} />
           </Suspense>
         ) : (
@@ -198,7 +272,7 @@ export function App() {
                 <div className={`avatar-portrait ${profile.avatar}`}><AvatarPortrait avatar={profile.avatar} /></div>
                 <p className="saved-name">{profile.nickname}</p>
                 <div className="profile-actions">
-                  <button className="primary" disabled={busy} onClick={() => setScreen('room')}>{pl.continue} <span aria-hidden="true">→</span></button>
+                  <button className="primary" disabled={busy} onClick={() => { lockLandscape(); setScreen('room') }}>{pl.continue} <span aria-hidden="true">→</span></button>
                   <button className="secondary" disabled={busy} onClick={() => setScreen('edit')}>{pl.edit}</button>
                 </div>
                 {(api || selectedPack) && <details className="educational-updates">
@@ -215,9 +289,32 @@ export function App() {
               </div>
             ) : (
               <ProfileForm initial={profile} busy={busy} onSave={async (profile) => {
-                if (await commit({ type: 'profile', profile })) setScreen('room')
+                lockLandscape()
+                const first = !current.current.save
+                if ((await commit({ type: 'profile', profile }))?.save) {
+                  if (first) setGuidance('floor')
+                  setScreen('room')
+                }
               }} onCancel={profile ? () => setScreen('welcome') : undefined} />
             )}
+            {(screen !== 'edit' || !profile) && (profile || import.meta.env.MODE !== 'android') && <details className="adult-options">
+              <summary>{pl.adult.title}</summary>
+              {profile && <button type="button" className="secondary" disabled={busy || status === 'unavailable' || status === 'invalid'}
+                onClick={() => { setAdultNotice(''); setResetStep(1) }}>{pl.adult.reset}</button>}
+              <InstallOptions {...installOptions} />
+            </details>}
+            <dialog ref={confirmation} aria-labelledby="new-game-title" aria-describedby={resetStep === 2 ? 'new-game-loss' : undefined}
+              onCancel={(event) => { event.preventDefault(); if (!busyRef.current) setResetStep(0) }}>
+              <h2 id="new-game-title">{resetStep === 2 ? pl.adult.reset : pl.adult.first}</h2>
+              {resetStep === 2 && <p id="new-game-loss">{pl.adult.loss}</p>}
+              <div className="profile-actions">
+                <button type="button" className="secondary" disabled={busy} onClick={() => setResetStep(0)}>{pl.cancel}</button>
+                <button type="button" className="primary" disabled={busy}
+                  onClick={() => resetStep === 1 ? setResetStep(2) : void resetGame()}>
+                  {resetStep === 1 ? pl.adult.next : pl.adult.confirm}
+                </button>
+              </div>
+            </dialog>
           </section>
         )}
       {import.meta.env.PROD && import.meta.env.MODE !== 'android' && <OfflineStatus showUpdate={screen === 'welcome'} />}

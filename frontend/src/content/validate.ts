@@ -121,6 +121,11 @@ export function validateContent(maps: Record<LocationId, LocationMap>) {
     'invalid cat preferences or habitat for ' + cat.id)
     require(!cat.pace || (cat.pace.speed > 0 && cat.pace.speed <= 64 &&
       cat.pace.idleMs >= 1000 && cat.pace.idleMs <= 6000), 'invalid cat pace for ' + cat.id)
+    if (cat.roam) {
+      const stops = [cat.greet, cat.rest, ...cat.roam, ...cat.attractions.map(({ position }) => position)]
+      require(stops.every((from) => stops.every((to) => clearCatRoute(from, to, solids))),
+        'blocked roaming leg for ' + cat.id)
+    }
     for (const target of [cat.rest, ...cat.attractions.map(({ position }) => position)]) {
       require([cat.greet, target].every(({ x, y }) => x >= 5 && x <= map.width - 5 && y >= 3 && y <= map.height - 3) &&
         clearCatRoute(cat.greet, target, solids), 'blocked cat route for ' + cat.id)

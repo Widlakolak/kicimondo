@@ -35,8 +35,8 @@ async function close(page: Page, title: string, button = 'Zamknij') {
   await expectRoomReady(page)
 }
 
-const reward = 'Zadanie ukończone!'
-const points = (page: Page, value: number) => expect(page.getByText(`${value} PS`, { exact: true })).toBeVisible()
+const reward = 'Brawo!'
+const points = (page: Page, value: number) => expect(page.locator('.points strong').filter({ hasText: new RegExp('^' + value + '$') })).toBeVisible()
 
 async function match(page: Page, challenge: (typeof challenges)['pack-school-bag']) {
   const dialog = page.getByRole('dialog', { name: pl.challenges[challenge.text].title })
@@ -80,7 +80,7 @@ test('explores both floors offline, crosses at 8 PS and returns for the twelfth 
   await interact(page)
   const guide = page.getByRole('dialog', { name: 'Ciocia Hania' })
   await expect(guide).toContainText('Zajrzyj do gabinetu.')
-  await expect(guide).toContainText('Masz 2 PS. Potrzebujesz 8 PS')
+  await expect(guide).toContainText('Brakuje 6 gwiazdek.')
   await close(page, 'Ciocia Hania')
   await interact(page)
   await close(page, 'Ciocia Hania')
@@ -90,14 +90,18 @@ test('explores both floors offline, crosses at 8 PS and returns for the twelfth 
   await interact(page)
   await room(page, 'Gabinet')
   await page.setViewportSize({ width: 600, height: 960 })
-  await expect(page.getByRole('button', { name: 'W górę' })).toBeInViewport({ ratio: 1 })
+  await expect(page.getByText('Obróć ekran')).toBeVisible()
+  await expect(page.getByRole('button', { name: 'W górę' })).toBeHidden()
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBe(600)
-  const canvas = (await stage(page).locator('canvas').boundingBox())!
-  expect(canvas.width / canvas.height).toBeCloseTo(4 / 3, 2)
+  await page.setViewportSize({ width: 960, height: 600 })
+  await expectRoomReady(page)
+  await expect(page.getByRole('button', { name: 'W górę' })).toBeInViewport({ ratio: 1 })
   await walk(page, null, 85)
   await walk(page, 66, null)
   await interact(page)
   await expect(page.getByRole('dialog', { name: 'Pakowanie tornistra' })).toBeVisible()
+  await page.setViewportSize({ width: 600, height: 960 })
+  await expect(page.getByText('Obróć ekran')).toBeVisible()
   await page.setViewportSize({ width: 960, height: 600 })
   await match(page, challenges['pack-school-bag'])
   await walk(page, 160, null)
@@ -137,9 +141,9 @@ test('explores both floors offline, crosses at 8 PS and returns for the twelfth 
   await room(page, 'Półpiętro')
 
   await walk(page, 256, 157)
-  await expect(page.getByText('Masz 7 PS. Potrzebujesz 8 PS', { exact: false })).toBeVisible()
+  await expect(page.getByText('Brakuje 1 gwiazdki.', { exact: false })).toBeVisible()
   await interact(page)
-  await expect(page.getByRole('dialog', { name: 'Schody na parter' })).toContainText('Masz 7 PS. Potrzebujesz 8 PS')
+  await expect(page.getByRole('dialog', { name: 'Schody na parter' })).toContainText('Brakuje 1 gwiazdki.')
   await close(page, 'Schody na parter')
   await walk(page, 64, 192)
   await interact(page)
