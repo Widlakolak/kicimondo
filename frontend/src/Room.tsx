@@ -95,10 +95,16 @@ function RotateDevice() {
   </>
 }
 
-function ViewIcon({ controls = false, expanded = false }: { controls?: boolean; expanded?: boolean }) {
-  const path = controls ? 'M3 9h6V3h6v6h6v6h-6v6H9v-6H3z' :
-    expanded ? 'M3 9h6V3m6 0v6h6M3 15h6v6m6 0v-6h6' : 'M3 9V3h6m6 0h6v6M3 15v6h6m6 0h6v-6'
-  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d={path} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" /></svg>
+const hudIcons = {
+  book: 'M12 6C9 4 6 4 3 5v14c3-1 6-1 9 1c3-2 6-2 9-1V5c-3-1-6-1-9 1v14',
+  pause: 'M8 5v14m8-14v14',
+  expand: 'M3 9V3h6m6 0h6v6M3 15v6h6m6 0h6v-6',
+  collapse: 'M3 9h6V3m6 0v6h6M3 15h6v6m6 0v-6h6',
+  controls: 'M3 9h6V3h6v6h6v6h-6v6H9v-6H3z',
+}
+
+function HudIcon({ name }: { name: keyof typeof hudIcons }) {
+  return <svg viewBox="0 0 24 24" aria-hidden="true"><path d={hudIcons[name]} fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" /></svg>
 }
 
 type Overlay =
@@ -385,6 +391,9 @@ export default function Room({ save, commit, busy, notice, educationalPack, guid
     (catPrompt ?? (unlocked ? interaction?.unlocked : null) ?? interaction?.prompt)
   const shownGuidance = guidance !== 'task' && !prompt && !open ? guidance : null
   const conversation = open?.type === 'dialogue' && dialogueBody(open.dialogue)
+  const fullscreenLabel = expanded ? (fullscreen ? pl.play.exitFullscreen : pl.play.collapse) :
+    document.fullscreenEnabled ? pl.play.fullscreen : pl.play.expand
+  const controlsLabel = controls ? pl.play.hideControls : pl.play.showControls
 
   return (
     <section ref={root} className={`room${expanded ? ' expanded' : ''}${portrait ? ' portrait' : ''}`}
@@ -412,37 +421,36 @@ export default function Room({ save, commit, busy, notice, educationalPack, guid
       <aside className="game-dock">
         <header className="room-header">
           <div className="room-heading">
-            <div>
-              <h1 id="room-title" ref={heading} tabIndex={-1}>{text.title}</h1>
-              {resident && catName && <p className="cat-trust">{pl.cat.trust(catName, trustOf(save, resident.id))}</p>}
-            </div>
+            <h1 id="room-title" ref={heading} tabIndex={-1}>{text.title}</h1>
             <span className="points" role="group" aria-label={pl.pointsLabel} title={pl.pointsLabel}>
               <span aria-hidden="true">★</span> <strong>{points}</strong>
             </span>
           </div>
           <div className="room-actions">
-            <GameButton className="secondary" disabled={busy}
-              onActivate={openKicipedia}>{pl.kicipedia.title}</GameButton>
-            <GameButton className="secondary" disabled={busy} onActivate={openPause}>{pl.pause.title}</GameButton>
-            <GameButton className="secondary game-icon"
-              aria-label={expanded ? (fullscreen ? pl.play.exitFullscreen : pl.play.collapse) :
-                document.fullscreenEnabled ? pl.play.fullscreen : pl.play.expand}
-              onActivate={() => { void toggleFullscreen() }}><ViewIcon expanded={expanded} /></GameButton>
-            {expanded && <GameButton className="secondary game-icon" aria-pressed={controls}
-              aria-label={controls ? pl.play.hideControls : pl.play.showControls}
-              onActivate={() => { input.clear(); setControls(!controls) }}><ViewIcon controls /></GameButton>}
+            <GameButton className="secondary" disabled={busy} aria-label={pl.kicipedia.title} title={pl.kicipedia.title}
+              onActivate={openKicipedia}><HudIcon name="book" /></GameButton>
+            <GameButton className="secondary" disabled={busy} aria-label={pl.pause.title} title={pl.pause.title}
+              onActivate={openPause}><HudIcon name="pause" /></GameButton>
+            <GameButton className="secondary" aria-label={fullscreenLabel} title={fullscreenLabel}
+              onActivate={() => { void toggleFullscreen() }}><HudIcon name={expanded ? 'collapse' : 'expand'} /></GameButton>
+            {expanded && <GameButton className="secondary" aria-pressed={controls}
+              aria-label={controlsLabel} title={controlsLabel}
+              onActivate={() => { input.clear(); setControls(!controls) }}><HudIcon name="controls" /></GameButton>}
           </div>
           <p className="task-count">{pl.play.tasks} <b>{world.quests.length}</b></p>
         </header>
-        {(prompt || !guidance) && <p className="interaction-status" role="status">
-          <span className={prompt ? 'status-dot active' : 'status-dot'} aria-hidden="true" />
-          {prompt ?? (points === quests.length ? pl.play.finished : world.exit ? pl.play.next : pl.explore)}
-        </p>}
-        {shownGuidance && <div className="onboarding" role="status">
-          <span aria-hidden="true">{shownGuidance === 'floor' ? '◇' : shownGuidance === 'star' ? '★' : '→'}</span>
-          <strong>{pl.play[shownGuidance]}</strong>
-          <button className="secondary" aria-label={pl.play.skip} onClick={() => setGuidance(null)}>×</button>
-        </div>}
+        <div className="room-status">
+          {resident && catName && <p className="cat-trust">{pl.cat.trust(catName, trustOf(save, resident.id))}</p>}
+          {(prompt || !guidance) && <p className="interaction-status" role="status">
+            <span className={prompt ? 'status-dot active' : 'status-dot'} aria-hidden="true" />
+            {prompt ?? (points === quests.length ? pl.play.finished : world.exit ? pl.play.next : pl.explore)}
+          </p>}
+          {shownGuidance && <div className="onboarding" role="status">
+            <span aria-hidden="true">{shownGuidance === 'floor' ? '◇' : shownGuidance === 'star' ? '★' : '→'}</span>
+            <strong>{pl.play[shownGuidance]}</strong>
+            <button className="secondary" aria-label={pl.play.skip} onClick={() => setGuidance(null)}>×</button>
+          </div>}
+        </div>
         {(!expanded || controls) && <div className="controls" aria-label={pl.controls} role="group">
           <div className="dpad">
             {(['up', 'left', 'down', 'right'] as const).map((direction) => (

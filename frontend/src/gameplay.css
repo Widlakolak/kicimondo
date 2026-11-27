@@ -41,18 +41,32 @@
 
 .gameplay .stage, .gameplay .stage canvas { width: 100%; height: 100%; }
 .gameplay .stage canvas { display: block; image-rendering: pixelated; }
-.game-dock { display: flex; flex-direction: column; justify-content: space-between; min-width: 0; min-height: 0; }
-.game-dock > * { flex: none; }
-.gameplay .room-header { display: block; margin: 0; }
+.game-dock {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: .25rem;
+  min-width: 0;
+  min-height: 0;
+}
+
 .room-heading { display: flex; justify-content: space-between; align-items: center; gap: .25rem; }
-.gameplay .room-header h1 { font-size: clamp(1.08rem, 2.1vw, 1.9rem); }
+.gameplay .room-header h1 { min-width: 0; overflow-wrap: anywhere; font-size: clamp(1.08rem, 2.1vw, 1.9rem); }
 .room-header h1:focus { outline: none; }
-.gameplay .room-actions { gap: .3rem; margin-top: .25rem; }
-.gameplay .room-actions button { min-height: 48px; padding: .25rem .45rem; font-size: .88rem; }
-.gameplay .game-icon { min-width: 48px; }
-.game-icon svg { display: block; width: 1.32rem; height: 1.32rem; margin: auto; }
-.gameplay .cat-trust { color: #ead4bf; margin: 0; font-size: .82rem; }
+.room-actions {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 48px;
+  justify-content: start;
+  gap: .3rem;
+  margin-top: .25rem;
+}
+.room-actions button { min-height: 48px; padding: .25rem; }
+.room-actions svg { display: block; width: 1.32rem; height: 1.32rem; margin: auto; }
+/* Room hints use the space left above the movement controls. */
+.room-status { min-height: 0; overflow: auto; overflow-wrap: anywhere; }
+.gameplay .cat-trust { color: #ead4bf; margin: 0 0 .2rem; font-size: .82rem; }
 .gameplay .points {
+  flex: none;
   background: #504052;
   color: #ffd767;
   border: 0;
@@ -69,7 +83,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  align-self: center;
+  justify-self: center;
   gap: .22rem;
 }
 .gameplay .dpad {
@@ -83,7 +97,8 @@
 
 .gameplay .expanded { display: block; padding: 0; }
 .gameplay .expanded .world { border: 0; border-radius: 0; }
-.expanded .game-dock { position: absolute; inset: 0; pointer-events: none; }
+.expanded .game-dock { display: block; position: absolute; inset: 0; pointer-events: none; }
+.expanded .room-status { overflow: visible; }
 .gameplay .expanded .room-header {
   display: grid;
   grid-template-columns: auto auto;
@@ -149,10 +164,12 @@
 .gameplay .trace-checkpoint { fill: #315d45; }
 .onboarding { display: flex; align-items: center; gap: .35rem; color: #ffe3a3; font-size: .9rem; }
 .onboarding span { font-size: 1.3rem; }
-.onboarding button { margin-left: auto; min-height: 48px; min-width: 48px; padding: .15rem; pointer-events: auto; }
+.onboarding button { flex: none; margin-left: auto; min-height: 48px; min-width: 48px; padding: .15rem; pointer-events: auto; }
+.onboarding button:focus-visible { outline-offset: -4px; }
 .expanded .onboarding {
   position: absolute; top: .35rem; left: .35rem;
   top: max(.35rem, env(safe-area-inset-top)); left: max(.35rem, env(safe-area-inset-left));
+  max-width: 40%;
   border-radius: .55rem; background: #302a35ec; padding: .25rem;
 }
 .tutorial-task { color: #365e49; font-weight: 750; }

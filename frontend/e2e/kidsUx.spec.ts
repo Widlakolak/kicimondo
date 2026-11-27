@@ -1,5 +1,6 @@
 import { expect, test, type BrowserContext, type Page, type TestInfo } from '@playwright/test'
 import { challenges, type TraceChallenge } from '../src/content/pack'
+import type { Save } from '../src/core/progress'
 import type { Point } from '../src/core/room'
 import { earn, fromHouse, travel } from './gardenFixtures'
 import { buttonAlternative, enterRoom, expectRoomReady, holdKey, pixelAt, reach, saveRecord, stage, walkToClothes, worldClient } from './roomHelpers'
@@ -64,8 +65,72 @@ async function adultMenu(page: Page) {
   await page.getByText('Dla dorosłych', { exact: true }).click()
 }
 
+async function writeSave(page: Page, save: Save) {
+  await page.evaluate((save) => new Promise<void>((resolve, reject) => {
+    const opening = indexedDB.open('kicimondo')
+    opening.onerror = () => reject(opening.error)
+    opening.onsuccess = () => {
+      const db = opening.result
+      const write = db.transaction('saves', 'readwrite')
+      write.objectStore('saves').put(save, 'current')
+      write.oncomplete = () => { db.close(); resolve() }
+      write.onabort = () => { db.close(); reject(write.error) }
+    }
+  }), save)
+}
+
+async function expectDockControls(page: Page) {
+  for (const button of await page.locator('.game-dock').getByRole('button').all()) {
+    await expect(button).toBeInViewport({ ratio: 1 })
+    const { width, height, unobstructed } = await button.evaluate((element) => {
+      const { x, y, width, height } = element.getBoundingClientRect()
+      return { width, height, unobstructed: element.contains(document.elementFromPoint(x + width / 2, y + height / 2)) }
+    })
+    expect(width).toBeGreaterThanOrEqual(48)
+    expect(height).toBeGreaterThanOrEqual(48)
+    expect(unobstructed).toBe(true)
+  }
+  const arrows = (await page.locator('.game-dock .dpad').boundingBox())!
+  const action = (await page.getByRole('button', { name: 'Sprawdź' }).boundingBox())!
+  expect(action.y).toBeGreaterThanOrEqual(arrows.y + arrows.height)
+  expect(action.y - arrows.y - arrows.height).toBeLessThan(8)
+  expect(await page.evaluate(() => [document.documentElement.scrollWidth, document.documentElement.scrollHeight]))
+    .toEqual([landscape.width, landscape.height])
+}
+
 test.describe('direct touch in the game world', () => {
   test.use({ viewport: landscape, hasTouch: true, isMobile: true, deviceScaleFactor: 2 })
+
+  test('keeps short landscape controls above the safe edge with wide fonts and changing hints', async ({ page }, info) => {
+    await page.goto('/')
+    const useWideFont = () => page.addStyleTag({ content: '.gameplay, .gameplay h1 { font-family: monospace; }' })
+    await useWideFont()
+    await enterRoom(page)
+    await expect(page.getByText('Zaufanie · Bursztynek: 0')).toBeInViewport({ ratio: 1 })
+    await expect(page.getByText('Dotknij podłogi', { exact: true })).toBeInViewport({ ratio: 1 })
+    await expectDockControls(page)
+    await capture(page, info, 'compact-onboarding')
+
+    await tapWorld(page, { x: 181, y: 150 })
+    await expect(page.getByText('Obok leżą rozrzucone ubrania.')).toBeInViewport({ ratio: 1 })
+    await expectDockControls(page)
+    await capture(page, info, 'compact-nearby-interaction')
+    await page.getByRole('button', { name: 'Sprawdź' }).tap()
+    await expect(page.getByRole('dialog', { name: clothes })).toBeVisible()
+    await page.getByRole('button', { name: 'Anuluj' }).tap()
+
+    const house = earn(fromHouse(), ({ id }) => id === 'living-match-living-items')
+    await writeSave(page, travel(travel(house, 'landing'), 'hall'))
+    await page.reload()
+    await useWideFont()
+    await resume(page)
+    await expect(page.getByRole('heading', { name: 'Hol na parterze' })).toBeInViewport({ ratio: 1 })
+    await expect(stage(page)).toHaveAttribute('data-y', '112')
+    await tapWorld(page, { x: 160, y: 194 })
+    await expect(page.getByText('Brama jest otwarta. Możesz wejść do ogrodu.')).toBeInViewport({ ratio: 1 })
+    await expectDockControls(page)
+    await capture(page, info, 'compact-hall')
+  })
 
   test('walks, resolves exact object taps across camera scroll, scratches the clothes and unlocks the landing', async ({ page, context }, info) => {
     await page.goto('/')
@@ -138,17 +203,7 @@ test.describe('direct touch in the game world', () => {
     await page.goto('/')
     await expect(page.getByText('Gra gotowa do działania bez internetu.')).toBeVisible()
     const seed = travel(earn(fromHouse(), ({ id }) => id === 'living-match-living-items'), 'garden')
-    await page.evaluate((save) => new Promise<void>((resolve, reject) => {
-      const opening = indexedDB.open('kicimondo')
-      opening.onerror = () => reject(opening.error)
-      opening.onsuccess = () => {
-        const db = opening.result
-        const write = db.transaction('saves', 'readwrite')
-        write.objectStore('saves').put(save, 'current')
-        write.oncomplete = () => { db.close(); resolve() }
-        write.onabort = () => { db.close(); reject(write.error) }
-      }
-    }), seed)
+    await writeSave(page, seed)
     await context.setOffline(true)
     await page.reload()
     await resume(page)
@@ -247,14 +302,17 @@ test('keeps the same canvas through the landscape matrix and offers browser full
   await world(page).evaluate((canvas) => { canvas.setAttribute('data-test-scene', 'original') })
   for (const viewport of [landscape, { width: 844, height: 390 }, { width: 960, height: 600 },
     { width: 1920, height: 1200 }, { width: 1920, height: 1080 }]) {
-    await page.setViewportSize(viewport)
-    await expect(page.getByRole('button', { name: 'Sprawdź' })).toBeInViewport({ ratio: 1 })
-    const rect = (await world(page).boundingBox())!
-    expect(rect.width / viewport.width).toBeGreaterThanOrEqual(0.6)
-    expect(rect.width / viewport.width).toBeLessThanOrEqual(0.7)
-    expect(rect.height / viewport.height).toBeGreaterThan(0.92)
-    expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(viewport.height)
-    await capture(page, info, `${viewport.width}x${viewport.height}`)
+    await test.step(`${viewport.width} × ${viewport.height}`, async () => {
+      await page.setViewportSize(viewport)
+      await expect(page.getByRole('button', { name: 'Sprawdź' })).toBeInViewport({ ratio: 1 })
+      await expect(world(page)).toHaveAttribute('data-test-scene', 'original')
+      const rect = (await world(page).boundingBox())!
+      expect(rect.width / viewport.width).toBeGreaterThanOrEqual(0.6)
+      expect(rect.width / viewport.width).toBeLessThanOrEqual(0.7)
+      expect(rect.height / viewport.height).toBeGreaterThan(0.92)
+      expect(await page.evaluate(() => document.documentElement.scrollHeight)).toBe(viewport.height)
+      await capture(page, info, `${viewport.width}x${viewport.height}`)
+    })
   }
   await page.getByRole('button', { name: 'Pełny ekran' }).click()
   await expect(page.getByRole('button', { name: 'Wyjdź z pełnego ekranu' })).toBeVisible()

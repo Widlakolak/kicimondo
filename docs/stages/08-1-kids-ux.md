@@ -72,7 +72,7 @@ Bursztynek visits four additional validated bedroom points and uses the restored
 | Check | Result |
 | --- | --- |
 | `npm ci --engine-strict`, `npm run lint`, `npm run typecheck`, `npm run contracts:check` and `npm run build` | Passed with Node 24.13.1 and npm 11.11.0. The service worker precaches 11 files, including the room and its styles. |
-| `npm test` and `npm run test:browser` | 91 unit and 28 browser tests passed. Both real touch traces also passed three consecutive focused runs each. Browser coverage includes all 25 stars, saved effects, offline play, service worker updates, rotation, Back and reset failure recovery. |
+| `npm test` and `npm run test:browser` | 91 unit and 29 browser tests passed after the compact dock fix. Both real touch traces also passed three consecutive focused runs each during Stage 08.1. Browser coverage includes all 25 stars, saved effects, offline play, service worker updates, rotation, Back and reset failure recovery. |
 | `backend/gradlew -p backend --no-daemon --max-workers=4 test bootJar --rerun-tasks` | Nine tests passed, including five with real PostgreSQL through Testcontainers. `bootJar` completed. |
 | Linux amd64 production image builds and `node scripts/qnapSmoke.mjs` | Passed with pinned PostgreSQL, optional backend, same-origin pack use, offline update, prior asset retention, backup/restore and rollback. The local Docker daemon verified configured memory settings and lacks cgroup enforcement. |
 | `npm run build:android`, `./gradlew assembleDebug` and `bash scripts/verify-apk.sh kicimondo-debug.apk` | APK signature and bundled files verified. The manifest has version 8 / 0.8.1, minimum API 24, target API 36 and sensor landscape. |
@@ -82,6 +82,14 @@ Bursztynek visits four additional validated bedroom points and uses the restored
 The visual review used the running production build at 640 × 360, 844 × 390, 960 × 600, 1920 × 1200 and 1920 × 1080, and portrait at 360 × 640 and 600 × 960. The standard canvas used 63.4–65.3% of screen width. Directional targets measured about 50–55 CSS px on the phones and 64 CSS px at the larger sizes. The camera retained pixel edges and scrolled independently of the HUD. The final compact layout keeps the action button in view, places the tracing tools beside the brush board and fits the five Kicipedia entries across a short landscape viewport. Frontend CI collects representative frames in the `stage-08-1-visual-review` artifact.
 
 On a Linux amd64 AMD EPYC 9V74 cloud host, Chromium 156 headless at 640 × 360 with a 258 × 216 Canvas averaged 59.9 frames per second in the bedroom and 60.0 in the garden with three visitors. Each result uses 600 browser frame intervals during player movement and camera scrolling after a 60-frame warm-up. Median and p95 were 16.7 ms in both scenes. This measurement describes the desktop-browser run. MediaPad performance requires the physical device.
+
+### PR #9 compact landscape regression
+
+The supplied failure trace records the first matrix viewport at 640 × 360 on `ubuntu-latest`, with Playwright 1.65.1 and HeadlessChrome 159.0.8154.6 on Linux x86-64. Its final frame shows the fullscreen button on the second toolbar row and the bottom of the interaction button clipped. The trace records the user agent and visible font metrics. The resolved font family is unavailable in the trace.
+
+The original build reproduced the intersection ratio of 0.375 in Chromium 156 on Debian 13 with DejaVu Sans or DejaVu Sans Mono. DejaVu Sans produced the same button edges as the runner frame. Roughly 89, 64 and 48 px of buttons plus 9.6 px of gaps exceeded the 205.77 px dock width. The fullscreen button wrapped, taking the toolbar from 48 to 100.8 px. The flex column kept the full height of each child, including the trust and onboarding text. The 48 px interaction button ended at y=390, leaving exactly 18 px visible.
+
+The dock now uses a fixed-width icon toolbar with accessible names, a flexible section for cat trust and hints, and a reserved bottom row for the D-pad and action button. The new regression checks every touch target at 640 × 360 with a wider font. It exercises onboarding, the clothing prompt and an open gate in the ground-floor hall. The original full-visibility assertion and the same-canvas checks cover all five landscape sizes. Both tests passed five focused runs each. The 48 px action button now ends at y=352.81 in the local reproduction.
 
 ## Owner checks
 
