@@ -100,7 +100,11 @@ test.describe('direct touch in the game world', () => {
     await expect(points(page)).toHaveText('1')
 
     const full = page.getByRole('button', { name: /Pełny ekran|Powiększ grę/ })
+    // Reproduce the first post-trace tap for which Chromium omits the compatibility click.
+    await page.evaluate(() => window.addEventListener('click', (event) => event.stopImmediatePropagation(),
+      { capture: true, once: true }))
     await full.tap()
+    await expect(page.getByRole('button', { name: 'Ukryj strzałki' })).toBeVisible()
     await page.getByRole('button', { name: 'Ukryj strzałki' }).tap()
     await expect(page.getByRole('group', { name: 'Sterowanie' })).toHaveCount(0)
     await capture(page, info, 'hidden-controls')

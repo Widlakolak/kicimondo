@@ -63,6 +63,8 @@ Tap movement checks a straight segment before using an 8 px grid. It checks the 
 
 The Stage 08 build reproduced the tracing failure on a touch-emulated Chromium phone. After the finger left the guide, accepted progress stayed at sample 58 even when the finger returned and reached the finish. The attempt discarded its previous sample on the first excursion, then deferred success until pointer release. The new SVG shows the actual brush and the revealed ordered path. Both tasks require 90% coverage and a finish within their normalized 0.05 tolerance. Lifting, a short excursion and cancel retain accepted progress. The award is issued once, after the quest transaction commits.
 
+Repeated touch runs also showed Chromium delivering pointer release and sometimes omitting the next synthetic click after tracing. The HUD and dialog buttons accept a completed touch on release and suppress its duplicate click. Mouse and keyboard still use standard button activation. The Playwright regression reproduces the missing click deliberately.
+
 Bursztynek visits four additional validated bedroom points and uses the restored bowl and bed. Visitor rotation and consent use the existing rules. The save stays at schema 3/content 4. Database version 2 adds a separate generation for reset. Each reset replaces both gameplay snapshots in the same transaction. It keeps the profile and the separate pack cache, blocks stale writers and prevents recovery from the previous game. An error leaves both old snapshots intact.
 
 ## Local verification
@@ -70,7 +72,7 @@ Bursztynek visits four additional validated bedroom points and uses the restored
 | Check | Result |
 | --- | --- |
 | `npm ci --engine-strict`, `npm run lint`, `npm run typecheck`, `npm run contracts:check` and `npm run build` | Passed with Node 24.13.1 and npm 11.11.0. The service worker precaches 11 files, including the room and its styles. |
-| `npm test` and `npm run test:browser` | 91 unit and 28 browser tests passed. Browser coverage includes both actual trace gestures, all 25 stars, saved effects, offline play, service worker updates, rotation, Back and reset failure recovery. |
+| `npm test` and `npm run test:browser` | 91 unit and 28 browser tests passed. Both real touch traces also passed three consecutive focused runs each. Browser coverage includes all 25 stars, saved effects, offline play, service worker updates, rotation, Back and reset failure recovery. |
 | `backend/gradlew -p backend --no-daemon --max-workers=4 test bootJar --rerun-tasks` | Nine tests passed, including five with real PostgreSQL through Testcontainers. `bootJar` completed. |
 | Linux amd64 production image builds and `node scripts/qnapSmoke.mjs` | Passed with pinned PostgreSQL, optional backend, same-origin pack use, offline update, prior asset retention, backup/restore and rollback. The local Docker daemon verified configured memory settings and lacks cgroup enforcement. |
 | `npm run build:android`, `./gradlew assembleDebug` and `bash scripts/verify-apk.sh kicimondo-debug.apk` | APK signature and bundled files verified. The manifest has version 8 / 0.8.1, minimum API 24, target API 36 and sensor landscape. |

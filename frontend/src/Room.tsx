@@ -1,4 +1,4 @@
-import { useEffect, useEffectEvent, useRef, useState, type RefObject } from 'react'
+import { useEffect, useEffectEvent, useRef, useState, type ComponentPropsWithoutRef, type RefObject } from 'react'
 import type { Guidance } from './App'
 import type { SaveReceipt } from './storage/saveRepository'
 import { Kicipedia } from './Kicipedia'
@@ -48,6 +48,41 @@ function DirectionButton({ direction, input }: { direction: Direction; input: Ro
       onBlur={() => input.release(buttonKey)}
     >{arrows[direction]}</button>
   )
+}
+
+function GameButton({ onActivate, ...props }: ComponentPropsWithoutRef<'button'> & {
+  onActivate: (button: HTMLButtonElement) => void
+}) {
+  const press = useRef<{ id: number; x: number; y: number } | null>(null)
+  const handledTouch = useRef(false)
+
+  return <button {...props} type="button"
+    onPointerDown={(event) => {
+      if (!event.isPrimary) return
+      handledTouch.current = false
+      press.current = event.pointerType === 'touch' && event.button === 0
+        ? { id: event.pointerId, x: event.clientX, y: event.clientY } : null
+    }}
+    onPointerCancel={(event) => {
+      if (press.current?.id === event.pointerId) press.current = null
+    }}
+    onPointerUp={(event) => {
+      const tap = press.current
+      if (tap?.id !== event.pointerId) return
+      press.current = null
+      const button = event.currentTarget
+      if (button.disabled || Math.hypot(tap.x - event.clientX, tap.y - event.clientY) > 10 ||
+          !button.contains(document.elementFromPoint(event.clientX, event.clientY))) return
+      // Chromium can omit the synthesized click after a captured drawing gesture.
+      handledTouch.current = true
+      onActivate(button)
+    }}
+    onClick={(event) => {
+      const alreadyActivated = handledTouch.current && event.detail > 0
+      handledTouch.current = false
+      if (!alreadyActivated) onActivate(event.currentTarget)
+    }}
+  />
 }
 
 function RotateDevice() {
@@ -131,7 +166,6 @@ export default function Room({ save, commit, busy, notice, educationalPack, guid
   const modalHeading = useRef<HTMLHeadingElement>(null)
   const dialog = useRef<HTMLDialogElement>(null)
   const previousFocus = useRef<HTMLElement | null>(null)
-  const dismissTap = useRef<{ id: number; x: number; y: number } | null>(null)
   const engine = useRef<ReturnType<typeof createRoom> | null>(null)
   const [input] = useState(() => new RoomInput())
   const [target, setTarget] = useState<{ id: InteractionId | null; cue: CatCue | null }>({ id: null, cue: null })
@@ -157,7 +191,6 @@ export default function Room({ save, commit, busy, notice, educationalPack, guid
   function closeOverlay() {
     const overlay = dialog.current
     if (busy || !overlay?.open) return
-    dismissTap.current = null
     if (open?.type === 'kicipedia') {
       if (open.selected) {
         setOpen({ ...open, selected: null })
@@ -388,16 +421,16 @@ export default function Room({ save, commit, busy, notice, educationalPack, guid
             </span>
           </div>
           <div className="room-actions">
-            <button type="button" className="secondary" disabled={busy}
-              onClick={(event) => openKicipedia(event.currentTarget)}>{pl.kicipedia.title}</button>
-            <button type="button" className="secondary" disabled={busy} onClick={(event) => openPause(event.currentTarget)}>{pl.pause.title}</button>
-            <button type="button" className="secondary game-icon"
+            <GameButton className="secondary" disabled={busy}
+              onActivate={openKicipedia}>{pl.kicipedia.title}</GameButton>
+            <GameButton className="secondary" disabled={busy} onActivate={openPause}>{pl.pause.title}</GameButton>
+            <GameButton className="secondary game-icon"
               aria-label={expanded ? (fullscreen ? pl.play.exitFullscreen : pl.play.collapse) :
                 document.fullscreenEnabled ? pl.play.fullscreen : pl.play.expand}
-              onClick={() => { void toggleFullscreen() }}><ViewIcon expanded={expanded} /></button>
-            {expanded && <button type="button" className="secondary game-icon" aria-pressed={controls}
+              onActivate={() => { void toggleFullscreen() }}><ViewIcon expanded={expanded} /></GameButton>
+            {expanded && <GameButton className="secondary game-icon" aria-pressed={controls}
               aria-label={controls ? pl.play.hideControls : pl.play.showControls}
-              onClick={() => { input.clear(); setControls(!controls) }}><ViewIcon controls /></button>}
+              onActivate={() => { input.clear(); setControls(!controls) }}><ViewIcon controls /></GameButton>}
           </div>
           <p className="task-count">{pl.play.tasks} <b>{world.quests.length}</b></p>
         </header>
@@ -475,29 +508,10 @@ export default function Room({ save, commit, busy, notice, educationalPack, guid
           {notice && <p className="notice" role="status">{notice}</p>}
         </>}
         <div className="dialog-footer">
-          <button type="button" className="primary" disabled={busy}
-            onClick={closeOverlay}
-            onPointerDown={(event) => {
-              if (event.pointerType === 'touch' && event.isPrimary) {
-                dismissTap.current = { id: event.pointerId, x: event.clientX, y: event.clientY }
-              }
-            }}
-            onPointerCancel={(event) => {
-              if (dismissTap.current?.id === event.pointerId) dismissTap.current = null
-            }}
-            onPointerUp={(event) => {
-              const tap = dismissTap.current
-              if (tap?.id !== event.pointerId) return
-              dismissTap.current = null
-              // A drawing gesture can suppress the next synthesized click on touch browsers.
-              if (Math.hypot(tap.x - event.clientX, tap.y - event.clientY) <= 10 &&
-                  event.currentTarget.contains(document.elementFromPoint(event.clientX, event.clientY))) {
-                closeOverlay()
-              }
-            }}>
+          <GameButton className="primary" disabled={busy} onActivate={closeOverlay}>
             {busy ? pl.saving : open?.type === 'quest' ? pl.cancel : open?.type === 'pause' ? pl.pause.resume :
               open?.type === 'kicipedia' && open.selected ? pl.kicipedia.back : pl.close}
-          </button>
+          </GameButton>
         </div>
       </dialog>
     </section>
