@@ -72,4 +72,8 @@ The academy is a location and a separate development loop. The player helps cat 
 
 ## Visual direction
 
-Original cozy pixel art, top-down 4-direction movement, 16 px tiles as a starting point, a 320 × 240 logical world viewport, nearest-neighbour scaling. Keep educational UI readable at device resolution rather than forcing tiny pixel fonts. Landscape is the first gameplay layout; allow a usable portrait layout or clear rotation guidance without losing a session. No copied maps, sprites or battle screens. Use licensed or original temporary art first.
+Original cozy pixel art uses 16 px world tiles and nearest-neighbour scaling. Play in landscape with a following camera. Smaller landscape frames crop the world to keep sprites legible. Portrait shows a rotation cue and pauses the current activity until the screen returns to landscape. Draw HUD and dialogue text at screen resolution with legible sans-serif type.
+
+The first-minute cues take a new player from choosing a character to tapping the floor, following a gold star and exploring the unlocked landing. A new player can skip the cues. Floor taps route around obstacles. Distant object taps approach the correct furniture, then a second tap opens its activity. Players can also use the direction pad or keyboard. The regular view puts controls beside the game frame. Fullscreen floats the HUD and lets the player hide the controls.
+
+Unfinished activities have gold stars and outlines. Off-screen arrows point toward a remaining task or a reachable exit to a room with tasks. Completed tasks lose their markers. The child sees **Gwiazdki samodzielności** and a star counter. The first success that crosses each threshold names the newly open area.

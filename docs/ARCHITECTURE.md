@@ -1,6 +1,6 @@
 # Architecture
 
-Stage 07 adds optional math content to the web and Android game.
+Stage 08.1 adds a landscape game shell, adaptive camera, direct world input and a transactional new-game command to the web and Android game.
 
 ## Stack and boundaries
 
@@ -11,6 +11,10 @@ Phaser scenes own map rendering, animations, input and collisions. React renders
 The content backend is a modular monolith. Its content feature separates the read-only API, transactional publication and queries, domain validation and math generation, and JPA persistence. Flyway owns the PostgreSQL schema, and Hibernate validates it. The database stores one immutable row per pack ID and version. The API sends metadata and the exact normalized JSON bytes without exposing persistence entities.
 
 One Phaser scene loads the current location from the Tiled map registry and resolves movement against map rectangles with pure TypeScript rules. The scene reports eligible interaction anchors through the room bridge. React selects a quest view by its challenge type and presents tracing, maths, matching, sequencing or category sorting. The quest, transition and dialogue definitions connect stable anchor IDs to challenge data, prop effects, destination spawns and contextual hints. Once a quest is committed, the existing scene redraws props and updates its active anchors. A location transition starts the same scene at the destination spawn. The cat population owns independent state machines keyed by stable IDs. Restored tags enable visitors and an active-time queue admits up to three. Each visitor claims an activity spot before walking and keeps it until returning to its greeting spot. The build validates direct routes and the simulation falls back to the cat's resting point when its preferred spots are taken. The scene draws frames and sends encounter and accepted greeting events through the bridge. React receives nearby cue changes and saved discoveries. Cat simulation pauses during modal overlays, backgrounding and hidden pages.
+
+The Phaser canvas uses up to 480 × 216 logical pixels at device-pixel ratio 1. The initial fullscreen reference is 384 × 216 at 16:9. The scale floor is 1.35 CSS pixels per logical pixel. The camera follows past a dead zone of up to 24 world pixels on each axis, interpolates over a 65 ms time constant and rounds scroll to pixels. Reduced motion applies the target immediately. The camera clamps large worlds and centres any axis with room to spare. Resize and fullscreen change the visible bounds of the existing scene. The nine shipped maps retain their 320 × 240 geometry. The Tiled reader accepts finite orthogonal maps of other dimensions with 16 px tiles and at most 4,096 tiles.
+
+Screen-space overlays remain in React. A pointer tap maps from client coordinates into the current canvas viewport, adds camera scroll and checks world-space furniture and interaction radii. Routing tries a straight segment, then searches an eight-neighbour grid of 8 px cells and simplifies the result. Each candidate segment checks the full foot rectangle against solids, including obstacle corners. Held manual input and pause/lifecycle events invalidate the route. The scene draws quest and door markers. A search across open transitions chooses an exit when the room has no remaining tasks. The resident cat cycles through validated roaming destinations, using restored spots when available.
 
 ## Repository layout
 
@@ -32,9 +36,11 @@ The client is authoritative for single-player state. The game stores one local p
 
 Each command reads the current record inside an IndexedDB read-write transaction. The client queues passive encounters alongside interaction commands without disabling movement. Concurrent tabs read the latest record inside the transaction. Quest completion adds its ID, unique reward, world effects and any associated restoration trust in the same transaction. The first accepted pet interaction adds its own trust event. The restored prop ledger also stores organization effects. Each resident attraction and each newly eligible visitor habitat has its own trust event. Trust is derived from unique event IDs and persists independently of PS. Lifetime PS comes from the ledger. Door access uses the resulting point total. The previous valid snapshot is retained in the same transaction. A malformed record can be recovered from that snapshot. Unsupported versions and records with no recoverable snapshot are preserved for a compatible reader. If a write fails, the UI warns that later changes last only for the current session.
 
+The IndexedDB database is version 2. Gameplay records still use schema 3 and content version 4. The adult reset writes a fresh bedroom record to both snapshots and increments a separate generation in one transaction. The transaction preserves the current profile and requires the expected generation. Open tabs on the same version reload after detecting a stale command. Older code requesting database version 1 receives a version error after the upgrade. Legacy profile import applies only before the first reset. Reset failure keeps the old data and reports an error. Only a committed unique quest award plays the reward animation, with the old point total read from the same transaction.
+
 The production web build generates a manifest and a versioned service worker. The worker verifies integrity and precaches every emitted application file, including lazy chunks, before it can control a page. The old version continues serving its own cache while windows are open. A waiting worker activates after those windows close, then cleans up older caches within the scope. The menu shows update instructions; the app does not reload itself. IndexedDB stays independent of caches.
 
-The Android build uses a separate output without a manifest or worker. Capacitor serves bundled content under `https://localhost`; retain that origin and the application ID for IndexedDB. Browser and APK data are separate. Capacitor App forwards Back and foreground state; the existing room bridge cancels an unfinished exercise, toggles pause, and suspends the renderer while backgrounded. Completed transactions survive normal restarts. Physical Android persistence and signing upgrades have their own acceptance checks. Backup/export/import remains deferred.
+The Android build uses a separate output without a web manifest or worker. Capacitor serves bundled content under `https://localhost`. The application ID and origin stay stable for IndexedDB. Browser and APK data are separate. Capacitor App forwards Back and foreground state. The activity uses sensor-landscape orientation. The room bridge handles Back, pauses the world during dialogs and suspends rendering while backgrounded. Completed transactions survive normal restarts. Physical Android persistence and signing upgrades have their own acceptance checks. Save export/import remains deferred.
 
 ## Content and optional server
 
@@ -56,7 +62,7 @@ An explicit main-branch workflow tests the checkout, promotes the exact tested i
 
 ## Performance
 
-Render and simulate cats locally. Use grid collision and bounded NPC updates; initially fixed routes or adjacent walkable tiles are enough. Introduce A* only for obstacle-aware movement when needed. Pause world input and movement during a modal exercise and when the app backgrounds. Cap asset sizes and avoid remote dependencies. Measure on a modest Android device and the actual QNAP; no fixed capacity claim before measurements.
+Render and simulate cats locally. Player path search runs only on a destination tap. Cats reuse bounded, validated routes. React receives interaction cues, position-independent HUD updates and committed changes. The Canvas renderer uses nearest-neighbour scaling and a low logical resolution. See the stage notes for desktop browser observations and pending device checks.
 
 ## Decisions
 

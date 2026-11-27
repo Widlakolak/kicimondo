@@ -4,9 +4,11 @@ Design requirements, not a published legal privacy notice.
 
 Kicimondo is intended for children. The default game is local and account-free. Use an avatar nickname only; do not require real names, date of birth, school, location, contacts, camera or microphone. Do not add ads, tracking SDKs, third-party analytics, chat, public profiles, social login or behavioural advertising. No external fonts or asset requests during offline play.
 
-Keep local progress on the device. Provide parent-controlled export, import and reset with clear confirmation. Do not log nicknames, raw tracing strokes or detailed educational attempts to the server. Parent reports are supportive, not diagnostic.
+Local progress stays on the device. The adult menu requires two confirmations to restart, and the same transaction replaces the current save and its recovery copy. The reset keeps the avatar and nickname, device settings and downloaded educational pack. Tracing strokes stay in memory for the exercise. Save export and import remain deferred.
 
 The content update menu requests only the configured pack ID, game content version and locale. Downloads send no game nickname, progress, challenge answers, trust or discoveries. The optional pack cache is separate from the gameplay save.
+
+The adult Android download link opens GitHub only when selected. GitHub may ask the adult to sign in. No game data is included in the link.
 
 A hosted website and its infrastructure may still process technical request data (IP addresses, server logs, Cloudflare traffic). Review actual logging, retention, access control, providers and legal responsibilities before public hosting. Do not claim that no data is collected until the real implementation and infrastructure have been audited.
 

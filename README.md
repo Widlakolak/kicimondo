@@ -4,19 +4,19 @@ Kicimondo is a 2D adventure game for children in the first years of primary scho
 
 ## Status
 
-Meet Bursztynek, the resident cat. Put away the clothes by tracing, fill the water bowl with counting and arithmetic, and prepare the cat bed by matching Polish words to pictures. The cat uses the restored spots and shows when it is ready for petting. The first independence point (PS) opens the door to the upstairs landing.
+Play in landscape with a camera that follows your character. Tap the floor to walk, and tap a nearby marked object to try its activity. Fullscreen has optional on-screen arrows. The short introduction shows new players where to start.
 
-Visit the study, bathroom and playroom upstairs. At 8 PS the stairs open to the hall, kitchen and living room. The house has 17 one-point activities, including matching, arithmetic, ordering and sorting. Ciocia Hania gives short hints on the landing.
+Meet Bursztynek, the resident cat. Reveal a path to put away the clothes, count drops for the water bowl and match words to pictures to prepare the cat bed. Bursztynek roams, uses restored spots and shows when he is ready for petting. The first independence star opens the upstairs landing.
 
-At 16 PS the hall opens to the garden. Eight activities restore fixed cat attractions and bring the total to 25 PS. Four visiting cats can appear when their preferred attractions are ready. Approach a cat to reveal its Kicipedia entry.
+At eight stars the stairs open to the ground floor. At 16 stars the hall opens to the garden. The house and garden offer 25 stars in total. Four visiting cats can appear when their preferred attractions are ready. Approach a cat to reveal its Kicipedia entry.
 
-The browser stores the profile, quest progress, location, discoveries and trust in IndexedDB. Earlier saves carry over on the same origin and browser profile.
+The browser stores the profile, quest progress, location, discoveries and trust in IndexedDB. Earlier saves carry over on the same origin and browser profile. The adult menu offers a two-step restart that keeps the avatar, nickname and downloaded educational pack.
 
 The production web build is installable on supported browsers and plays offline after “Gra gotowa do działania bez internetu” appears. The Android debug build bundles the game for a first launch in airplane mode. Android and browser saves are separate. MediaPad T5 device acceptance is pending. See the [installation and upgrade guide](docs/DEPLOYMENT.md#android).
 
 The optional Java content service publishes compatible math variants. With an API configured, an adult can download a pack from the main menu and use it offline after restart. The bundled game and its save work with no configured backend. See the [local content service guide](docs/DEPLOYMENT.md#local-content-service).
 
-The family web deployment has a production Nginx image and a QNAP Compose template for the game with or without the content service. Both images are built on Linux amd64. The initial release workflow and physical NAS verification await owner review. See the [QNAP deployment guide](docs/DEPLOYMENT.md#qnap-family-web-release).
+The owner confirmed that the Stage 08 family site works over HTTPS on QNAP. NAS content import and backup/restore checks are pending. The Stage 08.1 changes are prepared for review. See the [QNAP deployment guide](docs/DEPLOYMENT.md#qnap-family-web-release).
 
 ## Getting started
 
@@ -28,7 +28,7 @@ npm ci --engine-strict
 npm run dev
 ```
 
-Open the local address printed by Vite. Move with arrows, WASD, or the on-screen controls. Press E or **Sprawdź** when the interaction prompt appears.
+Open the local address printed by Vite. Tap or click the floor to walk. Tap a quest object again after approaching it. You can also move with arrows, WASD or the on-screen controls and interact with E or **Sprawdź**.
 
 ## Checks
 
@@ -67,6 +67,7 @@ The browser suite serves the production build. On Linux, use `npx playwright ins
 - [Stage 06](docs/stages/06-garden-kicipedia.md)
 - [Stage 07](docs/stages/07-java-content-backend.md)
 - [Stage 08](docs/stages/08-qnap-family-release.md)
+- [Stage 08.1](docs/stages/08-1-kids-ux.md)
 - [Codex task prompt](docs/CODEX.md)
 
 The game uses Polish text. Code and technical documentation are in English. Names other than Kicimondo and Kicipedia are provisional. No open-source license has been selected.

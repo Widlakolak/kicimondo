@@ -13,7 +13,7 @@ Stage 04 and Stage 05 are merged with green CI. Stage 05 owner gameplay review a
 | 06 | [Garden, visiting cats and Kicipedia](stages/06-garden-kicipedia.md) | Garden at 16 PS, eight restorations, four visitors and 25 total PS. Owner review pending. |
 | 07 | [Java content backend](stages/07-java-content-backend.md) | Read-only REST, immutable math packs, operator import, offline client cache and PostgreSQL integration tests. Owner review pending. |
 | 08 | [Family web release on QNAP](stages/08-qnap-family-release.md) | Isolated Compose, read-only content routing, offline update, backup/restore and rollback tested locally. GHCR published, NAS healthy and HTTPS confirmed by owner. Further owner checks pending. |
-| 08.1 | [Kids UX and playtest fixes](stages/08-1-kids-ux.md) | Child-first layout, direct touch movement, visible quests, tracing, roaming, reset and install controls. |
+| 08.1 | [Kids UX and playtest fixes](stages/08-1-kids-ux.md) | Landscape camera, direct touch movement, visible quests, scratch tracing, cat roaming, reset and installation. Owner gameplay and physical device acceptance pending. |
 | 09 | Basement workshop | Reach 32 PS, simple recipes and fixed upgrade slots; enough accessible tasks |
 | 10 | Educational refinement | Skill-based difficulty, reviewed Polish pools, local parent reports and export |
 | 11 | Forest | Reach 64 PS with sufficient pre-forest content, stories and nature challenges |
