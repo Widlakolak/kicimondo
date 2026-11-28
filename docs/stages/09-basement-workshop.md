@@ -104,6 +104,17 @@ World content version 5 uses the existing schema 3 and IndexedDB generation. Mig
 - Update README, roadmap, GAME_DESIGN, CONTENT, ARCHITECTURE, EDUCATION, TESTING, DEPLOYMENT, ASSET_LICENSES and stage notes where affected. English code/docs, Polish child-facing UI and Polish implementation report. List implemented quest IDs, gate proof, recipes, maps, migration, artifact links and owner checklist.
 - Out of scope: forest, village, academy, free building/drag placement, economy, shopping, multiplayer, accounts, remote saves, ads, analytics, narration, new external services, public signed APK distribution, changes to QNAP or Cloudflare. Do not merge, publish images or deploy. Stop for owner review.
 
+## Verification
+
+Local verification started from main commit `d532613`, which includes PR #9. The baseline passed 91 unit and 29 browser tests.
+
+- Node.js 24.13.1 and npm 11.11.0 passed strict installation, lint, TypeScript, 97 unit tests, `npm run contracts:check` and the production build. The v4 compatibility manifest is byte-for-byte unchanged.
+- `npm run test:browser -- --workers=3 --reporter=list,html` passed all 30 tests in Chromium 156. One test played the complete 50-star route offline in 4.3 minutes, including all six recipes, touch tracing, Iskierka's discovery and trust, and reload at 50 stars.
+- Visual review checked 640 × 360, 844 × 390, 960 × 600, 1920 × 1200 and 1920 × 1080, plus portrait pause and direct interaction in fullscreen with hidden arrows. Frontend CI stores the captured scenes as `stage-09-visual-review`.
+- Desktop Chromium 80.0.3987.0 reloaded offline from the service worker cache, completed the clothes trace and persisted the new sock-pattern reward. The API 26 emulator booted, then ADB timed out before installation.
+- `backend/gradlew -p backend --no-daemon --max-workers=4 test bootJar --rerun-tasks` passed all nine tests, including PostgreSQL through Testcontainers. Local amd64 image builds and `node scripts/qnapSmoke.mjs` passed the demo pack, offline update, restore and rollback checks. The local daemon checked configured memory limits. Kernel enforcement requires a cgroup-capable runner.
+- `npm run build:android`, `./gradlew assembleDebug` in `frontend/android` and `scripts/verify-apk.sh` produced and checked the universal debug APK. Its manifest reports `io.github.widlakolak.kicimondo`, version 0.9.0, versionCode 9, minimum API 24 and target API 36.
+
 ## Owner acceptance
 
 - Open the game with a saved Stage 08.1 profile. Check the nickname, avatar, location, stars, discoveries and trust. With a downloaded math pack selected, disconnect and open one of its existing exercises.
