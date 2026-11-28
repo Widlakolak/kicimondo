@@ -1,0 +1,87 @@
+{
+  "type": "map",
+  "version": "1.10",
+  "tiledversion": "1.11.0",
+  "orientation": "orthogonal",
+  "renderorder": "right-down",
+  "infinite": false,
+  "width": 26,
+  "height": 16,
+  "tilewidth": 16,
+  "tileheight": 16,
+  "nextlayerid": 5,
+  "nextobjectid": 23,
+  "tilesets": [],
+  "layers": [
+    {
+      "id": 1,
+      "name": "Furniture",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {"id": 1, "name": "basement-return", "x": 181, "y": 220, "width": 54, "height": 19, "properties": [{"name": "art", "type": "string", "value": "basement-stair"}]},
+        {"id": 2, "name": "storage-door", "x": 48, "y": 8, "width": 32, "height": 24, "properties": [{"name": "art", "type": "string", "value": "door"}]},
+        {"id": 3, "name": "workshop-door", "x": 336, "y": 8, "width": 32, "height": 24, "properties": [{"name": "art", "type": "string", "value": "door"}]},
+        {"id": 4, "name": "cardboard-crate", "x": 111, "y": 48, "width": 60, "height": 29, "properties": [{"name": "art", "type": "string", "value": "cardboard-crate"}, {"name": "solid", "type": "bool", "value": true}]},
+        {"id": 5, "name": "felt-basket", "x": 212, "y": 49, "width": 54, "height": 29, "properties": [{"name": "art", "type": "string", "value": "felt-basket"}, {"name": "solid", "type": "bool", "value": true}]},
+        {"id": 6, "name": "fabric-drawers", "x": 44, "y": 159, "width": 56, "height": 38, "properties": [{"name": "art", "type": "string", "value": "fabric-drawers"}, {"name": "solid", "type": "bool", "value": true}]},
+        {"id": 7, "name": "route-basket", "x": 316, "y": 165, "width": 60, "height": 32, "properties": [{"name": "art", "type": "string", "value": "route-basket"}, {"name": "solid", "type": "bool", "value": true}]},
+        {"id": 8, "name": "corridor-plant", "x": 25, "y": 58, "width": 20, "height": 26, "properties": [{"name": "art", "type": "string", "value": "plant"}]}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Collisions",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {"id": 9, "name": "north-wall", "x": 0, "y": 0, "width": 416, "height": 32},
+        {"id": 10, "name": "south-wall", "x": 0, "y": 240, "width": 416, "height": 16},
+        {"id": 11, "name": "west-wall", "x": 0, "y": 32, "width": 16, "height": 208},
+        {"id": 12, "name": "east-wall", "x": 400, "y": 32, "width": 16, "height": 208}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Interactions",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {"id": 13, "name": "basement-return", "x": 208, "y": 206, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 14, "name": "storage-door", "x": 64, "y": 43, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 15, "name": "workshop-door", "x": 352, "y": 43, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 16, "name": "cardboard-crate", "x": 141, "y": 91, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 17, "name": "felt-basket", "x": 239, "y": 92, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 18, "name": "fabric-drawers", "x": 72, "y": 143, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 19, "name": "route-basket", "x": 346, "y": 149, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]}
+      ]
+    },
+    {
+      "id": 4,
+      "name": "SpawnPoints",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {"id": 20, "name": "from-hall", "x": 208, "y": 179, "width": 0, "height": 0, "point": true},
+        {"id": 21, "name": "from-storage", "x": 64, "y": 69, "width": 0, "height": 0, "point": true},
+        {"id": 22, "name": "from-workshop", "x": 352, "y": 69, "width": 0, "height": 0, "point": true}
+      ]
+    }
+  ]
+}

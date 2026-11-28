@@ -16,7 +16,7 @@ test('cat gives consent, pauses safely and records only its first accepted greet
   await page.goto('/')
   await enterRoom(page)
   await expect(stage(page)).toHaveAttribute('data-cat-activity', 'idle')
-  await holdKey(page, 'd', () => reach(page, 'x', 122, 1))
+  await holdKey(page, 'd', () => reach(page, 'x', 132, 1))
   await holdKey(page, 's', () => reach(page, 'y', 186, 1))
   await expect(page.getByText('Bursztynek jest gotowy', { exact: false })).toBeVisible()
   await interact(page).click()
@@ -128,7 +128,7 @@ test('migrates a Stage 02 landing save, restores both attractions, and preserves
   await expect(trust(page, 2)).toBeVisible()
   const save = await saveRecord(page)
   expect(save).toMatchObject({
-    schemaVersion: 3, contentVersion: 4, profile: { nickname, avatar: 'girl' },
+    schemaVersion: 3, contentVersion: 5, profile: { nickname, avatar: 'girl' },
     completed: ['bedroom-clean-clothes', 'bedroom-fill-water-bowl', 'bedroom-prepare-cat-bed'],
     hidden: [{ location: 'bedroom', object: 'scattered-clothes' }],
     restored: [{ location: 'bedroom', object: 'water-bowl' }, { location: 'bedroom', object: 'cat-bed' }],

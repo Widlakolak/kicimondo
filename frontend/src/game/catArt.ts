@@ -33,6 +33,11 @@ export function paintCat(paint: Paint, { activity, facing }: CatPose, frame: num
   } else if (shape === 'patched') {
     rect(stripe, -7, -8, 5, 4)
     rect(stripe, -4, -7, 3, 3)
+  } else if (shape === 'spark') {
+    rect(cream, -16, -13 + beat, 4, 5)
+    rect(stripe, -6, -8, 6, 5)
+    rect(cream, -5, -7, 4, 3)
+    rect(cream, -4, -8, 2, 5)
   } else if (shape === 'fluffy') {
     rect(coat, -16, -12 + beat, 7, 6)
     rect(cream, -10, -7, 3, 5)
@@ -52,6 +57,7 @@ export function paintCat(paint: Paint, { activity, facing }: CatPose, frame: num
   rect(stripe, 2, head - 3, 3, 4)
   rect(stripe, 8, head - (shape === 'slender' ? 5 : 3) + Number(receptive && beat === 1), 3, 4)
   if (shape === 'patched') rect(stripe, 8, head + 1, 3, 4)
+  if (shape === 'spark') rect(cream, 5, head + 1, 2, 3)
   if (shape === 'bright') rect(cream, 6, head + 1, 2, 4)
   rect(cream, 7, head + 5, 6, 3)
   rect(ink, 8, head + 3, 2, lying || blink ? 1 : 2)

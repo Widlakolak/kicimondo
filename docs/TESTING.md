@@ -28,4 +28,6 @@ Review the running build at 640 × 360 and 844 × 390 on phones, 960 × 600 and 
 
 Use the stage-specific checklist. Label owner acceptance separately from code completion and CI results.
 
-Set `KICIMONDO_VISUAL_REVIEW=1` when running Playwright to save representative screenshots in `frontend/test-results`. Frontend CI uploads them as `stage-08-1-visual-review` and keeps the failure report and traces in `playwright-failure`.
+`e2e/workshop.spec.ts` plays all 50 quests offline from a fresh profile. It checks the 31/32-star boundary, return paths, kit guidance, touch traces, scenery and trust after reload, and movement with fullscreen controls hidden. The pack integration suite tests a version 4 gameplay save with an active version 4 educational pack while offline. The backend integration and production Compose suites still check the same published pack and byte checksum.
+
+Set `KICIMONDO_VISUAL_REVIEW=1` when running Playwright to save screenshots in `frontend/test-results`. Frontend CI uploads `stage-08-1-visual-review` and `stage-09-visual-review`. A failing run retains the report and traces in `playwright-failure`.

@@ -15,13 +15,20 @@ function CatPortrait({ cat, known }: { cat: CatDefinition; known: boolean }) {
     paintCat((colour, x, y, width, height) => {
       context.fillStyle = known ? '#' + colour.toString(16).padStart(6, '0') : '#827782'
       context.fillRect(x + 18, y + 22, width, height)
-    }, { activity: 'idle', facing: 1 }, 0, known ? cat.appearance : cats[0].appearance)
+    }, { activity: 'idle', facing: 1 }, 0, cat.appearance)
   }, [cat, known])
   return <canvas className="cat-portrait" width={36} height={26} aria-hidden="true" ref={canvas} />
 }
 
-const placesFor = (cat: CatDefinition) => cat.requires?.map((tag) => pl.attractions[tag]).join(' i ')
-  ?? collection.profiles.amber.favourite
+function placesFor(cat: CatDefinition) {
+  const profile = collection.profiles[cat.id]
+  return 'favourite' in profile ? profile.favourite : cat.attractions.map(({ tag }) => pl.attractions[tag]).join(' i ')
+}
+
+function habitatHint(cat: CatDefinition) {
+  const profile = collection.profiles[cat.id]
+  return 'habitat' in profile ? profile.habitat : placesFor(cat)
+}
 
 export function Kicipedia({ save, selected, select }: {
   save: Save
@@ -50,8 +57,7 @@ export function Kicipedia({ save, selected, select }: {
         return <li key={cat.id}>
           <CatPortrait cat={cat} known={known} />
           {known ? <button type="button" className="secondary" onClick={() => select(cat.id)}>{pl.cat.names[cat.id]}</button>
-            : <><strong>{collection.unknown}</strong><p>{collection.hint(cat.requires
-              ? placesFor(cat) : collection.profiles.amber.habitat)}</p></>}
+            : <><strong>{collection.unknown}</strong><p>{collection.hint(habitatHint(cat))}</p></>}
         </li>
       })}
     </ul>

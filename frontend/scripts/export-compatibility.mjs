@@ -1,12 +1,11 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { argv } from 'node:process'
 import { URL } from 'node:url'
-import { challenges, contentVersion } from '../src/content/pack.ts'
+import { downloadableMath, educationalCompatibilityVersion } from '../src/content/remote/compatibility.ts'
 
 const manifest = {
-  gameContentVersion: contentVersion,
-  math: Object.fromEntries(Object.entries(challenges)
-    .filter(([, challenge]) => challenge.type === 'MATH_CHOICE')
+  gameContentVersion: educationalCompatibilityVersion,
+  math: Object.fromEntries(Object.entries(downloadableMath)
     .sort(([a], [b]) => a.localeCompare(b, 'en'))
     .map(([id, { maximum, operations }]) => [id, { maximum, operations }])),
 }

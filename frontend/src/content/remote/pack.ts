@@ -1,5 +1,6 @@
 import { mathQuestions } from '../../core/education'
-import { challenges, contentVersion, type Challenge } from '../pack'
+import { challenges, type Challenge } from '../pack'
+import { downloadableMath, educationalCompatibilityVersion, isDownloadableMath } from './compatibility'
 
 export const maxPackBytes = 16_384
 export const packIdPattern = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/
@@ -37,7 +38,7 @@ function exactFields(value: unknown, fields: string[]): value is Record<string, 
 export function decodePack(value: unknown): EducationalPack {
   if (!exactFields(value, ['schemaVersion', 'packId', 'version', 'gameContentVersion', 'locale', 'variants']) ||
       value.schemaVersion !== 1 || !identifier(value.packId) || !integer(value.version, 1) ||
-      value.gameContentVersion !== contentVersion || value.locale !== 'pl' ||
+      value.gameContentVersion !== educationalCompatibilityVersion || value.locale !== 'pl' ||
       !Array.isArray(value.variants) || value.variants.length < 1 || value.variants.length > 32) {
     throw new Error('Invalid educational pack')
   }
@@ -47,8 +48,8 @@ export function decodePack(value: unknown): EducationalPack {
         !identifier(variant.challengeId) || !integer(variant.seed, 0, 0xffffffff) || ids.has(variant.id)) {
       throw new Error('Invalid educational variant')
     }
-    const bundled: Challenge | undefined = (challenges as Record<string, Challenge>)[variant.challengeId]
-    if (bundled?.type !== 'MATH_CHOICE') throw new Error('Unknown math challenge')
+    if (!isDownloadableMath(variant.challengeId)) throw new Error('Unknown downloadable math challenge')
+    const bundled = downloadableMath[variant.challengeId]
     const { maximum } = bundled
     if (mathQuestions({ ...bundled, seed: variant.seed }).some(({ left, right, answer, options }) =>
       !integer(left, 0, maximum) || !integer(right, 0, maximum) || !integer(answer, 0, maximum) ||
@@ -59,7 +60,7 @@ export function decodePack(value: unknown): EducationalPack {
     ids.add(variant.id)
     return { id: variant.id, challengeId: variant.challengeId, seed: variant.seed }
   })
-  return { schemaVersion: 1, packId: value.packId, version: value.version, gameContentVersion: contentVersion, locale: 'pl', variants }
+  return { schemaVersion: 1, packId: value.packId, version: value.version, gameContentVersion: educationalCompatibilityVersion, locale: 'pl', variants }
 }
 
 export async function verifyPack(bytes: Uint8Array<ArrayBuffer>, sha256: string): Promise<VerifiedPack> {
@@ -76,7 +77,7 @@ export async function verifyPack(bytes: Uint8Array<ArrayBuffer>, sha256: string)
 export function challengeAttempt(challengeId: keyof typeof challenges, pack: EducationalPack | null,
   pick = Math.random): Challenge {
   const challenge = challenges[challengeId]
-  if (challenge.type !== 'MATH_CHOICE' || !pack) return challenge
+  if (challenge.type !== 'MATH_CHOICE' || !isDownloadableMath(challengeId) || !pack) return challenge
   const variants = pack.variants.filter((variant) => variant.challengeId === challengeId)
   if (!variants.length) return challenge
   return { ...challenge, seed: variants[Math.floor(pick() * variants.length)].seed }

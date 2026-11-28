@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 5,
-  "nextobjectid": 20,
+  "nextobjectid": 22,
   "tilesets": [],
   "layers": [
     {
@@ -29,7 +29,8 @@
         {"id": 4, "name": "closed-door", "x": 144, "y": 8, "width": 32, "height": 24, "properties": [{"name": "art", "type": "string", "value": "door"}]},
         {"id": 5, "name": "scattered-clothes", "x": 174, "y": 144, "width": 25, "height": 18, "properties": [{"name": "art", "type": "string", "value": "clothes"}]},
         {"id": 15, "name": "water-bowl", "x": 199, "y": 192, "width": 22, "height": 12, "properties": [{"name": "art", "type": "string", "value": "bowl"}]},
-        {"id": 16, "name": "cat-bed", "x": 240, "y": 177, "width": 41, "height": 25, "properties": [{"name": "art", "type": "string", "value": "cat-bed"}]}
+        {"id": 16, "name": "cat-bed", "x": 240, "y": 177, "width": 41, "height": 25, "properties": [{"name": "art", "type": "string", "value": "cat-bed"}]},
+        {"id": 20, "name": "sock-tray", "x": 35, "y": 192, "width": 36, "height": 17, "properties": [{"name": "art", "type": "string", "value": "sock-tray"}]}
       ]
     },
     {
@@ -62,7 +63,8 @@
         {"id": 12, "name": "scattered-clothes", "x": 186, "y": 154, "point": true, "width": 0, "height": 0, "properties": [{"name": "radius", "type": "int", "value": 23}]},
         {"id": 17, "name": "water-bowl", "x": 210, "y": 199, "point": true, "width": 0, "height": 0, "properties": [{"name": "radius", "type": "int", "value": 21}]},
         {"id": 18, "name": "cat-bed", "x": 258, "y": 190, "point": true, "width": 0, "height": 0, "properties": [{"name": "radius", "type": "int", "value": 22}]},
-        {"id": 19, "name": "desk-reading", "x": 255, "y": 93, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]}
+        {"id": 19, "name": "desk-reading", "x": 255, "y": 93, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]},
+        {"id": 21, "name": "sock-tray", "x": 53, "y": 180, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]}
       ]
     },
     {

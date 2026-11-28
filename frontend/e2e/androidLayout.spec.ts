@@ -48,7 +48,7 @@ test('Android bridge handling cancels an unfinished quest and freezes the canvas
   await expect(pause).toBeVisible()
   await pause.getByRole('button', { name: 'Kicipedia' }).click()
   const collection = page.getByRole('dialog', { name: 'Kicipedia' })
-  await expect(collection.getByText('Nieznany kot', { exact: true })).toHaveCount(5)
+  await expect(collection.getByText('Nieznany kot', { exact: true })).toHaveCount(6)
   await dispatch('backButton')
   await expect(pause).toBeVisible()
   await dispatch('backButton')

@@ -52,10 +52,13 @@ export function SortOrder({ challenge, busy, onComplete }: {
         })}
       </div>
       {challenge.mode === 'categories' && (
-        <div className="activity-choices" role="group" aria-label={labels.destinations}>
+        <div className="activity-choices sort-choices" role="group" aria-label={labels.destinations}>
           {challenge.groups.map((group) => (
             <button key={group} type="button" className="secondary" disabled={busy}
-              onClick={() => place(selected, group)}>{labels.groups[group]}</button>
+              onClick={() => place(selected, group)}>
+              {challenge.groupPictures?.[group] && <Picture id={challenge.groupPictures[group]} />}
+              {labels.groups[group]}
+            </button>
           ))}
         </div>
       )}

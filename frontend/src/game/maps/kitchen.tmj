@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 5,
-  "nextobjectid": 20,
+  "nextobjectid": 22,
   "tilesets": [],
   "layers": [
     {
@@ -27,7 +27,8 @@
         {"id": 11, "name": "table-settings", "x": 224, "y": 40, "width": 59, "height": 36, "properties": [{"name": "art", "type": "string", "value": "table"}, {"name": "solid", "type": "bool", "value": true}]},
         {"id": 12, "name": "counter", "x": 31, "y": 121, "width": 64, "height": 36, "properties": [{"name": "art", "type": "string", "value": "counter"}, {"name": "solid", "type": "bool", "value": true}]},
         {"id": 13, "name": "kitchen-plant", "x": 245, "y": 143, "width": 21, "height": 28, "properties": [{"name": "art", "type": "string", "value": "plant"}, {"name": "solid", "type": "bool", "value": true}]},
-        {"id": 17, "name": "hall-door", "x": 144, "y": 205, "width": 32, "height": 19, "properties": [{"name": "art", "type": "string", "value": "door"}]}
+        {"id": 17, "name": "hall-door", "x": 144, "y": 205, "width": 32, "height": 19, "properties": [{"name": "art", "type": "string", "value": "door"}]},
+        {"id": 20, "name": "snack-tray", "x": 132, "y": 40, "width": 47, "height": 26, "properties": [{"name": "art", "type": "string", "value": "snack-tray"}]}
       ]
     },
     {
@@ -59,7 +60,8 @@
         {"id": 14, "name": "fruit", "x": 69, "y": 89, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
         {"id": 15, "name": "table-settings", "x": 253, "y": 89, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
         {"id": 18, "name": "hall-door", "x": 160, "y": 194, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 16}]},
-        {"id": 19, "name": "sort-counter", "x": 63, "y": 174, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]}
+        {"id": 19, "name": "sort-counter", "x": 63, "y": 174, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]},
+        {"id": 21, "name": "snack-tray", "x": 155, "y": 80, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]}
       ]
     },
     {

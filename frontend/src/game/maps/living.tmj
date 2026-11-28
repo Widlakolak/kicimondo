@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 5,
-  "nextobjectid": 20,
+  "nextobjectid": 22,
   "tilesets": [],
   "layers": [
     {
@@ -28,7 +28,8 @@
         {"id": 12, "name": "coffee-table", "x": 139, "y": 108, "width": 42, "height": 29, "properties": [{"name": "art", "type": "string", "value": "table"}, {"name": "solid", "type": "bool", "value": true}]},
         {"id": 13, "name": "living-plant", "x": 246, "y": 70, "width": 24, "height": 31, "properties": [{"name": "art", "type": "string", "value": "plant"}, {"name": "solid", "type": "bool", "value": true}]},
         {"id": 14, "name": "bookcase", "x": 229, "y": 124, "width": 60, "height": 37, "properties": [{"name": "art", "type": "string", "value": "books"}, {"name": "solid", "type": "bool", "value": true}]},
-        {"id": 17, "name": "hall-door", "x": 144, "y": 205, "width": 32, "height": 19, "properties": [{"name": "art", "type": "string", "value": "door"}]}
+        {"id": 17, "name": "hall-door", "x": 144, "y": 205, "width": 32, "height": 19, "properties": [{"name": "art", "type": "string", "value": "door"}]},
+        {"id": 20, "name": "day-board", "x": 47, "y": 44, "width": 49, "height": 24, "properties": [{"name": "art", "type": "string", "value": "day-board"}]}
       ]
     },
     {
@@ -59,7 +60,8 @@
       "objects": [
         {"id": 15, "name": "household-objects", "x": 160, "y": 89, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
         {"id": 18, "name": "hall-door", "x": 160, "y": 194, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 16}]},
-        {"id": 19, "name": "living-shelf", "x": 257, "y": 177, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]}
+        {"id": 19, "name": "living-shelf", "x": 257, "y": 177, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]},
+        {"id": 21, "name": "day-board", "x": 71, "y": 79, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]}
       ]
     },
     {

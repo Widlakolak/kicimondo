@@ -8,7 +8,7 @@ Play in landscape with a camera that follows your character. Tap the floor to wa
 
 Meet Bursztynek, the resident cat. Reveal a path to put away the clothes, count drops for the water bowl and match words to pictures to prepare the cat bed. Bursztynek roams, uses restored spots and shows when he is ready for petting. The first independence star opens the upstairs landing.
 
-At eight stars the stairs open to the ground floor. At 16 stars the hall opens to the garden. The house and garden offer 25 stars in total. Four visiting cats can appear when their preferred attractions are ready. Approach a cat to reveal its Kicipedia entry.
+At eight stars the stairs open to the ground floor. At 16 stars the hall opens to the garden. At 32 stars the basement stairs open. The house and garden offer 35 stars, so three activities can wait. The basement adds a corridor, material storage and a workshop, bringing the game to 50 stars across 12 rooms. Find six material kits and build a hideout, ball, mat, ramp, scratching board and tunnel. Meet Iskierka in the workshop alongside Bursztynek and the four garden visitors. Approach a cat to reveal its Kicipedia entry.
 
 The browser stores the profile, quest progress, location, discoveries and trust in IndexedDB. Earlier saves carry over on the same origin and browser profile. The adult menu offers a two-step restart that keeps the avatar, nickname and downloaded educational pack.
 
@@ -16,7 +16,7 @@ The production web build is installable on supported browsers and plays offline 
 
 The optional Java content service publishes compatible math variants. With an API configured, an adult can download a pack from the main menu and use it offline after restart. The bundled game and its save work with no configured backend. See the [local content service guide](docs/DEPLOYMENT.md#local-content-service).
 
-The owner confirmed that the Stage 08 family site works over HTTPS on QNAP. NAS content import and backup/restore checks are pending. The Stage 08.1 changes are prepared for review. See the [QNAP deployment guide](docs/DEPLOYMENT.md#qnap-family-web-release).
+The owner confirmed that Stage 08.1 is running on QNAP over HTTPS. Owner gameplay, NAS content import and backup/restore checks are pending. Stage 09 is prepared for review. See the [QNAP deployment guide](docs/DEPLOYMENT.md#qnap-family-web-release).
 
 ## Getting started
 
@@ -32,12 +32,13 @@ Open the local address printed by Vite. Tap or click the floor to walk. Tap a qu
 
 ## Checks
 
-Run these commands from `frontend/`:
+Run these commands from `frontend/`.
 
 ```sh
 npm run lint
 npm run typecheck
 npm test
+npm run contracts:check
 npm run build
 npx playwright install chromium
 npm run test:browser
@@ -68,6 +69,7 @@ The browser suite serves the production build. On Linux, use `npx playwright ins
 - [Stage 07](docs/stages/07-java-content-backend.md)
 - [Stage 08](docs/stages/08-qnap-family-release.md)
 - [Stage 08.1](docs/stages/08-1-kids-ux.md)
+- [Stage 09](docs/stages/09-basement-workshop.md)
 - [Codex task prompt](docs/CODEX.md)
 
 The game uses Polish text. Code and technical documentation are in English. Names other than Kicimondo and Kicipedia are provisional. No open-source license has been selected.

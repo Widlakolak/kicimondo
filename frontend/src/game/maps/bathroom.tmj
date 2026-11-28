@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 5,
-  "nextobjectid": 20,
+  "nextobjectid": 22,
   "tilesets": [],
   "layers": [
     {
@@ -27,7 +27,8 @@
         {"id": 11, "name": "bathroom-items", "x": 221, "y": 38, "width": 56, "height": 34, "properties": [{"name": "art", "type": "string", "value": "bath-shelf"}, {"name": "solid", "type": "bool", "value": true}]},
         {"id": 12, "name": "bathtub", "x": 34, "y": 124, "width": 72, "height": 42, "properties": [{"name": "art", "type": "string", "value": "tub"}, {"name": "solid", "type": "bool", "value": true}]},
         {"id": 13, "name": "laundry", "x": 259, "y": 143, "width": 28, "height": 27, "properties": [{"name": "art", "type": "string", "value": "basket"}, {"name": "solid", "type": "bool", "value": true}]},
-        {"id": 17, "name": "landing-door", "x": 144, "y": 205, "width": 32, "height": 19, "properties": [{"name": "art", "type": "string", "value": "door"}]}
+        {"id": 17, "name": "landing-door", "x": 144, "y": 205, "width": 32, "height": 19, "properties": [{"name": "art", "type": "string", "value": "door"}]},
+        {"id": 20, "name": "wash-kit", "x": 130, "y": 37, "width": 50, "height": 26, "properties": [{"name": "art", "type": "string", "value": "wash-kit"}]}
       ]
     },
     {
@@ -59,7 +60,8 @@
         {"id": 14, "name": "hygiene", "x": 70, "y": 85, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
         {"id": 15, "name": "bathroom-items", "x": 249, "y": 85, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
         {"id": 18, "name": "landing-door", "x": 160, "y": 194, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 16}]},
-        {"id": 19, "name": "count-towels", "x": 273, "y": 185, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]}
+        {"id": 19, "name": "count-towels", "x": 273, "y": 185, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]},
+        {"id": 21, "name": "wash-kit", "x": 155, "y": 77, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]}
       ]
     },
     {

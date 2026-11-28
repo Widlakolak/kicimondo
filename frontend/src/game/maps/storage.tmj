@@ -1,0 +1,83 @@
+{
+  "type": "map",
+  "version": "1.10",
+  "tiledversion": "1.11.0",
+  "orientation": "orthogonal",
+  "renderorder": "right-down",
+  "infinite": false,
+  "width": 28,
+  "height": 16,
+  "tilewidth": 16,
+  "tileheight": 16,
+  "nextlayerid": 5,
+  "nextobjectid": 19,
+  "tilesets": [],
+  "layers": [
+    {
+      "id": 1,
+      "name": "Furniture",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {"id": 1, "name": "corridor-door", "x": 208, "y": 221, "width": 32, "height": 19, "properties": [{"name": "art", "type": "string", "value": "door"}]},
+        {"id": 2, "name": "block-bin", "x": 39, "y": 48, "width": 65, "height": 33, "properties": [{"name": "art", "type": "string", "value": "block-bin"}, {"name": "solid", "type": "bool", "value": true}]},
+        {"id": 3, "name": "board-bundle", "x": 191, "y": 47, "width": 68, "height": 34, "properties": [{"name": "art", "type": "string", "value": "board-bundle"}, {"name": "solid", "type": "bool", "value": true}]},
+        {"id": 4, "name": "tube-rack", "x": 341, "y": 43, "width": 62, "height": 37, "properties": [{"name": "art", "type": "string", "value": "tube-rack"}, {"name": "solid", "type": "bool", "value": true}]},
+        {"id": 5, "name": "size-crates", "x": 46, "y": 152, "width": 60, "height": 37, "properties": [{"name": "art", "type": "string", "value": "size-crates"}, {"name": "solid", "type": "bool", "value": true}]},
+        {"id": 6, "name": "label-rack", "x": 334, "y": 153, "width": 68, "height": 40, "properties": [{"name": "art", "type": "string", "value": "label-rack"}, {"name": "solid", "type": "bool", "value": true}]},
+        {"id": 7, "name": "storage-bench", "x": 182, "y": 148, "width": 84, "height": 23, "properties": [{"name": "art", "type": "string", "value": "bench"}, {"name": "solid", "type": "bool", "value": true}]}
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Collisions",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {"id": 8, "name": "north-wall", "x": 0, "y": 0, "width": 448, "height": 32},
+        {"id": 9, "name": "south-wall", "x": 0, "y": 240, "width": 448, "height": 16},
+        {"id": 10, "name": "west-wall", "x": 0, "y": 32, "width": 16, "height": 208},
+        {"id": 11, "name": "east-wall", "x": 432, "y": 32, "width": 16, "height": 208}
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Interactions",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {"id": 12, "name": "corridor-door", "x": 224, "y": 209, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 13, "name": "block-bin", "x": 72, "y": 97, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 14, "name": "board-bundle", "x": 225, "y": 96, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 15, "name": "tube-rack", "x": 372, "y": 96, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 16, "name": "size-crates", "x": 76, "y": 137, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
+        {"id": 17, "name": "label-rack", "x": 368, "y": 138, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]}
+      ]
+    },
+    {
+      "id": 4,
+      "name": "SpawnPoints",
+      "type": "objectgroup",
+      "draworder": "topdown",
+      "opacity": 1,
+      "visible": true,
+      "x": 0,
+      "y": 0,
+      "objects": [
+        {"id": 18, "name": "from-corridor", "x": 224, "y": 183, "width": 0, "height": 0, "point": true}
+      ]
+    }
+  ]
+}

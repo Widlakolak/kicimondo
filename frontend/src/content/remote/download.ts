@@ -1,4 +1,4 @@
-import { contentVersion } from '../pack'
+import { educationalCompatibilityVersion } from './compatibility'
 import { checksumPattern, identifier, integer, maxPackBytes, object, verifyPack } from './pack'
 
 const path = '/api/v1/content/packs'
@@ -51,7 +51,7 @@ export async function downloadPack(endpoint: string, packId = defaultPackId, tim
   if (!identifier(packId)) throw new Error('Invalid pack ID')
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), timeoutMs)
-  const query = '?gameContentVersion=' + contentVersion + '&locale=pl'
+  const query = '?gameContentVersion=' + educationalCompatibilityVersion + '&locale=pl'
   const get = (suffix: string) => request(endpoint + '/' + packId + suffix + query, {
     signal: controller.signal, credentials: 'omit', redirect: 'error', referrerPolicy: 'no-referrer', cache: 'no-store',
   })
@@ -59,7 +59,7 @@ export async function downloadPack(endpoint: string, packId = defaultPackId, tim
     const metadata: unknown = JSON.parse(new TextDecoder('utf-8', { fatal: true })
       .decode(await bytesFrom(await get('/latest'), 2048)))
     if (!object(metadata) || Object.keys(metadata).length !== 6 || metadata.packId !== packId ||
-        !integer(metadata.version, 1) || metadata.gameContentVersion !== contentVersion || metadata.locale !== 'pl' ||
+        !integer(metadata.version, 1) || metadata.gameContentVersion !== educationalCompatibilityVersion || metadata.locale !== 'pl' ||
         typeof metadata.sha256 !== 'string' || !checksumPattern.test(metadata.sha256) ||
         typeof metadata.publishedAt !== 'string') {
       throw new Error('Invalid pack metadata')

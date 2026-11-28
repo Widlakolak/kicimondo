@@ -1,4 +1,5 @@
-import { cats, contentVersion, isLocation, locations, quests, start, transitions, type Checkpoint, type Quest } from '../content/pack'
+import { cats, contentVersion, isLocation, locationIds, locations, quests, start, transitions, type Checkpoint, type Quest } from '../content/pack'
+import { kitStatus, obtainableQuests, recipeFor } from '../content/crafting'
 import type { CatId } from '../content/catCatalog'
 import { recordDiscovery } from './discovery'
 import { eligibleCats } from './habitat'
@@ -51,8 +52,8 @@ function restoredTrust(restored: readonly WorldObject[]): TrustEvent[] {
   const resident = restored.flatMap(({ location, object }) => cats.filter((cat) => !cat.requires &&
     cat.location === location && cat.attractions.some((spot) => spot.object === object))
     .map(({ id }) => ({ cat: id, id: 'restored:' + object })))
-  const visitors = eligibleCats('garden', restoredIn(restored, 'garden'))
-    .map(({ id }) => ({ cat: id, id: 'habitat-ready' }))
+  const visitors = locationIds.flatMap((location) => eligibleCats(location, restoredIn(restored, location)))
+    .filter(({ requires }) => requires).map(({ id }) => ({ cat: id, id: 'habitat-ready' }))
   return [...resident, ...visitors]
 }
 
@@ -85,6 +86,8 @@ export function applyCommand(save: Save | null, command: SaveCommand): Save | nu
 
   const quest = quests.find((entry) => entry.id === command.quest && entry.location === save.checkpoint.location)
   if (!quest || save.completed.includes(quest.id) || save.rewards.some(({ id }) => id === quest.reward.id)) return save
+  const recipe = recipeFor(quest.id)
+  if (recipe && kitStatus(recipe, save.completed) !== 'available') return save
   const restored = [...save.restored, ...objectsFor([quest], ['RESTORE_ATTRACTION', 'ORGANIZE_OBJECT'])]
   const earnedTrust = restoredTrust(restored).filter((event) => !hasEvent(save.trust, event))
   return {
@@ -101,19 +104,18 @@ function record(value: unknown): Record<string, unknown> | null {
   return value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : null
 }
 
-function saveFormat(value: Record<string, unknown>): 'firstQuest' | 'bedroom' | 'house' | 'garden' | null {
-  if (value.schemaVersion === 1 && value.contentVersion === 1) return 'firstQuest'
-  if (value.schemaVersion === 2 && value.contentVersion === 2) return 'bedroom'
-  if (value.schemaVersion === 2 && value.contentVersion === 3) return 'house'
-  if (value.schemaVersion === 3 && value.contentVersion === contentVersion) return 'garden'
+function saveContentVersion(value: Record<string, unknown>): Quest['introduced'] | null {
+  if (value.schemaVersion === 1 && value.contentVersion === 1) return 1
+  if (value.schemaVersion === 2 && (value.contentVersion === 2 || value.contentVersion === 3)) return value.contentVersion
+  if (value.schemaVersion === 3 && (value.contentVersion === 4 || value.contentVersion === 5)) return value.contentVersion
   return null
 }
 
 export function isIncompatibleSave(raw: unknown): boolean {
   const data = record(raw)
-  if (!data || saveFormat(data)) return false
+  if (!data || saveContentVersion(data)) return false
   return (typeof data.schemaVersion === 'number' && ![1, 2, 3].includes(data.schemaVersion)) ||
-    (typeof data.contentVersion === 'number' && ![1, 2, 3, contentVersion].includes(data.contentVersion)) ||
+    (typeof data.contentVersion === 'number' && ![1, 2, 3, 4, 5].includes(data.contentVersion)) ||
     (typeof data.schemaVersion === 'number' && typeof data.contentVersion === 'number')
 }
 
@@ -129,30 +131,30 @@ function sameEntries(stored: unknown, expected: readonly Record<string, string |
 export function decodeSave(raw: unknown, maps: Record<Checkpoint['location'], LocationMap>): Save | null {
   const stored = record(raw)
   if (!stored) return null
-  const format = saveFormat(stored)
-  if (!format) return null
-  const earlierBedroom = format === 'firstQuest' || format === 'bedroom'
+  const version = saveContentVersion(stored)
+  if (!version) return null
   // Stage 02 stored neither attractions nor trust.
-  const data = format === 'firstQuest' ? { ...stored, restored: [], trust: [] } : stored
+  const data = version === 1 ? { ...stored, restored: [], trust: [] } : stored
   const profile = parseProfile(data.profile)
   if (!profile || !Array.isArray(data.completed) || new Set(data.completed).size !== data.completed.length) return null
 
   const completedIds: unknown[] = data.completed
-  const completed = quests.filter(({ id, location, introduced }) =>
-    (format === 'garden' || !introduced) && (!earlierBedroom || location === 'bedroom') && completedIds.includes(id))
+  const completed = quests.filter(({ id, introduced }) => introduced <= version && completedIds.includes(id))
+  const routes = transitions.filter(({ target }) => locations[target.location].introduced <= version)
+  const reachable = reachableLocations((visited) => obtainableQuests(completed, visited).size, routes)
+  if (obtainableQuests(completed, reachable).size !== completedIds.length) return null
   const rewards = completed.map(({ reward }) => reward)
   const hidden = objectsFor(completed, ['HIDE_OBJECT'])
   const restored = objectsFor(completed, ['RESTORE_ATTRACTION', 'ORGANIZE_OBJECT'])
   const trust = restoredTrust(restored)
-  const visibleCats = [...eligibleCats('bedroom', restoredIn(restored, 'bedroom')),
-    ...eligibleCats('garden', restoredIn(restored, 'garden'))]
+  const visibleCats = [...reachable].flatMap((location) => eligibleCats(location, restoredIn(restored, location)))
   const petted = visibleCats.filter(({ id }) => Array.isArray(data.trust) &&
     (data.trust as unknown[]).some((value) => record(value)?.cat === id && record(value)?.id === 'first-pet'))
     .map(({ id }) => id)
   for (const id of petted) trust.push(firstPet(id))
 
   const discovered: CatId[] = []
-  if (format === 'garden') {
+  if (version >= 4) {
     if (!Array.isArray(data.discovered) || new Set(data.discovered).size !== data.discovered.length) return null
     for (const rawId of data.discovered as unknown[]) {
       const cat = visibleCats.find(({ id }) => id === rawId)
@@ -164,18 +166,13 @@ export function decodeSave(raw: unknown, maps: Record<Checkpoint['location'], Lo
     // A previous accepted greeting proves that the resident has already been encountered.
     if (petted.includes('amber')) discovered.push('amber')
   }
-  if (completed.length !== completedIds.length || !sameEntries(data.rewards, rewards) ||
+  if (!sameEntries(data.rewards, rewards) ||
     !sameEntries(data.hidden, hidden) || !sameEntries(data.restored, restored) || !sameEntries(data.trust, trust)) return null
 
   const saved = record(data.checkpoint)
   const location = saved?.location
   const spawn = saved?.spawn
-  const reachable = reachableLocations((visited) => completed.reduce((points, quest) =>
-    points + (visited.has(quest.location) ? quest.reward.points : 0), 0))
-  if (completed.some((quest) => !reachable.has(quest.location))) return null
-  const knownCheckpoint = earlierBedroom ? location === 'bedroom' || location === 'landing' :
-    format === 'garden' || location !== 'garden'
-  const checkpoint = knownCheckpoint && isLocation(location) && reachable.has(location)
+  const checkpoint = isLocation(location) && reachable.has(location)
     ? { location, spawn: typeof spawn === 'string' && maps[location].spawns.has(spawn) ? spawn : locations[location].entry }
     : start
   return { ...newSave(profile), checkpoint, completed: completed.map(({ id }) => id), rewards, hidden, restored, trust, discovered }

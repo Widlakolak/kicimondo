@@ -1,4 +1,5 @@
 import type { PictureId } from '../content/pack'
+import { workshopIllustrations } from './workshopPictures'
 
 const pencil = (width: number): readonly (readonly [string, string])[] => [
   ['#aa7454', `M2 9h${width}l3 3-3 3H2z`], ['#e6ba73', `M4 10h${width - 2}v3H4z`],
@@ -10,7 +11,8 @@ const ball = (border: string, fill: string): readonly (readonly [string, string]
   [border, 'M8 3h8v2h4v3h2v8h-2v3h-4v2H8v-2H4v-3H2V8h2V5h4z'], [fill, 'M8 6h8v2h3v7h-3v3H8v-3H5V8h3z'],
 ]
 
-const housePictures: Record<Exclude<PictureId, 'blanket' | 'pillow' | 'basket'>, readonly (readonly [string, string])[]> = {
+const pictures: Record<Exclude<PictureId, 'blanket' | 'pillow' | 'basket'>, readonly (readonly [string, string])[]> = {
+  ...workshopIllustrations,
   lamp: [['#7b5e72', 'M11 7h2v12h5v2H6v-2h5z'], ['#d49665', 'M8 4h8l4 9H4z'], ['#f6dc9b', 'M7 10h10v2H7z']],
   book: [['#84759e', 'M3 5h8l1 2 1-2h8v15h-8l-1 1-1-1H3z'], ['#f6e8c5', 'M5 7h5l2 2 2-2h5v10h-5l-2 2-2-2H5z']],
   paper: [['#887377', 'M5 3h10l4 4v14H5z'], ['#fff1d5', 'M6 4h8v4h4v12H6z'], ['#9d8688', 'M8 11h8v1H8zm0 4h8v1H8z']],
@@ -55,7 +57,7 @@ export function Picture({ id }: { id: PictureId }) {
         <path fill="#946648" d="M5 13V7h2V4h10v3h2v6h3v4h-2v4H4v-4H2v-4zm2 0h10V8h-2V6H9v2H7z" />
         <path fill="#d4a56e" d="M3 13h18v3H3zM6 17h12v3H6z" />
         <path fill="#a77653" d="M8 16h2v4H8zM14 16h2v4h-2z" />
-      </> : housePictures[id].map(([fill, path]) => <path key={path} fill={fill} d={path} />)}
+      </> : pictures[id].map(([fill, path]) => <path key={path} fill={fill} d={path} />)}
     </svg>
   )
 }

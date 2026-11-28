@@ -3,6 +3,8 @@ import type { pl } from '../i18n/pl.ts'
 import { gardenChallenges, gardenPictures } from './gardenChallenges.ts'
 import { houseChallenges, houseMatchPictures, sortPictures } from './houseChallenges.ts'
 
+import { workshopChallenges, workshopPictures } from './workshopChallenges.ts'
+
 type ChallengeText = {
   skillId: string
   difficulty: 'intro'
@@ -25,14 +27,15 @@ export type MathChallenge = ChallengeText & {
   maximum: number
   seed: number
   counter?: keyof typeof pl.math.counters
+  illustration?: PictureId
 }
 
-export const pictureIds = ['blanket', 'pillow', 'basket', ...houseMatchPictures, ...sortPictures, ...gardenPictures] as const
+export const pictureIds = ['blanket', 'pillow', 'basket', ...houseMatchPictures, ...sortPictures, ...gardenPictures, ...workshopPictures] as const
 export type PictureId = (typeof pictureIds)[number]
 type MatchPictureId = keyof typeof pl.match.pictures
 export type MatchChallenge = ChallengeText & {
   type: 'MATCH_PAIRS'
-  pairs: readonly { id: string; word: keyof typeof pl.match.words; picture: MatchPictureId }[]
+  pairs: readonly { id: string; word: keyof typeof pl.match.words; picture: MatchPictureId; cue?: MatchPictureId }[]
   pictureOrder: readonly MatchPictureId[]
 }
 
@@ -43,15 +46,17 @@ export type SortChallenge = ChallengeText & {
   items: readonly { id: SortItemId; picture?: PictureId }[]
 } & (
   | { mode: 'sequence'; order: readonly SortItemId[] }
-  | { mode: 'categories'; groups: readonly SortGroup[]; assignments: Partial<Record<SortItemId, SortGroup>> }
+  | { mode: 'categories'; groups: readonly SortGroup[]; assignments: Partial<Record<SortItemId, SortGroup>>;
+      groupPictures?: Partial<Record<SortGroup, PictureId>> }
 )
 
 export type Challenge = TraceChallenge | MathChallenge | MatchChallenge | SortChallenge
-export const contentVersion = 4
+export const contentVersion = 5
 
 export const challenges = {
   ...houseChallenges,
   ...gardenChallenges,
+  ...workshopChallenges,
   'clothes-to-basket': {
     type: 'TRACE_PATH',
     skillId: 'hand-eye-coordination',
@@ -91,15 +96,18 @@ export const challenges = {
 } satisfies Record<string, Challenge>
 
 export const locations = {
-  bedroom: { entry: 'bedside', art: 'bedroom' },
-  landing: { entry: 'from-bedroom', art: 'landing' },
-  study: { entry: 'from-landing', art: 'study' },
-  bathroom: { entry: 'from-landing', art: 'bathroom' },
-  playroom: { entry: 'from-landing', art: 'playroom' },
-  hall: { entry: 'from-landing', art: 'hall' },
-  kitchen: { entry: 'from-hall', art: 'kitchen' },
-  living: { entry: 'from-hall', art: 'living' },
-  garden: { entry: 'from-hall', art: 'garden' },
+  bedroom: { entry: 'bedside', art: 'bedroom', introduced: 1 },
+  landing: { entry: 'from-bedroom', art: 'landing', introduced: 1 },
+  study: { entry: 'from-landing', art: 'study', introduced: 3 },
+  bathroom: { entry: 'from-landing', art: 'bathroom', introduced: 3 },
+  playroom: { entry: 'from-landing', art: 'playroom', introduced: 3 },
+  hall: { entry: 'from-landing', art: 'hall', introduced: 3 },
+  kitchen: { entry: 'from-hall', art: 'kitchen', introduced: 3 },
+  living: { entry: 'from-hall', art: 'living', introduced: 3 },
+  garden: { entry: 'from-hall', art: 'garden', introduced: 4 },
+  basement: { entry: 'from-hall', art: 'basement', introduced: 5 },
+  storage: { entry: 'from-corridor', art: 'storage', introduced: 5 },
+  workshop: { entry: 'from-corridor', art: 'workshop', introduced: 5 },
 } as const
 
 export type LocationId = keyof typeof locations
@@ -119,7 +127,7 @@ export type Quest = {
   interaction: string
   challenge: keyof typeof challenges
   reward: { id: string; points: number }
-  introduced?: 4
+  introduced: 1 | 2 | 3 | 4 | 5
   effects: readonly (
     | { type: 'HIDE_OBJECT'; object: string }
     | { type: 'RESTORE_ATTRACTION'; object: string }
@@ -129,7 +137,7 @@ export type Quest = {
 
 function houseQuest(location: LocationId, interaction: string, challenge: keyof typeof houseChallenges): Quest {
   const id = location + '-' + challenge
-  return { id, location, interaction, challenge, reward: { id: id + '-first', points: 1 },
+  return { id, location, interaction, challenge, introduced: 3, reward: { id: id + '-first', points: 1 },
     effects: [{ type: 'ORGANIZE_OBJECT', object: interaction }] }
 }
 
@@ -139,9 +147,17 @@ function newQuest(location: LocationId, interaction: string, challenge: keyof ty
     effects: [{ type: location === 'garden' ? 'RESTORE_ATTRACTION' : 'ORGANIZE_OBJECT', object }] }
 }
 
+function workshopQuest(location: LocationId, interaction: string, challenge: keyof typeof workshopChallenges,
+  type: 'ORGANIZE_OBJECT' | 'RESTORE_ATTRACTION' = 'ORGANIZE_OBJECT'): Quest {
+  const id = location + '-' + challenge
+  return { id, location, interaction, challenge, introduced: 5, reward: { id: id + '-first', points: 1 },
+    effects: [{ type, object: interaction }] }
+}
+
 export const quests: readonly Quest[] = [
   {
     id: 'bedroom-clean-clothes',
+    introduced: 1,
     location: 'bedroom',
     interaction: 'scattered-clothes',
     challenge: 'clothes-to-basket',
@@ -150,6 +166,7 @@ export const quests: readonly Quest[] = [
   },
   {
     id: 'bedroom-fill-water-bowl',
+    introduced: 2,
     location: 'bedroom',
     interaction: 'water-bowl',
     challenge: 'count-water-drops',
@@ -158,6 +175,7 @@ export const quests: readonly Quest[] = [
   },
   {
     id: 'bedroom-prepare-cat-bed',
+    introduced: 2,
     location: 'bedroom',
     interaction: 'cat-bed',
     challenge: 'prepare-cat-bed',
@@ -186,6 +204,31 @@ export const quests: readonly Quest[] = [
   newQuest('garden', 'garden-platform', 'order-platform-boards'),
   newQuest('garden', 'garden-shelter', 'prepare-garden-shelter'),
   newQuest('garden', 'garden-flowers', 'count-garden-flowers'),
+  workshopQuest('bedroom', 'sock-tray', 'sort-sock-patterns'),
+  workshopQuest('study', 'crayon-tin', 'count-crayons'),
+  workshopQuest('study', 'shape-board', 'match-geometric-shapes'),
+  workshopQuest('bathroom', 'wash-kit', 'match-hygiene-symbols'),
+  workshopQuest('playroom', 'block-tray', 'sort-block-shapes'),
+  workshopQuest('playroom', 'build-board', 'order-build-steps'),
+  workshopQuest('kitchen', 'snack-tray', 'count-snack-apples'),
+  workshopQuest('living', 'day-board', 'order-family-day'),
+  workshopQuest('garden', 'leaf-path', 'trace-leaf-path'),
+  workshopQuest('garden', 'seed-tray', 'count-seed-packets'),
+  workshopQuest('basement', 'cardboard-crate', 'sort-storage-boxes'),
+  workshopQuest('basement', 'felt-basket', 'count-felt-pieces'),
+  workshopQuest('basement', 'fabric-drawers', 'match-drawer-symbols'),
+  workshopQuest('basement', 'route-basket', 'trace-basket-route'),
+  workshopQuest('storage', 'block-bin', 'sort-ramp-blocks'),
+  workshopQuest('storage', 'board-bundle', 'count-scratch-pieces'),
+  workshopQuest('storage', 'tube-rack', 'match-cardboard-tubes'),
+  workshopQuest('storage', 'size-crates', 'order-containers'),
+  workshopQuest('storage', 'label-rack', 'match-storage-labels'),
+  workshopQuest('workshop', 'cardboard-hideout', 'build-cardboard-hideout', 'RESTORE_ATTRACTION'),
+  workshopQuest('workshop', 'felt-ball', 'build-felt-ball', 'RESTORE_ATTRACTION'),
+  workshopQuest('workshop', 'resting-mat', 'build-resting-mat', 'RESTORE_ATTRACTION'),
+  workshopQuest('workshop', 'cat-ramp', 'build-cat-ramp'),
+  workshopQuest('workshop', 'scratch-board', 'build-scratch-board'),
+  workshopQuest('workshop', 'play-tunnel', 'build-play-tunnel'),
 ]
 
 export type Transition = {
@@ -193,7 +236,7 @@ export type Transition = {
   interaction: string
   target: Checkpoint
   minimumPoints: number
-  kind?: 'stairs' | 'gate'
+  kind?: 'stairs' | 'gate' | 'basement-stair'
 }
 
 export const transitions: readonly Transition[] = [
@@ -213,6 +256,14 @@ export const transitions: readonly Transition[] = [
   { location: 'living', interaction: 'hall-door', minimumPoints: 0, target: { location: 'hall', spawn: 'from-living' } },
   { location: 'hall', interaction: 'garden-gate', kind: 'gate', minimumPoints: 16, target: { location: 'garden', spawn: 'from-hall' } },
   { location: 'garden', interaction: 'return-hall', kind: 'gate', minimumPoints: 0, target: { location: 'hall', spawn: 'from-garden' } },
+  { location: 'hall', interaction: 'basement-stairs', kind: 'basement-stair', minimumPoints: 32,
+    target: { location: 'basement', spawn: 'from-hall' } },
+  { location: 'basement', interaction: 'basement-return', kind: 'basement-stair', minimumPoints: 0,
+    target: { location: 'hall', spawn: 'from-basement' } },
+  { location: 'basement', interaction: 'storage-door', minimumPoints: 0, target: { location: 'storage', spawn: 'from-corridor' } },
+  { location: 'storage', interaction: 'corridor-door', minimumPoints: 0, target: { location: 'basement', spawn: 'from-storage' } },
+  { location: 'basement', interaction: 'workshop-door', minimumPoints: 0, target: { location: 'workshop', spawn: 'from-corridor' } },
+  { location: 'workshop', interaction: 'corridor-door', minimumPoints: 0, target: { location: 'basement', spawn: 'from-workshop' } },
 ]
 
 type DialogueHint = Exclude<keyof typeof pl.dialogue, 'hania'>

@@ -14,7 +14,7 @@ Stage 04 and Stage 05 are merged with green CI. Stage 05 owner gameplay review a
 | 07 | [Java content backend](stages/07-java-content-backend.md) | Read-only REST, immutable math packs, operator import, offline client cache and PostgreSQL integration tests. Owner review pending. |
 | 08 | [Family web release on QNAP](stages/08-qnap-family-release.md) | Isolated Compose, read-only content routing, offline update, backup/restore and rollback tested locally. GHCR published, NAS healthy and HTTPS confirmed by owner. Further owner checks pending. |
 | 08.1 | [Kids UX and playtest fixes](stages/08-1-kids-ux.md) | Landscape camera, direct touch movement, visible quests, scratch tracing, cat roaming, reset and installation. Owner gameplay and physical device acceptance pending. |
-| 09 | [Basement and cat workshop](stages/09-basement-workshop.md) | 50 total PS, 35 before the 32 PS staircase, three new maps, six fixed-slot recipes, sixth cat, compatible saves and educational packs |
+| 09 | [Basement and cat workshop](stages/09-basement-workshop.md) | Implemented for review. 50 PS, basement at 32 PS, three new rooms, six recipes and Iskierka. Owner gameplay and physical device checks pending. |
 | 10 | Educational refinement | Skill-based difficulty, reviewed Polish pools, local parent reports and export |
 | 11 | Forest | Reach 64 PS with sufficient pre-forest content, stories and nature challenges |
 | 12 | Android release readiness | Device matrix, accessibility, privacy, licenses, signed AAB, Play policy and closed testing |

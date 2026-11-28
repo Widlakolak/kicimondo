@@ -14,6 +14,8 @@ The game supports practice, not a substitute for school or an assessment tool. I
 
 Each task has a skill ID, difficulty, content version, a clear instruction, a hint and appropriate feedback. One short exercise is sufficient for a small quest. A failed attempt is not a failed quest: offer a useful hint, retry, simpler alternative or exit without penalty. Do not lock children out because of motor, reading or input difficulties.
 
+Stage 09 uses illustrated pattern categories, geometric shape cues, familiar hygiene symbols and time-of-day picture sequences. Tube labels intentionally retain a short reading task. Counting and arithmetic use pictured crayons, apples, seed packets, felt and prepared boards. A hint pictures the operands and crosses out removed items. Workshop puzzles represent assembly with prepared pieces and tracing gestures. They introduce no real-world tools or procedures.
+
 ## Tracing
 
 The clothes and tunnel activities show a broad guide with a start and finish, a finger-following brush and a revealed section. SVG coordinates come from the current viewBox transform. Interpolation between pointer samples measures progress through an ordered path using each task's tolerance and coverage threshold. An excursion can be retraced with the same finger still down. Lifting or cancellation preserves the accepted section and shows where to resume. A stationary tap or shortcut that skips valid coverage earns no star. Reaching the endpoint after enough coverage completes the task during the stroke. The numbered alternative remains available with keyboard and touch controls. Tracing provides untimed coordination practice.

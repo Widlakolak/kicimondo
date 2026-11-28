@@ -71,7 +71,7 @@ it('restores either attraction first and grants each reward and trust event once
 
 it('migrates a Stage 03/04 save with all bedroom rewards, trust and its landing checkpoint', () => {
   let save = initial()
-  for (const quest of quests.filter(({ location, introduced }) => location === 'bedroom' && !introduced)) {
+  for (const quest of quests.filter(({ location, introduced }) => location === 'bedroom' && introduced <= 2)) {
     save = applyCommand(save, { type: 'complete', quest: quest.id })!
   }
   save = applyCommand(save, { type: 'pet', cat: 'amber' })!
@@ -81,7 +81,7 @@ it('migrates a Stage 03/04 save with all bedroom rewards, trust and its landing 
   expect({ ...migrated, schemaVersion: 2, contentVersion: 2 }).toEqual(expect.objectContaining({
     ...stage04, trust: expect.arrayContaining(stage04.trust),
   }))
-  expect(migrated.contentVersion).toBe(4)
+  expect(migrated.contentVersion).toBe(5)
   expect(migrated.discovered).toEqual(['amber'])
   expect(migrated.checkpoint).toEqual({ location: 'landing', spawn: 'from-bedroom' })
   expect(pointsOf(migrated)).toBe(3)

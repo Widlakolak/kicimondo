@@ -34,8 +34,8 @@ export function earn(save: Save, allowed: (quest: Quest) => boolean): Save {
 export function fromHouse(contentV3 = false): Save {
   const initial = newSave({ avatar: 'girl', nickname: 'Żółwik' })
   const greeted = applyCommand(initial, { type: 'pet', cat: 'amber' })!
-  return travel(earn(greeted, (quest) => contentV3 ? !quest.introduced :
-    quest.location !== 'garden' && quest.id !== 'bedroom-read-desk-words' &&
+  return travel(earn(greeted, (quest) => contentV3 ? quest.introduced <= 3 :
+    quest.introduced <= 4 && quest.location !== 'garden' && quest.id !== 'bedroom-read-desk-words' &&
     quest.id !== 'living-match-living-items'), 'hall')
 }
 

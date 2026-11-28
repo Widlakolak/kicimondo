@@ -5,7 +5,13 @@ import type { Paint } from './avatarArt'
 import { paintGarden, paintGardenFurniture } from './gardenArt'
 import { paintHouseRoom, paintHouseFurniture } from './houseArt'
 
-export function paintRoom(paint: Paint, theme: LocationId) {
+import { isWorkshopProp, paintBasementRoom, paintWorkshopFurniture } from './workshopArt'
+
+export function paintRoom(paint: Paint, theme: LocationId, width: number, height: number) {
+  if (theme === 'basement' || theme === 'storage' || theme === 'workshop') {
+    paintBasementRoom(paint, theme, width, height)
+    return
+  }
   if (theme === 'garden') {
     paintGarden(paint)
     return
@@ -84,6 +90,10 @@ export function paintRoom(paint: Paint, theme: LocationId) {
 }
 
 export function paintFurniture(paint: Paint, art: FurnitureArt, box: Box, ready: boolean) {
+  if (art === 'basement-stair' || art === 'workbench' || isWorkshopProp(art)) {
+    paintWorkshopFurniture(paint, art, box, ready)
+    return
+  }
   const { x, y, width: w, height: h } = box
   const rect: Paint = (color, left, top, width, height) =>
     paint(color, x + left, y + top, width, height)

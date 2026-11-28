@@ -3,6 +3,8 @@ import type { Guidance } from './App'
 import type { SaveReceipt } from './storage/saveRepository'
 import { Kicipedia } from './Kicipedia'
 import type { CatId } from './content/catCatalog'
+import { kitStatus, recipeFor } from './content/crafting'
+import { Picture } from './challenges/Picture'
 import { Challenge } from './challenges/Challenge'
 import { cats, challenges, dialogues, quests, transitions, type Challenge as ChallengeDefinition, type Dialogue, type Quest, type Transition } from './content/pack'
 import { meetsGate, pointsOf, trustOf, type Save, type SaveCommand } from './core/progress'
@@ -110,6 +112,7 @@ function HudIcon({ name }: { name: keyof typeof hudIcons }) {
 type Overlay =
   | { type: 'quest'; quest: Quest; definition: ChallengeDefinition }
   | { type: 'locked'; edge: Transition }
+  | { type: 'recipe'; quest: Quest; recipe: NonNullable<ReturnType<typeof recipeFor>> }
   | { type: 'dialogue'; dialogue: Dialogue }
   | { type: 'pause' }
   | { type: 'kicipedia'; selected: CatId | null; fromPause: boolean }
@@ -117,26 +120,36 @@ type Overlay =
 
 const interactionText = (id: string): { prompt: string; unlocked?: string } => pl.interactions[id as keyof typeof pl.interactions]
 
-function worldState(save: Save): WorldState {
+function worldState(save: Save, materialGoal: string | null): WorldState {
   const { location, spawn } = save.checkpoint
   const edges = transitions.filter((edge) => edge.location === location)
   const unfinished = quests.filter(({ id }) => !save.completed.includes(id))
-  const tasks = unfinished.filter((quest) => quest.location === location).map(({ interaction }) => interaction)
-  const hidden = save.hidden.filter((effect) => effect.location === location).map(({ object }) => object)
+  const actionable = unfinished.filter(({ id }) => {
+    const recipe = recipeFor(id)
+    return !recipe || kitStatus(recipe, save.completed) === 'available'
+  })
+  const tasks = actionable.filter((quest) => quest.location === location).map(({ interaction }) => interaction)
+  const waiting = unfinished.filter((quest) => quest.location === location && !actionable.includes(quest))
+    .map(({ interaction }) => interaction)
+  const built = quests.filter(({ id, location: room }) => room === location && recipeFor(id) && save.completed.includes(id))
+    .map(({ interaction }) => interaction)
   const arrivedFrom = transitions.find(({ target }) => target.location === location && target.spawn === spawn)?.location
+  const material = actionable.find(({ id }) => id === materialGoal)
+  const goal = material?.location === location ? material.interaction : null
+  const exit = (material ? nextQuestExit(location, new Set([material.location]), pointsOf(save), undefined) : null) ??
+    (tasks.length ? null : nextQuestExit(location, new Set(actionable.map((quest) => quest.location)), pointsOf(save), arrivedFrom))
+  const hidden = save.hidden.filter((effect) => effect.location === location).map(({ object }) => object)
   return {
     hidden,
     discovered: save.discovered,
     restored: save.restored.filter((effect) => effect.location === location).map(({ object }) => object),
     openDoors: edges.filter((edge) => meetsGate(pointsOf(save), edge.minimumPoints)).map(({ interaction }) => interaction),
-    quests: tasks,
+    quests: tasks, waiting, goal, exit,
     doors: edges.map(({ interaction }) => interaction),
-    exit: tasks.length ? null :
-      nextQuestExit(location, new Set(unfinished.map((quest) => quest.location)), pointsOf(save), arrivedFrom),
     active: [
       ...edges.map(({ interaction }) => interaction),
       ...dialogues.filter((dialogue) => dialogue.location === location).map(({ interaction }) => interaction),
-      ...tasks,
+      ...tasks, ...waiting, ...built,
     ],
   }
 }
@@ -175,6 +188,7 @@ export default function Room({ save, commit, busy, notice, educationalPack, guid
   const engine = useRef<ReturnType<typeof createRoom> | null>(null)
   const [input] = useState(() => new RoomInput())
   const [target, setTarget] = useState<{ id: InteractionId | null; cue: CatCue | null }>({ id: null, cue: null })
+  const [materialGoal, setMaterialGoal] = useState<string | null>(null)
   const [open, setOpen] = useState<Overlay | null>(null)
 
   const syncVisibility = useEffectEvent(() => {
@@ -266,7 +280,12 @@ export default function Room({ save, commit, busy, notice, educationalPack, guid
     }
   }
 
-  const initialWorld = useEffectEvent(() => worldState(save))
+  function startQuest(quest: Quest) {
+    if (guidance && guidance !== 'explore') setGuidance('task')
+    setOpen({ type: 'quest', quest, definition: challengeAttempt(quest.challenge, educationalPack) })
+  }
+
+  const initialWorld = useEffectEvent(() => worldState(save, materialGoal))
   const onInteraction = useEffectEvent(async (id: InteractionId) => {
     if (cats.some((cat) => cat.location === location && cat.id === id)) {
       if (!save.trust.some((event) => event.cat === id && event.id === 'first-pet')) {
@@ -275,13 +294,14 @@ export default function Room({ save, commit, busy, notice, educationalPack, guid
       return
     }
     const quest = quests.find((entry) => entry.location === location && entry.interaction === id &&
-      !save.completed.includes(entry.id))
+      (!save.completed.includes(entry.id) || recipeFor(entry.id)))
     const edge = transitions.find((entry) => entry.location === location && entry.interaction === id)
     const dialogue = dialogues.find((entry) => entry.location === location && entry.interaction === id)
     previousFocus.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
     if (quest) {
-      if (guidance && guidance !== 'explore') setGuidance('task')
-      setOpen({ type: 'quest', quest, definition: challengeAttempt(quest.challenge, educationalPack) })
+      const recipe = recipeFor(quest.id)
+      if (recipe) setOpen({ type: 'recipe', quest, recipe })
+      else startQuest(quest)
     } else if (dialogue) {
       setOpen({ type: 'dialogue', dialogue })
     } else if (edge && !meetsGate(points, edge.minimumPoints)) {
@@ -354,8 +374,8 @@ export default function Room({ save, commit, busy, notice, educationalPack, guid
   useEffect(() => { syncVisibility() }, [nativeActive, portrait])
 
   useEffect(() => {
-    engine.current?.setWorld(worldState(save))
-  }, [save])
+    engine.current?.setWorld(worldState(save, materialGoal))
+  }, [save, materialGoal])
 
   useEffect(() => {
     if (open && dialog.current && !dialog.current.open) dialog.current.showModal()
@@ -368,6 +388,7 @@ export default function Room({ save, commit, busy, notice, educationalPack, guid
     if (!result?.save?.completed.includes(quest.id)) return
     if (!result.applied) { closeOverlay(); return }
     if (guidance) setGuidance('explore')
+    if (quest.id === materialGoal) setMaterialGoal(null)
     const total = pointsOf(result.save)
     const areas = pl.play.unlocked
     const unlocked = transitions
@@ -377,7 +398,7 @@ export default function Room({ save, commit, busy, notice, educationalPack, guid
     setOpen({ type: 'success', quest, durable: result.durable, unlocked: [...new Set(unlocked)] })
   }
 
-  const world = worldState(save)
+  const world = worldState(save, materialGoal)
   const active = target.id && world.active.includes(target.id) ? target.id : null
   const interaction = active ? interactionText(active) : null
   const unlocked = active && world.openDoors.includes(active)
@@ -386,10 +407,22 @@ export default function Room({ save, commit, busy, notice, educationalPack, guid
   const lockedEdge = active && !unlocked
     ? transitions.find((edge) => edge.location === location && edge.interaction === active && edge.kind)
     : null
-  const lockText = (edge: Transition) => edge.kind === 'gate' ? pl.gardenGate : pl.stairs
+  const lockText = (edge: Transition) => {
+    if (edge.kind === 'basement-stair') return pl.basementStairs
+    return edge.kind === 'gate' ? pl.gardenGate : pl.stairs
+  }
+  const activeRecipe = active && quests.find((quest) => quest.location === location && quest.interaction === active)
+  const recipe = activeRecipe && recipeFor(activeRecipe.id)
+  const recipeStatus = recipe && kitStatus(recipe, save.completed)
+  const materialPrompt = recipeStatus === 'built' ? pl.crafting.ready :
+    recipe && recipeStatus === 'waiting' ? pl.crafting.find + ': ' + pl.kits[recipe.kit] : null
   const prompt = (lockedEdge && lockText(lockedEdge).progress(points, lockedEdge.minimumPoints)) ||
-    (catPrompt ?? (unlocked ? interaction?.unlocked : null) ?? interaction?.prompt)
+    (catPrompt ?? materialPrompt ?? (unlocked ? interaction?.unlocked : null) ?? interaction?.prompt)
   const shownGuidance = guidance !== 'task' && !prompt && !open ? guidance : null
+  const recipeView = open?.type === 'recipe' ? {
+    status: kitStatus(open.recipe, save.completed),
+    source: quests.find(({ id }) => id === open.recipe.source)!,
+  } : null
   const conversation = open?.type === 'dialogue' && dialogueBody(open.dialogue)
   const fullscreenLabel = expanded ? (fullscreen ? pl.play.exitFullscreen : pl.play.collapse) :
     document.fullscreenEnabled ? pl.play.fullscreen : pl.play.expand
@@ -483,6 +516,21 @@ export default function Room({ save, commit, busy, notice, educationalPack, guid
             void complete(open.quest)
           }} />
         </>}
+        {open?.type === 'recipe' && recipeView && <>
+          <h2 id="interaction-title">{pl.challenges[challenges[open.quest.challenge].text].title}</h2>
+          <div id="interaction-body" className="recipe-kit" data-kit-status={recipeView.status}>
+            <Picture id={open.recipe.picture} />
+            <div>
+              <strong>{recipeView.status === 'built' ? pl.crafting.ready : recipeView.status === 'available'
+                ? pl.crafting.have : pl.crafting.find}</strong>
+              {recipeView.status !== 'built' && <p>{pl.kits[open.recipe.kit]}</p>}
+              {recipeView.status === 'waiting' && <>
+                <p>{pl.locations[recipeView.source.location].title} · {pl.challenges[challenges[recipeView.source.challenge].text].title}</p>
+                <p>{pl.crafting.follow}</p>
+              </>}
+            </div>
+          </div>
+        </>}
         {open?.type === 'pause' && <>
           <h2 id="interaction-title" ref={modalHeading} tabIndex={-1}>{pl.pause.title}</h2>
           <p id="interaction-body">{pl.pause.body}</p>
@@ -515,7 +563,11 @@ export default function Room({ save, commit, busy, notice, educationalPack, guid
           {guidance === 'explore' && <p>{pl.play.explain}</p>}
           {notice && <p className="notice" role="status">{notice}</p>}
         </>}
-        <div className="dialog-footer">
+        <div className={open?.type === 'recipe' ? 'dialog-footer recipe-actions' : 'dialog-footer'}>
+          {open?.type === 'recipe' && recipeView?.status === 'available' && <GameButton className="primary" disabled={busy}
+            onActivate={() => startQuest(open.quest)}>{pl.crafting.build}</GameButton>}
+          {open?.type === 'recipe' && recipeView?.status === 'waiting' && <GameButton className="primary" disabled={busy}
+            onActivate={() => { setMaterialGoal(open.recipe.source); closeOverlay() }}>{pl.crafting.find}</GameButton>}
           <GameButton className="primary" disabled={busy} onActivate={closeOverlay}>
             {busy ? pl.saving : open?.type === 'quest' ? pl.cancel : open?.type === 'pause' ? pl.pause.resume :
               open?.type === 'kicipedia' && open.selected ? pl.kicipedia.back : pl.close}

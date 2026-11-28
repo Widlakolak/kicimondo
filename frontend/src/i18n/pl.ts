@@ -1,4 +1,5 @@
 import { gardenPl } from './gardenPl.ts'
+import { workshopPl } from './workshopPl.ts'
 import { housePl } from './housePl.ts'
 
 const starRequirement = (n: number) => n === 1 ? 'Brakuje 1 gwiazdki.' : `Brakuje ${n} gwiazdek.`
@@ -40,6 +41,7 @@ export const pl = {
   cancel: 'Anuluj',
   locations: {
     ...housePl.locations,
+    ...workshopPl.locations,
     garden: gardenPl.location,
     bedroom: { title: 'Twój pokój', map: 'Widok pokoju z góry' },
     landing: { title: 'Półpiętro', map: 'Widok półpiętra z góry' },
@@ -52,7 +54,8 @@ export const pl = {
     floor: 'Dotknij podłogi', star: 'Znajdź gwiazdkę', task: 'Zrób zadanie', explore: 'Odkrywaj dalej!',
     skip: 'Pomiń podpowiedź', explain: 'Zrób zadanie. Zdobądź gwiazdkę. Odkrywaj świat.',
     missing: starRequirement,
-    unlocked: { landing: 'Nowy pokój otwarty!', hall: 'Parter otwarty!', garden: 'Ogród otwarty! Poznaj nowe kotki!' },
+    unlocked: { landing: 'Nowy pokój otwarty!', hall: 'Parter otwarty!', garden: 'Ogród otwarty! Poznaj nowe kotki!',
+      basement: 'Piwnica otwarta! Odkryj koci warsztat!' },
   },
   offline: {
     ready: 'Gra gotowa do działania bez internetu.',
@@ -75,15 +78,16 @@ export const pl = {
     unavailable: 'Nie można zapisać gry na tym urządzeniu. Zmiany w tej sesji znikną po odświeżeniu.',
   },
   cat: {
-    names: { amber: 'Bursztynek', ...gardenPl.names },
+    names: { amber: 'Bursztynek', ...gardenPl.names, sparkle: 'Iskierka' },
     trust: (name: string, value: number) => `Zaufanie · ${name}: ${value}`,
     ready: (name: string, female = false) => `${name} jest ${female ? 'gotowa' : 'gotowy'} na głaskanie. Wybierz „Sprawdź”.`,
-    space: (name: string, female = false) => `${name} jest ${female ? 'zajęta' : 'zajęty'}. Daj mu teraz przestrzeń.`,
+    space: (name: string, female = false) => `${name} jest ${female ? 'zajęta' : 'zajęty'}. Daj ${female ? 'jej' : 'mu'} teraz przestrzeń.`,
     petting: (name: string) => `Głaszczesz kota: ${name}.`,
   },
   interactions: {
     ...housePl.interactions,
     ...gardenPl.interactions,
+    ...workshopPl.interactions,
     'water-bowl': { prompt: 'Obok stoi pusta miska na wodę.' },
     'cat-bed': { prompt: 'Obok jest legowisko do przygotowania.' },
     'scattered-clothes': {
@@ -100,11 +104,20 @@ export const pl = {
   dialogue: housePl.dialogue,
   sort: {
     ...housePl.sort,
-    items: { ...housePl.sort.items, ...gardenPl.items },
-    groups: { ...housePl.sort.groups, ...gardenPl.groups },
+    items: { ...housePl.sort.items, ...gardenPl.items, ...workshopPl.items },
+    groups: { ...housePl.sort.groups, ...gardenPl.groups, ...workshopPl.groups },
   },
-  kicipedia: gardenPl.collection,
-  attractions: gardenPl.attractions,
+  kicipedia: { ...gardenPl.collection, profiles: { ...gardenPl.collection.profiles, sparkle: workshopPl.sparkle } },
+  attractions: {
+    ...gardenPl.attractions, 'workshop-hideout': 'tekturowa kryjówka', 'workshop-mat': 'miękka mata',
+    'workshop-ball': 'filcowa piłeczka',
+  },
+  crafting: workshopPl.crafting,
+  kits: workshopPl.kitNames,
+  basementStairs: {
+    title: 'Schody do piwnicy',
+    progress: (points: number, goal: number) => starRequirement(goal - points),
+  },
   gardenGate: {
     title: 'Brama do ogrodu',
     progress: (points: number, goal: number) => starRequirement(goal - points),
@@ -119,6 +132,7 @@ export const pl = {
   challenges: {
     ...housePl.challenges,
     ...gardenPl.challenges,
+    ...workshopPl.challenges,
     clothesTrace: {
       title: 'Rozrzucone ubrania',
       instructions: 'Przeciągnij ubrania do kosza.',
@@ -142,6 +156,7 @@ export const pl = {
     progress: (current: number, total: number) => `Zagadka ${current} z ${total}`,
     count: 'Ile widzisz kropli?',
     counters: {
+      ...workshopPl.counters,
       towel: { count: 'Ile widzisz ręczników?', item: 'Ręcznik', crossed: 'Przekreślony ręcznik' },
       board: { count: 'Ile widzisz deseczek?', item: 'Deseczka', crossed: 'Przekreślona deseczka' },
       flower: { count: 'Ile widzisz kwiatów?', item: 'Kwiat', crossed: 'Przekreślony kwiat' },
@@ -158,9 +173,11 @@ export const pl = {
     crossedDrop: 'Przekreślona kropla',
   },
   match: {
-    words: { ...housePl.words, ...gardenPl.words, blanket: 'Koc', pillow: 'Poduszka', basket: 'Koszyk' },
-    pictures: { ...housePl.pictures, ...gardenPl.pictures, blanket: 'Obrazek: koc', pillow: 'Obrazek: poduszka', basket: 'Obrazek: koszyk' },
+    words: { ...housePl.words, ...gardenPl.words, ...workshopPl.items, blanket: 'Koc', pillow: 'Poduszka', basket: 'Koszyk' },
+    pictures: { ...housePl.pictures, ...gardenPl.pictures, ...workshopPl.pictures, blanket: 'Obrazek: koc', pillow: 'Obrazek: poduszka', basket: 'Obrazek: koszyk' },
     wordGroup: 'Słowa',
+    cueGroup: 'Obrazki do dopasowania',
+    chooseCue: 'Najpierw wybierz obrazek z górnego rzędu.',
     pictureGroup: 'Obrazki',
     chooseWord: 'Najpierw wybierz słowo.',
     wrong: 'To inna para. Spróbuj z kolejnym obrazkiem.',

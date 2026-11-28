@@ -3,6 +3,7 @@ import { mathQuestions } from '../core/education.ts'
 import { canStand, nearbyInteraction, type Point } from '../core/room.ts'
 import { organizedArt, solidsFor, type LocationMap } from '../core/tiledMap.ts'
 import { pl } from '../i18n/pl.ts'
+import { obtainableQuests, recipes } from './crafting.ts'
 import { attractions } from './catCatalog.ts'
 import { reachableLocations } from './routes.ts'
 import { cats, challenges, dialogues, locationIds, locations, mathOperations, pictureIds, quests, transitions, type Challenge, type LocationId, type SortChallenge } from './pack.ts'
@@ -19,7 +20,9 @@ export function validSort(challenge: SortChallenge): boolean {
     return challenge.order.length === ids.length && unique(challenge.order) &&
       challenge.order.every((id) => ids.includes(id))
   }
-  const { groups, assignments } = challenge
+  const { groups, assignments, groupPictures } = challenge
+  if (groupPictures && Object.entries(groupPictures).some(([group, picture]) =>
+    !groups.some((id) => id === group) || !pictureIds.includes(picture))) return false
   return groups.length >= 2 && unique(groups) && groups.every((group) => Object.hasOwn(pl.sort.groups, group) &&
     ids.some((id) => assignments[id] === group)) && unique(groups.map((group) => pl.sort.groups[group])) &&
     Object.keys(assignments).length === ids.length &&
@@ -60,7 +63,8 @@ export function validateContent(maps: Record<LocationId, LocationMap>) {
     if (challenge.type === 'MATH_CHOICE') {
       require(Number.isSafeInteger(challenge.maximum) && challenge.maximum >= 2 && challenge.maximum <= 10 &&
         Number.isSafeInteger(challenge.seed) && (challenge.counter === undefined ||
-          Object.hasOwn(pl.math.counters, challenge.counter)) && challenge.operations.length > 0 &&
+          Object.hasOwn(pl.math.counters, challenge.counter)) &&
+        (challenge.illustration === undefined || pictureIds.includes(challenge.illustration)) && challenge.operations.length > 0 &&
         challenge.operations.every((operation) => mathOperations.includes(operation)), 'invalid maths settings for ' + id)
       require(mathQuestions(challenge).every(({ answer, options }) => options.length === 3 &&
         new Set(options).size === 3 && options.filter((option) => option === answer).length === 1 &&
@@ -72,8 +76,8 @@ export function validateContent(maps: Record<LocationId, LocationMap>) {
       const { pairs, pictureOrder } = challenge
       require(pairs.length >= 2 && pairs.length === pictureOrder.length && unique(pictureOrder) &&
         unique(pairs.map((pair) => pair.id)) && unique(pairs.map((pair) => pl.match.words[pair.word])) &&
-        unique(pairs.map((pair) => pair.picture)) && pairs.every(({ word, picture }) =>
-          Object.hasOwn(pl.match.words, word) && pictureIds.includes(picture) && pictureOrder.some((id) => id === picture)),
+        unique(pairs.map((pair) => pair.cue ?? pair.word)) && unique(pairs.map((pair) => pair.picture)) && pairs.every(({ word, picture, cue }) =>
+          (!cue || (pictureIds.includes(cue) && Object.hasOwn(pl.match.pictures, cue))) && Object.hasOwn(pl.match.words, word) && pictureIds.includes(picture) && pictureOrder.some((id) => id === picture)),
       'ambiguous matching pairs for ' + id)
       continue
     }
@@ -89,20 +93,16 @@ export function validateContent(maps: Record<LocationId, LocationMap>) {
   }
 
   const stable = (ids: readonly string[]) => unique(ids) && ids.every((id) => /^[a-z][a-z0-9-]*$/.test(id))
+  require(stable(Object.keys(challenges)), 'invalid challenge ID')
   require(stable(quests.map((quest) => quest.id)), 'invalid or duplicate quest ID')
   require(stable(quests.map((quest) => quest.reward.id)), 'invalid or duplicate reward ID')
   require(stable(cats.map(({ id }) => id)), 'invalid or duplicate cat ID')
   require(unique(attractions.map(({ location, object }) => location + '/' + object)) &&
     unique(attractions.map(({ location, position: { x, y } }) => location + '/' + x + '/' + y)),
   'duplicate attraction object or activity spot')
-  const gardenArt = {
-    water: 'garden-bowl', bedding: 'garden-bed', scratch: 'garden-post', tunnel: 'garden-tunnel',
-    toys: 'garden-toys', platform: 'garden-platform', shelter: 'garden-shelter', flowers: 'garden-flowers',
-  } as const
   for (const spot of attractions) {
-    const art = spot.location === 'garden' ? gardenArt[spot.tag] : spot.tag === 'water' ? 'bowl' : 'cat-bed'
     require(Object.hasOwn(pl.attractions, spot.tag) &&
-      maps[spot.location].furniture.some((prop) => prop.id === spot.object && prop.art === art) &&
+      maps[spot.location].furniture.some((prop) => prop.id === spot.object && prop.art === spot.art) &&
       quests.filter((quest) => quest.location === spot.location && quest.effects.some((effect) =>
         effect.type === 'RESTORE_ATTRACTION' && effect.object === spot.object)).length === 1,
     'missing restoration quest or art for ' + spot.object)
@@ -135,7 +135,7 @@ export function validateContent(maps: Record<LocationId, LocationMap>) {
   require(unique(affectedObjects), 'object affected by multiple quest effects')
   for (const quest of quests) {
     require(Object.hasOwn(challenges, quest.challenge) && Number.isSafeInteger(quest.reward.points) &&
-      quest.reward.points === 1, 'invalid challenge or reward for ' + quest.id)
+      quest.reward.points === 1 && quest.introduced >= locations[quest.location].introduced, 'invalid challenge or reward for ' + quest.id)
     for (const effect of quest.effects) {
       const furniture = maps[quest.location].furniture.find(({ id }) => id === effect.object)
       require(furniture && (effect.type === 'HIDE_OBJECT' ||
@@ -189,19 +189,31 @@ export function validateContent(maps: Record<LocationId, LocationMap>) {
       'missing transition art for ' + interaction)
   }
 
-  // A gate can count only rewards reachable without using that gate.
-  const availablePoints = (reachable: ReadonlySet<LocationId>) =>
-    quests.filter((quest) => reachable.has(quest.location)).reduce((total, quest) => total + quest.reward.points, 0)
-  for (const edge of transitions.filter(({ minimumPoints }) => minimumPoints > 0)) {
-    const beforeGate = reachableLocations(availablePoints, transitions.filter((candidate) => candidate !== edge))
-    require(beforeGate.has(edge.location) && availablePoints(beforeGate) >= edge.minimumPoints,
-      'gate blocked by unavailable rewards: ' + edge.interaction)
+  require(stable(recipes.map(({ kit }) => kit)) && unique(recipes.map(({ source }) => source)) &&
+    unique(recipes.map(({ quest }) => quest)) && recipes.length === 6, 'expected six distinct material kits and recipes')
+  for (const { kit, picture, source, quest } of recipes) {
+    require(Object.hasOwn(pl.kits, kit) && pictureIds.includes(picture) &&
+      quests.some(({ id, location }) => id === source && (location === 'basement' || location === 'storage')) &&
+      quests.some(({ id, location }) => id === quest && location === 'workshop'),
+    'invalid crafting dependency for ' + quest)
   }
-  require(reachableLocations(availablePoints).size === locationIds.length, 'location blocked by unavailable rewards')
-  const gardenGate = transitions.find(({ target }) => target.location === 'garden')
-  require(gardenGate?.minimumPoints === 16 && quests.length === 25 &&
-    availablePoints(reachableLocations(availablePoints, transitions.filter((edge) => edge !== gardenGate))) === 17,
-  'expected 17 indoor rewards and 25 total rewards')
+  require(quests.filter(({ location }) => location === 'workshop').length === recipes.length, 'missing workshop recipe')
+
+  // Each gate can count only quests and their prerequisites reachable from the starting room.
+  const availablePoints = (reachable: ReadonlySet<LocationId>) => obtainableQuests(quests, reachable).size
+  const gates = transitions.filter(({ minimumPoints }) => minimumPoints > 0)
+  const expectedGates = { landing: 1, hall: 8, garden: 16, basement: 32 } as const
+  require(gates.length === Object.keys(expectedGates).length, 'unexpected progression gates')
+  for (const edge of gates) {
+    const beforeGate = reachableLocations(availablePoints, transitions.filter((candidate) => candidate !== edge))
+    require(edge.minimumPoints === expectedGates[edge.target.location as keyof typeof expectedGates] &&
+      beforeGate.has(edge.location) && availablePoints(beforeGate) >= edge.minimumPoints,
+    'gate blocked by unavailable rewards: ' + edge.interaction)
+    if (edge.target.location === 'basement') require(availablePoints(beforeGate) === 35, 'expected 35 pre-basement rewards')
+  }
+  const reachable = reachableLocations(availablePoints)
+  require(reachable.size === 12 && locationIds.length === 12 && quests.length === 50 &&
+    availablePoints(reachable) === 50 && cats.length === 6, 'expected 12 rooms, 50 obtainable rewards and six cats')
   for (let budget = 0; budget <= quests.length; budget++) {
     const reachable = reachableLocations(budget)
     for (const edge of transitions) {

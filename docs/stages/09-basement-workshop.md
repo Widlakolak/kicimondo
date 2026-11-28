@@ -46,6 +46,55 @@ The last six activities are fixed-slot recipes using their own one-time kit. Rep
 - Introduce bundled world content version 5, with a precise migration from schema 3/content 4 and all earlier supported combinations. Keep schema 3 if kit ownership is derived and shape does not change; otherwise introduce the smallest explicit schema migration. Preserve every valid old checkpoint, profile, reward, restored/hidden prop, cat discovery/trust and reset generation. Do not grant new rewards retroactively. Validate completions against their actual introduction version, graph reachability and recipe prerequisites; reject fabricated recipe completions without kits. New game reset clears new progress and kits, retains profile/settings/pack, protects stale writes and current/recovery snapshots. Older releases must not silently overwrite newer saves. Document frontend downgrade limits.
 - Educational pack compatibility is currently tied to world contentVersion=4 in client validation, requests and manifest generator. Decouple those concerns explicitly: keep the existing educational contract gameContentVersion=4 and seven downloadable math IDs/capabilities unchanged for Stage 09. Introduce a separately named educational compatibility version and explicit supported downloadable IDs; validate current definitions against the retained v4 manifest and use that version in requests/cache verification and contract generation. Existing published bytes/checksums, active cached pack and backend API remain valid. New math tasks use bundled variants only for now; Stage 10 can expand the downloadable contract deliberately. Reject variants targeting new bundled-only math IDs or unsupported versions. No database or backend API migration, no mutation or republishing of immutable old packs, no network on startup. Add migration and integration tests for a real v4 pack with a v4 save upgraded to v5 and offline use; preserve pack cache and reset semantics.
 
+## Implemented content
+
+The basement opens from the ground-floor hall at 32 cumulative stars. The graph has 25 indoor quests above the basement and ten in the garden. Three of these 35 quests can wait until after entry. Four corridor quests and five storage quests provide 9 basement stars. Six recipes provide the remaining 6 stars. All 12 maps have a return path.
+
+| Stable quest ID | Polish title | World prop |
+| --- | --- | --- |
+| `bedroom-sort-sock-patterns` | Skarpetki do pary | `sock-tray` |
+| `study-count-crayons` | Pudełko kredek | `crayon-tin` |
+| `study-match-geometric-shapes` | Kształty wokół nas | `shape-board` |
+| `bathroom-match-hygiene-symbols` | Znaki przy umywalce | `wash-kit` |
+| `playroom-sort-block-shapes` | Klocki według kształtu | `block-tray` |
+| `playroom-order-build-steps` | Wieża z flagą | `build-board` |
+| `kitchen-count-snack-apples` | Jabłka na podwieczorek | `snack-tray` |
+| `living-order-family-day` | Obrazki rodzinnego dnia | `day-board` |
+| `garden-trace-leaf-path` | Ścieżka wśród liści | `leaf-path` |
+| `garden-count-seed-packets` | Torebki nasion | `seed-tray` |
+| `basement-sort-storage-boxes` | Pudełka na półce | `cardboard-crate` |
+| `basement-count-felt-pieces` | Filc w koszyku | `felt-basket` |
+| `basement-match-drawer-symbols` | Znaki na szufladach | `fabric-drawers` |
+| `basement-trace-basket-route` | Droga do koszyka | `route-basket` |
+| `storage-sort-ramp-blocks` | Klocki na rampę | `block-bin` |
+| `storage-count-scratch-pieces` | Deseczki na drapak | `board-bundle` |
+| `storage-match-cardboard-tubes` | Tekturowe tuby | `tube-rack` |
+| `storage-order-containers` | Pojemniki według rozmiaru | `size-crates` |
+| `storage-match-storage-labels` | Etykiety materiałów | `label-rack` |
+| `workshop-build-cardboard-hideout` | Tekturowa kryjówka | `cardboard-hideout` |
+| `workshop-build-felt-ball` | Filcowa piłeczka | `felt-ball` |
+| `workshop-build-resting-mat` | Miękka mata | `resting-mat` |
+| `workshop-build-cat-ramp` | Niska kocia rampa | `cat-ramp` |
+| `workshop-build-scratch-board` | Płaski drapak | `scratch-board` |
+| `workshop-build-play-tunnel` | Tunel do zabawy | `play-tunnel` |
+
+The corridor measures 416 × 256 pixels. The storage room measures 448 × 256 pixels. The workshop measures 448 × 288 pixels. Each room uses the existing 16 px grid and shared adaptive Phaser scene.
+
+| Material kit | Source | Fixed recipe |
+| --- | --- | --- |
+| Cardboard | Storage boxes in the corridor | Cardboard hideout |
+| Felt | Felt pieces in the corridor | Felt ball |
+| Fabric | Drawer symbols in the corridor | Resting mat |
+| Prepared ramp blocks | Block shapes in storage | Cat ramp |
+| Prepared scratch-board pieces | Board count in storage | Scratching board |
+| Cardboard tubes | Tube labels in storage | Play tunnel |
+
+A waiting slot shows a parcel and the name and location of its source. Choosing **Znajdź** highlights the route to that source. **Masz** and **Zbuduj** appear once its kit is ready. **Gotowe!** confirms a construction that can be inspected again. The completion ledger derives kit availability. The save transaction adds the construction, one star and any trust event together.
+
+Iskierka roams the workshop, rests, plays and uses the hideout, mat and ball when they are ready. A nearby sighting unlocks her Kicipedia entry. Petting requires a receptive cat and earns one first-pet trust event. Discovery and petting award zero stars.
+
+World content version 5 uses the existing schema 3 and IndexedDB generation. Migrations retain valid checkpoints, progress, recovery snapshots and downloaded packs. An older client cannot write a world version 5 save. Educational compatibility stays at version 4 with the original seven remote math IDs and unchanged published bytes. Stage 09 math is bundled.
+
 ## Testing and delivery
 
 - Read AGENTS.md, README, relevant design and stage docs. Inspect existing implementation, work on one focused branch stage-09-basement-workshop and PR. Do not mix 08.1 fixes except a demonstrated blocker necessary for this stage; document and report such cases. Do not mark deferred acceptance as done.
@@ -54,3 +103,14 @@ The last six activities are fixed-slot recipes using their own one-time kit. Rep
 - Run frontend lint/typecheck/unit/build/browser/contracts checks, backend tests, production Compose smoke, Android artifact verification. Preserve Android ID, API24, Chromium80 baseline, native offline; set versionName 0.9.0, versionCode 9 or next monotonic value. Report real test results and limitations, no invented device acceptance.
 - Update README, roadmap, GAME_DESIGN, CONTENT, ARCHITECTURE, EDUCATION, TESTING, DEPLOYMENT, ASSET_LICENSES and stage notes where affected. English code/docs, Polish child-facing UI and Polish implementation report. List implemented quest IDs, gate proof, recipes, maps, migration, artifact links and owner checklist.
 - Out of scope: forest, village, academy, free building/drag placement, economy, shopping, multiplayer, accounts, remote saves, ads, analytics, narration, new external services, public signed APK distribution, changes to QNAP or Cloudflare. Do not merge, publish images or deploy. Stop for owner review.
+
+## Owner acceptance
+
+- Open the game with a saved Stage 08.1 profile. Check the nickname, avatar, location, stars, discoveries and trust. With a downloaded math pack selected, disconnect and open one of its existing exercises.
+- Enter the ground-floor hall at 31 stars and inspect the basement stairs. Complete one quest, check the unlock message, and enter with three house or garden tasks still open. Return to the hall from each of the new rooms.
+- Inspect a parcel marker in the workshop and choose **Znajdź**. Follow the highlighted door and then the source quest. Return to see **Masz** and **Zbuduj**. Finish the recipe, inspect the finished prop and check that the star count rose by one. Repeat for all six slots.
+- Approach Iskierka, open her entry in Kicipedia, and pet her when the heart appears. Watch her visit the completed hideout and mat. Reload and check the built objects, stars, trust and discovery.
+- Try the smallest landscape view, rotate back from portrait, move by touch in fullscreen with arrows hidden, and trace a path with a finger. Check Android Back during an unfinished quest before resuming.
+- Install the test APK on the MediaPad T5 and try a fresh launch in airplane mode. Check Android version, WebView, orientation and touch responsiveness. For an in-place upgrade, compare the signing certificates first and use a matching key. Clearing app data or uninstalling can remove the local save. See the [Android guide](../DEPLOYMENT.md#android).
+
+Physical device, same-key upgrade and child playtest acceptance are pending. Stage 08 and 08.1 owner gameplay, NAS content import and backup/restore acceptance remain pending.

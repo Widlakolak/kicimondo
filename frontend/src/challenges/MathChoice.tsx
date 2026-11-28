@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { MathChallenge } from '../content/pack'
 import { mathQuestions } from '../core/education'
 import { pl } from '../i18n/pl'
+import { Picture } from './Picture'
 
 export function MathChoice({ challenge, busy, onComplete }: {
   challenge: MathChallenge
@@ -36,7 +37,9 @@ export function MathChoice({ challenge, busy, onComplete }: {
           {Array.from({ length: operation === 'add' ? left + right : left }, (_, i) => {
             const crossed = operation === 'subtract' && i >= left - right
             return <span key={i} role="img" aria-label={crossed ? counter?.crossed ?? math.crossedDrop : counter?.item ?? math.drop}
-              className={crossed ? 'drop crossed' : i >= left ? 'drop added' : 'drop'} />
+              className={`${challenge.illustration ? 'illustrated-counter' : 'drop'}${crossed ? ' crossed' : i >= left ? ' added' : ''}`}>
+              {challenge.illustration && <Picture id={challenge.illustration} />}
+            </span>
           })}
         </div>
       )}

@@ -231,3 +231,26 @@ dialog::backdrop { background: rgba(41, 35, 41, .58); }
   .profile-form .field { margin-top: 0; }
   .profile-form .profile-actions { margin-top: .65rem; }
 }
+
+.illustrated-counter { display: inline-grid; place-items: center; width: 1.7rem; height: 1.7rem; position: relative; }
+.illustrated-counter svg { width: 100%; height: 100%; }
+.illustrated-counter.added { background: #f5dfb2; border-radius: 5px; }
+.illustrated-counter.crossed::after {
+  content: '';
+  position: absolute;
+  width: 85%;
+  height: 3px;
+  background: #583648;
+  transform: rotate(-34deg);
+}
+.recipe-kit {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  margin: .75rem 0;
+  padding: .6rem;
+  border-radius: .75rem;
+  background: #f5e4ca;
+}
+.recipe-kit svg { flex: 0 0 3.5rem; width: 3.5rem; height: 3.5rem; }
+.recipe-kit p { margin: .25rem 0; }

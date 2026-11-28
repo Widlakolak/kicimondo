@@ -27,6 +27,13 @@ describe('shared educational contracts', () => {
     expect(() => decodePack({ ...demo, ...overrides })).toThrow()
   })
 
+  it('rejects v5 packs and variants for bundled workshop mathematics', () => {
+    const bundled = { ...demo.variants[0], challengeId: 'count-crayons' }
+    expect(() => decodePack({ ...demo, variants: [bundled] })).toThrow('Unknown downloadable')
+    expect(() => decodePack({ ...demo, gameContentVersion: 5 })).toThrow('Invalid educational pack')
+    expect(challengeAttempt('count-crayons', { ...decodePack(demo), variants: [bundled] })).toBe(challenges['count-crayons'])
+  })
+
   it('uses the same deterministic questions and only replaces the seed for the selected attempt', () => {
     for (const { challengeId, seed, questions } of vectors) {
       const challenge = challenges[challengeId as keyof typeof challenges]

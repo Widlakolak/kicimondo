@@ -22,6 +22,8 @@ export type WorldState = {
   restored: readonly string[]
   active: readonly string[]
   quests: readonly string[]
+  waiting: readonly string[]
+  goal: string | null
   doors: readonly string[]
   exit: string | null
   discovered: readonly CatId[]
@@ -135,7 +137,7 @@ export function createRoom(
       this.drawnWorld = world
       const paint = painter(this.backdrop.clear())
       paint(0x4d3947, 0, 0, map.width, map.height)
-      paintRoom(paint, locations[checkpoint.location].art)
+      paintRoom(paint, locations[checkpoint.location].art, map.width, map.height)
       for (const { id, art, box } of map.furniture) {
         if (!world.hidden.includes(id)) paintFurniture(paint, art, box, world.openDoors.includes(id) || world.restored.includes(id))
       }
@@ -166,7 +168,7 @@ export function createRoom(
       const inside = (box: Box, pad = 0) => point.x >= box.x - pad && point.x <= box.x + box.width + pad &&
         point.y >= box.y - pad && point.y <= box.y + box.height + pad
       const furniture = targets.find(({ id, box }) => this.anchors.some((anchor) => anchor.id === id) &&
-        (inside(box) || (world.quests.includes(id) &&
+        (inside(box) || ((world.quests.includes(id) || world.waiting.includes(id)) &&
           Math.hypot(point.x - box.x - box.width / 2, point.y - Math.max(10, box.y - 9)) <= 8)))
       const anchor = furniture ? this.anchors.find(({ id }) => id === furniture.id) : undefined
       if (anchor && Math.hypot(this.position.x - anchor.x, this.position.y - anchor.y) <= anchor.radius) {
@@ -201,15 +203,26 @@ export function createRoom(
     private drawMarkers() {
       const graphic = this.quests.clear()
       parent.dataset.quests = world.quests.join(' ')
+      parent.dataset.waiting = world.waiting.join(' ')
+      if (world.goal) parent.dataset.goal = world.goal
+      else delete parent.dataset.goal
       if (world.exit) parent.dataset.exit = world.exit
       else delete parent.dataset.exit
       for (const { id, box } of targets) {
         const quest = world.quests.includes(id)
-        if (!quest && !world.doors.includes(id)) continue
+        const waiting = world.waiting.includes(id)
+        if (!quest && !waiting && !world.doors.includes(id)) continue
         const x = Math.round(box.x + box.width / 2), y = Math.max(10, box.y - 9)
         if (quest) {
           graphic.lineStyle(1, 0xffe182, 0.85).strokeRoundedRect(box.x - 1, box.y - 1, box.width + 2, box.height + 2, 2)
           this.star(graphic, x, y)
+          if (world.goal === id) {
+            graphic.lineStyle(1, 0xffedb8).strokeCircle(x, y, 9)
+          }
+        } else if (waiting) {
+          graphic.fillStyle(0x493144).fillRoundedRect(x - 7, y - 6, 14, 12, 3)
+          graphic.fillStyle(0xf0c288).fillRect(x - 4, y - 3, 8, 7)
+          graphic.fillStyle(0xffedb8).fillRect(x - 1, y - 3, 2, 4)
         } else {
           graphic.fillStyle(0x493144).fillRoundedRect(x - 7, y - 6, 14, 12, 3)
           if (world.openDoors.includes(id)) {
@@ -236,7 +249,9 @@ export function createRoom(
 
     private drawGuidance() {
       const { scrollX, scrollY } = this.cameras.main
-      const goals = world.quests.length ? world.quests : world.exit ? [world.exit] : []
+      const goal = world.goal ?? world.exit
+      const isQuest = !!world.goal || !world.exit
+      const goals = goal ? [goal] : world.quests
       let nearest: Point | null = null
       let distance = Infinity
       for (const { id, box } of targets) {
@@ -252,7 +267,7 @@ export function createRoom(
       const y = nearest ? Math.round(Math.max(12, Math.min(view.height - 12, nearest.y - scrollY))) : 0
       const dx = nearest ? Math.sign(nearest.x - scrollX - x) : 0
       const dy = nearest ? Math.sign(nearest.y - scrollY - y) : 0
-      const key = nearest ? `${x}:${y}:${dx}:${dy}:${world.quests.length > 0}` : ''
+      const key = nearest ? `${x}:${y}:${dx}:${dy}:${isQuest}` : ''
       if (key === this.lastGuidance) return
       this.lastGuidance = key
       this.guidance.clear()
@@ -260,8 +275,8 @@ export function createRoom(
         delete parent.dataset.guide
         return
       }
-      parent.dataset.guide = world.quests.length ? 'quest' : 'exit'
-      if (world.quests.length) this.star(this.guidance, x, y)
+      parent.dataset.guide = isQuest ? 'quest' : 'exit'
+      if (isQuest) this.star(this.guidance, x, y)
       else this.guidance.fillStyle(0x65444a).fillCircle(x, y, 7)
       this.guidance.fillStyle(0xffe8ad)
         .fillTriangle(x + 9 * dx, y + 9 * dy, x + 4 * dx - 3 * dy, y + 4 * dy + 3 * dx,
@@ -384,10 +399,13 @@ export function createRoom(
         paintCat(painter(sprite.graphic.clear()), state, frame, definition.appearance)
       }
       if (sprite.graphic.depth !== y) sprite.graphic.setDepth(y)
-      if (definition.id !== 'amber') return
+      if (definition.requires) return
       if (parent.dataset.catActivity !== state.activity) parent.dataset.catActivity = state.activity
       if (parent.dataset.catX !== String(x)) parent.dataset.catX = String(x)
       if (parent.dataset.catY !== String(y)) parent.dataset.catY = String(y)
+      if (state.spot) {
+        if (parent.dataset.catSpot !== state.spot) parent.dataset.catSpot = state.spot
+      } else if (parent.dataset.catSpot) delete parent.dataset.catSpot
       const elapsed = String(Math.floor(state.elapsed))
       if (parent.dataset.catElapsed !== elapsed) parent.dataset.catElapsed = elapsed
     }
@@ -446,7 +464,8 @@ export function createRoom(
       for (const id of next.discovered) observed.add(id)
       if (!same(world.hidden, next.hidden) || !same(world.restored, next.restored) ||
           !same(world.openDoors, next.openDoors) || !same(world.active, next.active) ||
-          !same(world.quests, next.quests) || world.exit !== next.exit) world = next
+          !same(world.quests, next.quests) || !same(world.waiting, next.waiting) ||
+          world.exit !== next.exit || world.goal !== next.goal) world = next
     },
     setBackgrounded(backgrounded: boolean) {
       if (backgrounded) game.pause()

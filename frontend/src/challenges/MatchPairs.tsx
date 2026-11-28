@@ -12,22 +12,24 @@ export function MatchPairs({ challenge, busy, onComplete }: {
 }) {
   const [selected, setSelected] = useState<string | null>(null)
   const [matched, setMatched] = useState<readonly string[]>([])
-  const [feedback, setFeedback] = useState<'chooseWord' | 'wrong' | 'correct' | null>(null)
+  const [feedback, setFeedback] = useState<'chooseWord' | 'chooseCue' | 'wrong' | 'correct' | null>(null)
   const [hint, setHint] = useState(false)
   const text = pl.challenges[challenge.text]
   const words = pl.match
+  const picturesOnly = challenge.pairs.some(({ cue }) => !!cue)
   const clue = hint && challenge.pairs.find((pair) => pair.id === selected)
 
   return (
     <div className="challenge">
       <p id="interaction-body">{text.instructions}</p>
-      <div className="activity-choices matching" role="group" aria-label={words.wordGroup}>
-        {challenge.pairs.map(({ id, word }) => {
+      <div className="activity-choices matching" role="group" aria-label={picturesOnly ? words.cueGroup : words.wordGroup}>
+        {challenge.pairs.map(({ id, word, cue }) => {
           const done = matched.includes(id)
-          return <button key={id} type="button" className={selected === id ? 'primary' : 'secondary'}
-            aria-pressed={selected === id} aria-label={done ? words.matched(words.words[word]) : undefined}
+          const label = cue ? words.pictures[cue] : words.words[word]
+          return <button key={id} type="button" className={`${cue ? 'picture-choice ' : ''}${selected === id ? 'primary' : 'secondary'}`}
+            aria-pressed={selected === id} aria-label={done ? words.matched(label) : cue ? label : undefined}
             disabled={busy || done}
-            onClick={() => { setSelected(id); setFeedback(null) }}>{words.words[word]}{done && ' ✓'}</button>
+            onClick={() => { setSelected(id); setFeedback(null) }}>{cue ? <Picture id={cue} /> : words.words[word]}{done && ' ✓'}</button>
         })}
       </div>
       <div className="activity-choices matching" role="group" aria-label={words.pictureGroup}>
@@ -38,7 +40,7 @@ export function MatchPairs({ challenge, busy, onComplete }: {
             onClick={() => {
               const next = matchPair(challenge, matched, selected, picture)
               if (next === matched) {
-                setFeedback(selected ? 'wrong' : 'chooseWord')
+                setFeedback(selected ? 'wrong' : picturesOnly ? 'chooseCue' : 'chooseWord')
                 return
               }
               setMatched(next)

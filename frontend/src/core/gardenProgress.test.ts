@@ -14,7 +14,7 @@ it('provides 17 indoor rewards, opens the garden at 16 and reaches exactly 25 wi
   expect(applyCommand(save, gate)).toBe(save)
   const indoor = reachableLocations(15)
   expect(indoor.has('garden')).toBe(false)
-  expect(quests.filter((quest) => indoor.has(quest.location))).toHaveLength(17)
+  expect(quests.filter((quest) => quest.introduced <= 4 && indoor.has(quest.location))).toHaveLength(17)
   save = travel(earn(save, living), 'hall')
   expect(pointsOf(save)).toBe(16)
   save = applyCommand(save, gate)!
@@ -22,7 +22,7 @@ it('provides 17 indoor rewards, opens the garden at 16 and reaches exactly 25 wi
   expect(pointsOf(save)).toBe(16)
   expect(applyCommand(save, { type: 'discover', cat: 'puszek' })).toBe(save)
 
-  save = earn(save, ({ location }) => location === 'garden')
+  save = earn(save, ({ introduced, location }) => introduced <= 4 && location === 'garden')
   expect(save.restored.filter(({ location }) => location === 'garden')).toHaveLength(8)
   expect(save.discovered).toEqual(['amber'])
   expect(pointsOf(save)).toBe(24)
@@ -53,7 +53,7 @@ it('migrates a Stage 05 schema 2/content 3 save including 12 PS and historical t
   const record = stage05Record()
   const migrated = decodeSave(record, maps)!
   expect(migrated).toMatchObject({
-    schemaVersion: 3, contentVersion: 4, profile: record.profile, checkpoint: record.checkpoint,
+    schemaVersion: 3, contentVersion: 5, profile: record.profile, checkpoint: record.checkpoint,
     completed: expect.arrayContaining(record.completed), rewards: expect.arrayContaining(record.rewards),
     hidden: record.hidden, restored: expect.arrayContaining(record.restored), trust: expect.arrayContaining(record.trust),
     discovered: ['amber'],

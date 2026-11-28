@@ -2,7 +2,7 @@ import { earn, fromHouse, travel } from '../../e2e/gardenFixtures'
 import { IDBFactory } from 'fake-indexeddb'
 import { expect, it, vi } from 'vitest'
 import { quests } from '../content/pack'
-import { pointsOf } from '../core/progress'
+import { newSave, pointsOf } from '../core/progress'
 import { currentKey, backupKey, databaseName, createSaveRepository, StaleSaveError } from './saveRepository'
 
 const profile = { avatar: 'girl', nickname: 'Żółwik' } as const
@@ -174,14 +174,14 @@ it('migrates a Stage 02 record in place on the next write and preserves its land
   await writeRaw(indexed, stage02)
   expect(await repository.load()).toEqual({
     status: 'ready', generation: 0,
-    save: { ...stage02, schemaVersion: 3, contentVersion: 4, restored: [], trust: [], discovered: [] },
+    save: { ...stage02, schemaVersion: 3, contentVersion: 5, restored: [], trust: [], discovered: [] },
   })
   await repository.commit({ type: 'transition', location: 'landing', interaction: 'bedroom-door' })
   const water = { type: 'complete', quest: 'bedroom-fill-water-bowl' } as const
   const other = createSaveRepository(() => indexed, () => ({ getItem: () => null }))
   await Promise.all([repository.commit(water), other.commit(water)])
   expect((await repository.load()).save).toMatchObject({
-    schemaVersion: 3, contentVersion: 4, profile,
+    schemaVersion: 3, contentVersion: 5, profile,
     checkpoint: { location: 'bedroom', spawn: 'from-landing' },
     completed: [quests[0].id, water.quest],
     hidden: stage02.hidden,
@@ -194,7 +194,7 @@ it('migrates a Stage 02 record in place on the next write and preserves its land
 it('migrates an earlier landing save and rolls back a new organized prop and reward together', async () => {
   const { indexed, repository } = setup()
   await repository.commit({ type: 'profile', profile })
-  for (const quest of quests.filter(({ location, introduced }) => location === 'bedroom' && !introduced)) {
+  for (const quest of quests.filter(({ location, introduced }) => location === 'bedroom' && introduced <= 2)) {
     await repository.commit({ type: 'complete', quest: quest.id })
   }
   await repository.commit({ type: 'pet', cat: 'amber' })
@@ -240,4 +240,28 @@ it('serializes an encounter, restoration and greeting across tabs and rolls back
   expect(result.trust.filter(({ cat }) => cat === 'puszek')).toEqual([
     { cat: 'puszek', id: 'habitat-ready' }, { cat: 'puszek', id: 'first-pet' },
   ])
+})
+
+it('preserves the kit after a failed construction, then commits it exactly once across tabs and reset', async () => {
+  const { indexed, repository } = setup()
+  await repository.load()
+  const outside = earn(newSave(profile), ({ location }) => location !== 'workshop' &&
+    location !== 'storage' && location !== 'basement')
+  const withMaterials = earn(outside, ({ id }) => id === 'basement-sort-storage-boxes')
+  const pending = travel(withMaterials, 'workshop')
+  await writeRaw(indexed, pending)
+  const build = { type: 'complete', quest: 'workshop-build-cardboard-hideout' } as const
+
+  await withFailedCurrentWrite(indexed, () => expect(repository.commit(build)).rejects.toThrow('Full'))
+  expect((await repository.load()).save?.restored).not.toContainEqual({ location: 'workshop', object: 'cardboard-hideout' })
+  const staleTab = createSaveRepository(() => indexed)
+  const results = await Promise.all([repository.commit(build), staleTab.commit(build)])
+  expect(results.filter(({ applied }) => applied)).toHaveLength(1)
+  expect(results[1].save?.restored).toContainEqual({ location: 'workshop', object: 'cardboard-hideout' })
+  expect(pointsOf(results[1].save!)).toBe(pointsOf(pending) + 1)
+  const reset = await repository.reset(0)
+  expect(reset.save).toMatchObject({ completed: [], restored: [], trust: [], discovered: [] })
+  await expect(staleTab.commit(build, 0)).rejects.toBeInstanceOf(StaleSaveError)
+  await writeRaw(indexed, 'damaged')
+  expect(await repository.load()).toEqual({ ...reset, status: 'recovered' })
 })

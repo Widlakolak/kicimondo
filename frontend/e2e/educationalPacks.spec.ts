@@ -134,7 +134,7 @@ test('explicit updates survive reload offline and a bad download leaves the cach
   await expect(bundled.getByRole('img', { name: 'Kropla', exact: true })).toHaveCount(bundledQuestions[0].answer)
 })
 
-test('downloaded seed completes the original quest once and changing packs keeps a full Stage 06 save', async ({ page, context }) => {
+test('downloaded v4 variants survive offline migration from a full Stage 08.1 save', async ({ page, context }) => {
   const api = await mockApi(page)
   api.respond()
   await page.goto(configuredApp)
@@ -161,12 +161,12 @@ test('downloaded seed completes the original quest once and changing packs keeps
   await expect(dialog).toBeHidden()
   expect((await saveRecord(page)).rewards).toEqual(completed.rewards)
 
-  let full = travel(earn(newSave(completed.profile), () => true), 'garden')
+  let full = travel(earn(newSave(completed.profile), ({ introduced }) => introduced <= 4), 'garden')
   full = applyCommand(full, { type: 'discover', cat: 'puszek' })!
   full = applyCommand(full, { type: 'pet', cat: 'puszek' })!
   expect(full.completed).toHaveLength(25)
   await returnToMenu(page)
-  await storeSave(page, travel(completed, 'study'))
+  await storeSave(page, { ...travel(completed, 'study'), contentVersion: 4 })
   await page.reload()
   await page.getByRole('button', { name: continueGame }).click()
   await expect(stage(page)).toHaveAttribute('data-y', '173')
@@ -179,13 +179,14 @@ test('downloaded seed completes the original quest once and changing packs keeps
   await schoolDialog.getByRole('button', { name: 'Anuluj' }).click()
   await expectRoomReady(page)
   await returnToMenu(page)
-  await storeSave(page, full)
+  await storeSave(page, { ...full, contentVersion: 4 })
   await page.reload()
   await page.getByText(updates).click()
   await expect(page.getByText(activate)).toBeVisible()
   await page.getByRole('button', { name: 'Wróć do zadań dołączonych do gry' }).click()
   await expect(page.getByText('Korzystasz z zadań dołączonych do gry.')).toBeVisible()
-  expect(await saveRecord(page)).toEqual(full)
+  expect(await saveRecord(page)).toEqual({ ...full, contentVersion: 4 })
   await page.getByRole('button', { name: continueGame }).click()
   await expect(page.locator('.points strong').filter({ hasText: /^25$/ })).toBeVisible()
+  await expect(stage(page)).toHaveAttribute('data-quests', 'leaf-path seed-tray')
 })

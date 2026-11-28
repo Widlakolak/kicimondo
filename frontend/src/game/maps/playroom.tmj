@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 5,
-  "nextobjectid": 18,
+  "nextobjectid": 22,
   "tilesets": [],
   "layers": [
     {
@@ -27,7 +27,9 @@
         {"id": 11, "name": "play-shelf", "x": 28, "y": 46, "width": 62, "height": 39, "properties": [{"name": "art", "type": "string", "value": "books"}, {"name": "solid", "type": "bool", "value": true}]},
         {"id": 12, "name": "soft-seat", "x": 226, "y": 139, "width": 53, "height": 46, "properties": [{"name": "art", "type": "string", "value": "sofa"}, {"name": "solid", "type": "bool", "value": true}]},
         {"id": 13, "name": "play-plant", "x": 248, "y": 56, "width": 21, "height": 28, "properties": [{"name": "art", "type": "string", "value": "plant"}, {"name": "solid", "type": "bool", "value": true}]},
-        {"id": 16, "name": "landing-door", "x": 144, "y": 205, "width": 32, "height": 19, "properties": [{"name": "art", "type": "string", "value": "door"}]}
+        {"id": 16, "name": "landing-door", "x": 144, "y": 205, "width": 32, "height": 19, "properties": [{"name": "art", "type": "string", "value": "door"}]},
+        {"id": 18, "name": "block-tray", "x": 43, "y": 144, "width": 48, "height": 26, "properties": [{"name": "art", "type": "string", "value": "block-tray"}]},
+        {"id": 19, "name": "build-board", "x": 198, "y": 41, "width": 42, "height": 27, "properties": [{"name": "art", "type": "string", "value": "build-board"}]}
       ]
     },
     {
@@ -57,7 +59,9 @@
       "y": 0,
       "objects": [
         {"id": 14, "name": "toy-box", "x": 160, "y": 90, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 19}]},
-        {"id": 17, "name": "landing-door", "x": 160, "y": 194, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 16}]}
+        {"id": 17, "name": "landing-door", "x": 160, "y": 194, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 16}]},
+        {"id": 20, "name": "block-tray", "x": 68, "y": 133, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]},
+        {"id": 21, "name": "build-board", "x": 219, "y": 83, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]}
       ]
     },
     {

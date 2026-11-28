@@ -18,12 +18,21 @@ type RoomMap = {
   layers: { name: string; type: string; objects: MapObject[] }[]
 }
 
+export const workshopProps = [
+  'sock-tray', 'crayon-tin', 'shape-board', 'wash-kit', 'block-tray', 'build-board', 'snack-tray', 'day-board',
+  'leaf-path', 'seed-tray', 'cardboard-crate', 'felt-basket', 'fabric-drawers', 'route-basket',
+  'block-bin', 'board-bundle', 'tube-rack', 'size-crates', 'label-rack',
+  'cardboard-hideout', 'felt-ball', 'resting-mat', 'cat-ramp', 'scratch-board', 'play-tunnel',
+] as const
+export type WorkshopProp = (typeof workshopProps)[number]
+
 export const organizedArt = [
   'desk', 'basket', 'counter', 'satchel', 'supplies', 'books', 'sink', 'bath-shelf', 'toy-box', 'fruit', 'table', 'household-shelf',
+  ...workshopProps,
 ] as const
 export const furnitureArt = [
   'bed', 'wardrobe', 'door', 'clothes', 'bowl', 'cat-bed', 'gate',
-  'stairs', 'guide', 'plant', 'bench', 'tub', 'sofa', ...organizedArt,
+  'stairs', 'basement-stair', 'workbench', 'guide', 'plant', 'bench', 'tub', 'sofa', ...organizedArt,
   'garden-bowl', 'garden-bed', 'garden-post', 'garden-tunnel', 'garden-toys', 'garden-platform', 'garden-shelter', 'garden-flowers',
 ] as const
 export type FurnitureArt = (typeof furnitureArt)[number]

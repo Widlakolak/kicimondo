@@ -42,6 +42,12 @@ jobs:
           name: stage-08-1-visual-review
           path: frontend/test-results/kidsUx-*/visual-*.png
           if-no-files-found: error
+      - name: Upload basement and workshop screenshots
+        uses: actions/upload-artifact@v4
+        with:
+          name: stage-09-visual-review
+          path: frontend/test-results/workshop-*/visual-*.png
+          if-no-files-found: error
       - name: Upload Playwright failure diagnostics
         if: ${{ failure() && steps.playwright.outcome == 'failure' }}
         uses: actions/upload-artifact@v4

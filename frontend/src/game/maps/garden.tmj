@@ -10,7 +10,7 @@
   "tilewidth": 16,
   "tileheight": 16,
   "nextlayerid": 5,
-  "nextobjectid": 29,
+  "nextobjectid": 33,
   "tilesets": [],
   "layers": [
     {
@@ -31,7 +31,9 @@
         {"id": 20, "name": "garden-platform", "x": 94, "y": 172, "width": 52, "height": 38, "properties": [{"name": "art", "type": "string", "value": "garden-platform"}, {"name": "solid", "type": "bool", "value": true}]},
         {"id": 22, "name": "garden-shelter", "x": 174, "y": 173, "width": 52, "height": 35, "properties": [{"name": "art", "type": "string", "value": "garden-shelter"}, {"name": "solid", "type": "bool", "value": true}]},
         {"id": 24, "name": "garden-flowers", "x": 245, "y": 175, "width": 50, "height": 27, "properties": [{"name": "art", "type": "string", "value": "garden-flowers"}, {"name": "solid", "type": "bool", "value": true}]},
-        {"id": 26, "name": "return-hall", "x": 136, "y": 207, "width": 48, "height": 17, "properties": [{"name": "art", "type": "string", "value": "gate"}]}
+        {"id": 26, "name": "return-hall", "x": 136, "y": 207, "width": 48, "height": 17, "properties": [{"name": "art", "type": "string", "value": "gate"}]},
+        {"id": 29, "name": "leaf-path", "x": 24, "y": 105, "width": 32, "height": 21, "properties": [{"name": "art", "type": "string", "value": "leaf-path"}]},
+        {"id": 30, "name": "seed-tray", "x": 269, "y": 108, "width": 30, "height": 20, "properties": [{"name": "art", "type": "string", "value": "seed-tray"}]}
       ]
     },
     {
@@ -68,7 +70,9 @@
         {"id": 21, "name": "garden-platform", "x": 120, "y": 153, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]},
         {"id": 23, "name": "garden-shelter", "x": 200, "y": 153, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]},
         {"id": 25, "name": "garden-flowers", "x": 270, "y": 153, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]},
-        {"id": 27, "name": "return-hall", "x": 160, "y": 199, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 16}]}
+        {"id": 27, "name": "return-hall", "x": 160, "y": 199, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 16}]},
+        {"id": 31, "name": "leaf-path", "x": 34, "y": 125, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]},
+        {"id": 32, "name": "seed-tray", "x": 284, "y": 136, "width": 0, "height": 0, "point": true, "properties": [{"name": "radius", "type": "int", "value": 17}]}
       ]
     },
     {
